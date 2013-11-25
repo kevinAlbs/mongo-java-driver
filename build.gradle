@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
+
+
 def configDir = new File(rootDir, 'config')
 
 buildscript {
     repositories {
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         mavenCentral()
+        maven { url 'http://repo.springsource.org/libs-release' }
     }
     dependencies {
         classpath 'me.trnl:clirr-gradle-plugin:0.4'
         classpath 'me.trnl:github-release-gradle-plugin:0.1'
+        // Reactor Core
+        compile 'org.projectreactor:reactor-core:1.0.0-RELEASE'
+        compile 'org.projectreactor:reactor-tcp:1.0.0-RELEASE'
     }
 }
 

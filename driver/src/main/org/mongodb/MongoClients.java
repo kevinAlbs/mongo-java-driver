@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 - 2013 10gen, Inc. <http://10gen.com>
+ * Copyright (c) 2008 - 2013 MongoDB Inc. <http://10gen.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.mongodb.connection.PowerOfTwoBufferPool;
 import org.mongodb.connection.ServerAddress;
 import org.mongodb.connection.SocketStreamFactory;
 import org.mongodb.connection.StreamFactory;
+import org.mongodb.connection.TcpClientStreamFactory;
 import org.mongodb.management.JMXConnectionPoolListener;
 
 import java.net.UnknownHostException;
@@ -118,8 +119,11 @@ public final class MongoClients {
             } else {
                 streamFactory = new AsynchronousSocketChannelStreamFactory(options.getSocketSettings(),
                                                                            options.getSslSettings());
-                heartbeatStreamFactory = new AsynchronousSocketChannelStreamFactory(options.getHeartbeatSocketSettings(),
-                                                                                    options.getSslSettings());
+                heartbeatStreamFactory = new TcpClientStreamFactory(options.getHeartbeatSocketSettings(),
+                                                                    options.getSslSettings());
+
+//                heartbeatStreamFactory = new AsynchronousSocketChannelStreamFactory(options.getHeartbeatSocketSettings(),
+//                                                                                    options.getSslSettings());
             }
         }
         return new DefaultClusterFactory().create(clusterSettings, options.getServerSettings(),
