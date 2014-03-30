@@ -65,4 +65,9 @@ public class UpdateOperation extends BaseWriteOperation {
     protected boolean getUpdatedExisting(final BulkWriteResult bulkWriteResult) {
         return bulkWriteResult.getUpdatedCount() > 0 && bulkWriteResult.getUpserts().isEmpty();
     }
+
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
 }

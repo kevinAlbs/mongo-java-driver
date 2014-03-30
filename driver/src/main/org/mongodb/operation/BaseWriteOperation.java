@@ -86,6 +86,11 @@ public abstract class BaseWriteOperation implements AsyncOperation<WriteResult>,
     }
 
     @Override
+    public boolean isQuery() {
+        return false;
+    }
+
+    @Override
     public MongoFuture<WriteResult> executeAsync(final Session session) {
         final SingleResultFuture<WriteResult> retVal = new SingleResultFuture<WriteResult>();
         getConnectionAsync(session, new ServerConnectionProviderOptions(false, new PrimaryServerSelector()))

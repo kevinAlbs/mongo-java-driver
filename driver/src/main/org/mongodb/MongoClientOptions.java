@@ -22,6 +22,8 @@ import org.mongodb.connection.ConnectionPoolSettings;
 import org.mongodb.connection.SSLSettings;
 import org.mongodb.connection.ServerSettings;
 import org.mongodb.connection.SocketSettings;
+import org.mongodb.retry.NoRetriesRetryPolicy;
+import org.mongodb.retry.RetryPolicy;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -65,6 +67,7 @@ public final class MongoClientOptions {
     private final ConnectionPoolSettings connectionPoolSettings;
     private final ServerSettings serverSettings;
     private final SSLSettings sslSettings;
+    private final RetryPolicy queryRetryPolicy;
 
     /**
      * Convenience method to create a Builder.
@@ -106,6 +109,8 @@ public final class MongoClientOptions {
         private int heartbeatSocketTimeout = 20000;
 
         private String requiredReplicaSetName;
+
+        private RetryPolicy queryRetryPolicy = new NoRetriesRetryPolicy();
 
         /**
          * Sets the description.
@@ -418,6 +423,20 @@ public final class MongoClientOptions {
         }
 
         /**
+         * Sets the retry policy for idempotent operations.
+         *
+         * @param retryPolicy the retry policy for idempotent operations
+         * @return this
+         */
+        public Builder retryPolicy(final RetryPolicy retryPolicy) {
+            if (retryPolicy == null) {
+                throw new IllegalArgumentException("queryRetryPolicy can not be null");
+            }
+            this.queryRetryPolicy = retryPolicy;
+            return this;
+        }
+
+        /**
          * Build an instance of MongoClientOptions.
          *
          * @return the options from this builder
@@ -708,6 +727,15 @@ public final class MongoClientOptions {
         return requiredReplicaSetName;
     }
 
+    /**
+     * Gets the retry policy for idempotent operations.
+     *
+     * @return the retry policy for idempotent operations
+     */
+    public RetryPolicy getQueryRetryPolicy() {
+        return queryRetryPolicy;
+    }
+
     @Override
     public String toString() {
         return "MongoClientOptions {"
@@ -732,6 +760,7 @@ public final class MongoClientOptions {
                + ", heartbeatConnectTimeout=" + heartbeatConnectTimeout
                + ", heartbeatSocketTimeout=" + heartbeatSocketTimeout
                + ", requiredReplicaSetName=" + requiredReplicaSetName
+               + ", queryRetryPolicy=" + queryRetryPolicy
                + '}';
     }
 
@@ -757,6 +786,7 @@ public final class MongoClientOptions {
         heartbeatConnectTimeout = builder.heartbeatConnectTimeout;
         heartbeatSocketTimeout = builder.heartbeatSocketTimeout;
         requiredReplicaSetName = builder.requiredReplicaSetName;
+        queryRetryPolicy = builder.queryRetryPolicy;
 
         socketSettings = SocketSettings.builder()
                                        .connectTimeout(connectTimeout, MILLISECONDS)

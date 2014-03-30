@@ -86,6 +86,11 @@ public class MapReduceWithInlineResultsOperation<T> implements Operation<MapRedu
         return new MapReduceInlineResultsCursor<T>(commandResult);
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
     private ServerConnectionProviderOptions getServerConnectionProviderOptions() {
         return new ServerConnectionProviderOptions(true, new ReadPreferenceServerSelector(readPreference));
     }

@@ -14,28 +14,25 @@
  * limitations under the License.
  */
 
-package org.mongodb.operation;
-
-import org.mongodb.session.Session;
+package org.mongodb.retry;
 
 /**
- * An Operation is something that can be run against a MongoDB instance.  This includes CRUD operations and Commands.
+ * An abstract base class for a retry policy
  *
- * @param <T> the return type of the execute method
+ * @since 3.0
  */
-public interface Operation<T> {
+public abstract class AbstractRetryPolicy implements RetryPolicy {
     /**
-     * General execute which can return anything of type T
-     *
-     * @return T, the results of the execution
-     * @param session
+     * Does nothing
      */
-    T execute(final Session session);
+    @Override
+    public void begin() {
+    }
 
     /**
-     * The operation should return true if it has no side effects, i.e. it's a query
-     *
-     * @return if it's a query.
+     * Does nothing
      */
-    boolean isQuery();
+    @Override
+    public void end() {
+    }
 }

@@ -48,6 +48,11 @@ public class CountOperation implements Operation<Long>, AsyncOperation<Long> {
     }
 
     @Override
+    public boolean isQuery() {
+        return true;
+    }
+
+    @Override
     public MongoFuture<Long> executeAsync(final Session session) {
         final SingleResultFuture<Long> retVal = new SingleResultFuture<Long>();
         new CommandOperation(namespace.getDatabaseName(), asDocument(), find.getReadPreference(), codec, commandEncoder)

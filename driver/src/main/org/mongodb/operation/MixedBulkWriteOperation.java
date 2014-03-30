@@ -126,6 +126,11 @@ public class MixedBulkWriteOperation<T> implements Operation<BulkWriteResult> {
         }
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private boolean shouldUseWriteCommands(final ServerConnectionProvider provider) {
         return writeConcern.isAcknowledged() && serverSupportsWriteCommands(provider);
     }

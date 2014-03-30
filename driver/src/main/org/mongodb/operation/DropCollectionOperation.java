@@ -56,6 +56,11 @@ public class DropCollectionOperation implements Operation<CommandResult> {
         }
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private CommandResult ignoreNamespaceNotFoundExceptionsWhenDroppingACollection(final MongoCommandFailureException e) {
         if (!e.getCommandResult().getErrorMessage().equals("ns not found")) {
             throw e;

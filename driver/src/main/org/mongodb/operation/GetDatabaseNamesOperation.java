@@ -57,4 +57,9 @@ public class GetDatabaseNamesOperation implements Operation<List<String>> {
         return unmodifiableList(databaseNames);
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
 }

@@ -55,6 +55,11 @@ public class FindAndUpdateOperation<T> implements Operation<T> {
         return (T) commandResult.getResponse().get("value");
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private void validateUpdateDocumentToEnsureItHasUpdateOperators(final Document value) {
         for (final String field : value.keySet()) {
             if (field.startsWith("$")) {

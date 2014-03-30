@@ -68,6 +68,11 @@ public class RenameCollectionOperation implements Operation<CommandResult> {
         return executeProtocol(new CommandProtocol("admin", createCommand(), commandCodec, commandCodec), session);
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private Document createCommand() {
         return new Document("renameCollection", asNamespaceString(databaseName, originalCollectionName))
                    .append("to", asNamespaceString(databaseName, newCollectionName))

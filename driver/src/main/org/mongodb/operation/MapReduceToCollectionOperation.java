@@ -78,6 +78,11 @@ public class MapReduceToCollectionOperation implements Operation<MapReduceStatis
         return new MapReduceIntoCollectionStatistics(commandResult);
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     /**
      * Returns the server that the map reduce operation ran against.
      *

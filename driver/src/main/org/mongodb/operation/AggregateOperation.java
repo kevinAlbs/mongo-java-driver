@@ -72,6 +72,11 @@ public class AggregateOperation<T> implements Operation<MongoCursor<T>> {
         }
     }
 
+    @Override
+    public boolean isQuery() {
+        return options.getOutputMode() == AggregationOptions.OutputMode.INLINE;
+    }
+
     public CommandResult explain(final Session session) {
         command.put("explain", true);
         return sendAndReceiveMessage(session);

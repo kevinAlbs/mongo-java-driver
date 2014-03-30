@@ -33,7 +33,6 @@ import org.mongodb.session.ServerConnectionProviderOptions;
 import org.mongodb.session.Session;
 
 import static org.mongodb.operation.CommandReadPreferenceHelper.getCommandReadPreference;
-import static org.mongodb.operation.CommandReadPreferenceHelper.isQuery;
 import static org.mongodb.operation.OperationHelper.executeProtocol;
 import static org.mongodb.operation.OperationHelper.getConnectionAsync;
 
@@ -70,6 +69,11 @@ public class CommandOperation implements AsyncOperation<CommandResult>, Operatio
     }
 
     @Override
+    public boolean isQuery(){
+        return false;
+    }
+
+    @Override
     public MongoFuture<CommandResult> executeAsync(final Session session) {
         final SingleResultFuture<CommandResult> retVal = new SingleResultFuture<CommandResult>();
         getConnectionAsync(session, new ServerConnectionProviderOptions(false, new PrimaryServerSelector()))
@@ -85,7 +89,7 @@ public class CommandOperation implements AsyncOperation<CommandResult>, Operatio
     }
 
     private ServerConnectionProviderOptions getServerConnectionProviderOptions() {
-        return new ServerConnectionProviderOptions(isQuery(commandDocument), getServerSelector());
+        return new ServerConnectionProviderOptions(CommandReadPreferenceHelper.isQuery(commandDocument), getServerSelector());
     }
 
     private ServerSelector getServerSelector() {

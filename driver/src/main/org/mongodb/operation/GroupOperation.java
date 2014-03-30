@@ -69,6 +69,11 @@ public class GroupOperation implements Operation<MongoCursor<Document>> {
         return new InlineMongoCursor<Document>(commandResult, (List<Document>) commandResult.getResponse().get("retval"));
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
     private Document createCommandDocument(final MongoNamespace namespace, final Group commandDocument) {
 
         Document document = new Document("ns", namespace.getCollectionName());

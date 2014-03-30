@@ -60,4 +60,9 @@ public class RemoveOperation extends BaseWriteOperation {
     protected int getCount(final BulkWriteResult bulkWriteResult) {
         return bulkWriteResult.getRemovedCount();
     }
+
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
 }

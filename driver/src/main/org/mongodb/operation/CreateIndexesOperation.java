@@ -63,6 +63,11 @@ public class CreateIndexesOperation implements Operation<Void> {
 
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private void executeCollectionBasedProtocol(final Session session) {
         MongoNamespace systemIndexes = new MongoNamespace(namespace.getDatabaseName(), "system.indexes");

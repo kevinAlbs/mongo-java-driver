@@ -59,4 +59,9 @@ public class InsertOperation<T> extends BaseWriteOperation {
     protected int getCount(final BulkWriteResult bulkWriteResult) {
         return 0;
     }
+
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
 }

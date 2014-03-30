@@ -51,6 +51,11 @@ public class FindAndRemoveOperation<T> implements Operation<T> {
         return (T) commandResult.getResponse().get("value");
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private Document getFindAndRemoveDocument() {
         Document command = new Document("findandmodify", namespace.getCollectionName());
         putIfNotNull(command, "query", findAndRemove.getFilter());

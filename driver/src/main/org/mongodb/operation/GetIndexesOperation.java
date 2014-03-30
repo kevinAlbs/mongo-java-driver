@@ -54,4 +54,9 @@ public class GetIndexesOperation implements Operation<List<Document>> {
         }
         return retVal;
     }
+
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
 }

@@ -57,6 +57,11 @@ public class UserExistsOperation implements Operation<Boolean> {
         }
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
     private Boolean executeCommandBasedProtocol(final ServerConnectionProvider serverConnectionProvider) {
         CommandResult commandResult = executeProtocol(new CommandProtocol(database, new Document("usersInfo", userName),
                                                                           new DocumentCodec(), new DocumentCodec()),

@@ -18,6 +18,7 @@ package org.mongodb;
 
 import org.mongodb.connection.Cluster;
 import org.mongodb.operation.Operation;
+import org.mongodb.retry.RetryPolicy;
 import org.mongodb.session.ClusterSession;
 import org.mongodb.session.PinnedSession;
 import org.mongodb.session.Session;
@@ -116,7 +117,29 @@ class MongoClientImpl implements MongoClient {
         sessionToUnpin.close();
     }
 
+
     <V> V execute(final Operation<V> operation) {
-        return operation.execute(getSession());
+        if (operation.isQuery()) {
+            return execute(operation, clientOptions.getQueryRetryPolicy().duplicate());
+        } else {
+            return operation.execute(getSession());
+        }
+    }
+
+    <V> V execute(final Operation<V> operation, final RetryPolicy retryPolicy) {
+        retryPolicy.begin();
+        try {
+            MongoException lastException;
+            do {
+                try {
+                    return operation.execute(getSession());
+                } catch (MongoException e) {
+                    lastException = e;
+                }
+            } while (retryPolicy.allowRetry(lastException));
+            throw lastException;
+        } finally {
+            retryPolicy.end();
+        }
     }
 }

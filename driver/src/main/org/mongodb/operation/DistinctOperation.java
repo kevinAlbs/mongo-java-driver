@@ -70,6 +70,11 @@ public class DistinctOperation implements Operation<MongoCursor<String>> {
         return new InlineMongoCursor<String>(commandResult, (List<String>) commandResult.getResponse().get("values"));
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
     private Document getCommandDocument() {
         Document cmd = new Document("distinct", namespace.getCollectionName());
         cmd.put("key", fieldName);

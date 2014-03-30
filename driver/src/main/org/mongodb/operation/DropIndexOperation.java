@@ -47,6 +47,11 @@ public class DropIndexOperation implements Operation<CommandResult> {
         }
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     //TODO: work out a way to reuse this
     private CommandResult ignoreNamespaceNotFoundExceptions(final MongoCommandFailureException e) {
         if (!e.getCommandResult().getErrorMessage().contains("ns not found")) {

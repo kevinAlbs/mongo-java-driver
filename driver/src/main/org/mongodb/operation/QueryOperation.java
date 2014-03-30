@@ -46,6 +46,11 @@ public class QueryOperation<T> implements AsyncOperation<MongoAsyncCursor<T>>, O
         return new MongoQueryCursor<T>(namespace, find, queryEncoder, resultDecoder, session);
     }
 
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
+
     public MongoFuture<MongoAsyncCursor<T>> executeAsync(final Session session) {
         return new SingleResultFuture<MongoAsyncCursor<T>>(new MongoAsyncQueryCursor<T>(namespace, find, queryEncoder, resultDecoder,
                                                                                         session), null);

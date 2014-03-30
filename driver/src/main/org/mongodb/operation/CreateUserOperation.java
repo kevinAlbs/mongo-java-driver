@@ -56,6 +56,11 @@ public class CreateUserOperation implements Operation<Void> {
         return null;
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private void executeCommandBasedProtocol(final ServerConnectionProvider serverConnectionProvider) {
         CommandProtocol commandProtocol = new CommandProtocol(user.getCredential().getSource(), asCommandDocument(user, "createUser"),
                                                               new DocumentCodec(), new DocumentCodec());

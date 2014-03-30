@@ -54,6 +54,11 @@ public class FindAndReplaceOperation<T> implements Operation<T> {
         return (T) commandResult.getResponse().get("value");
     }
 
+    @Override
+    public boolean isQuery() {
+        return false;
+    }
+
     private Document createFindAndReplaceDocument() {
         Document command = new Document("findandmodify", namespace.getCollectionName());
         putIfNotNull(command, "query", findAndReplace.getFilter());
