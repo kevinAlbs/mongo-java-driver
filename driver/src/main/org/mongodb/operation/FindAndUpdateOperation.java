@@ -60,6 +60,11 @@ public class FindAndUpdateOperation<T> implements Operation<T> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return false;
+    }
+
     private void validateUpdateDocumentToEnsureItHasUpdateOperators(final Document value) {
         for (final String field : value.keySet()) {
             if (field.startsWith("$")) {

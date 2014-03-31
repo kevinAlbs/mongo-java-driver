@@ -121,6 +121,8 @@ class MongoClientImpl implements MongoClient {
     <V> V execute(final Operation<V> operation) {
         if (operation.isQuery()) {
             return execute(operation, clientOptions.getQueryRetryPolicy().duplicate());
+        } else if (operation.isIdempotent()) {
+            return execute(operation, clientOptions.getIdempotentWriteRetryPolicy().duplicate());
         } else {
             return operation.execute(getSession());
         }

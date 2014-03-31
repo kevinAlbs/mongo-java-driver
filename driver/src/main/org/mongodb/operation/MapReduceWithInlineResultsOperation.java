@@ -91,6 +91,11 @@ public class MapReduceWithInlineResultsOperation<T> implements Operation<MapRedu
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private ServerConnectionProviderOptions getServerConnectionProviderOptions() {
         return new ServerConnectionProviderOptions(true, new ReadPreferenceServerSelector(readPreference));
     }

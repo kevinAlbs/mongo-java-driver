@@ -61,6 +61,11 @@ public class DropCollectionOperation implements Operation<CommandResult> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private CommandResult ignoreNamespaceNotFoundExceptionsWhenDroppingACollection(final MongoCommandFailureException e) {
         if (!e.getCommandResult().getErrorMessage().equals("ns not found")) {
             throw e;

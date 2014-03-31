@@ -74,6 +74,11 @@ public class GroupOperation implements Operation<MongoCursor<Document>> {
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private Document createCommandDocument(final MongoNamespace namespace, final Group commandDocument) {
 
         Document document = new Document("ns", namespace.getCollectionName());

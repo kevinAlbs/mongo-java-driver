@@ -56,6 +56,11 @@ public class FindAndRemoveOperation<T> implements Operation<T> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return false;
+    }
+
     private Document getFindAndRemoveDocument() {
         Document command = new Document("findandmodify", namespace.getCollectionName());
         putIfNotNull(command, "query", findAndRemove.getFilter());

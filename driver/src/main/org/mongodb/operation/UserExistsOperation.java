@@ -62,6 +62,11 @@ public class UserExistsOperation implements Operation<Boolean> {
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private Boolean executeCommandBasedProtocol(final ServerConnectionProvider serverConnectionProvider) {
         CommandResult commandResult = executeProtocol(new CommandProtocol(database, new Document("usersInfo", userName),
                                                                           new DocumentCodec(), new DocumentCodec()),

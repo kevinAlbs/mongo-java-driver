@@ -59,4 +59,9 @@ public class GetIndexesOperation implements Operation<List<Document>> {
     public boolean isQuery() {
         return true;
     }
+
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
 }

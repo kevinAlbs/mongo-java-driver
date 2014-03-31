@@ -52,6 +52,11 @@ public class DropIndexOperation implements Operation<CommandResult> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     //TODO: work out a way to reuse this
     private CommandResult ignoreNamespaceNotFoundExceptions(final MongoCommandFailureException e) {
         if (!e.getCommandResult().getErrorMessage().contains("ns not found")) {

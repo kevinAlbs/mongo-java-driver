@@ -62,4 +62,9 @@ public class GetDatabaseNamesOperation implements Operation<List<String>> {
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
 }

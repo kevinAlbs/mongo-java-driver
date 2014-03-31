@@ -51,6 +51,11 @@ public class QueryOperation<T> implements AsyncOperation<MongoAsyncCursor<T>>, O
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     public MongoFuture<MongoAsyncCursor<T>> executeAsync(final Session session) {
         return new SingleResultFuture<MongoAsyncCursor<T>>(new MongoAsyncQueryCursor<T>(namespace, find, queryEncoder, resultDecoder,
                                                                                         session), null);

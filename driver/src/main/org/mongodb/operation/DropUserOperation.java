@@ -62,6 +62,11 @@ public class DropUserOperation implements Operation<Void> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private void executeCommandBasedProtocol(final ServerConnectionProvider serverConnectionProvider) {
         CommandProtocol commandProtocol = new CommandProtocol(database, asCommandDocument(),
                                                               new DocumentCodec(),

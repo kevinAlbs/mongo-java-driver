@@ -73,6 +73,11 @@ public class RenameCollectionOperation implements Operation<CommandResult> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private Document createCommand() {
         return new Document("renameCollection", asNamespaceString(databaseName, originalCollectionName))
                    .append("to", asNamespaceString(databaseName, newCollectionName))

@@ -77,6 +77,11 @@ public class AggregateOperation<T> implements Operation<MongoCursor<T>> {
         return options.getOutputMode() == AggregationOptions.OutputMode.INLINE;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     public CommandResult explain(final Session session) {
         command.put("explain", true);
         return sendAndReceiveMessage(session);

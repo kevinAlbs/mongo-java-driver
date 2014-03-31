@@ -33,9 +33,17 @@ public interface Operation<T> {
     T execute(final Session session);
 
     /**
-     * The operation should return true if it has no side effects, i.e. it's a query
+     * The operation should return true if this operation is a query, and therefore has no side effects.
+     *
+     * @return if this operation is a query.
+     */
+    boolean isQuery();
+
+    /**
+     * The operation should return true if the side-effects of N > 0 identical executions of this opereration is the same as for a single
+     * execution.
      *
      * @return if it's a query.
      */
-    boolean isQuery();
+    boolean isIdempotent();
 }

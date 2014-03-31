@@ -83,6 +83,11 @@ public class MapReduceToCollectionOperation implements Operation<MapReduceStatis
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return false;  // this could be true for some output modes
+    }
+
     /**
      * Returns the server that the map reduce operation ran against.
      *

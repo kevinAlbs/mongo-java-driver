@@ -59,6 +59,11 @@ public class FindAndReplaceOperation<T> implements Operation<T> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return false;
+    }
+
     private Document createFindAndReplaceDocument() {
         Document command = new Document("findandmodify", namespace.getCollectionName());
         putIfNotNull(command, "query", findAndReplace.getFilter());

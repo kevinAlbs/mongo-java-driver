@@ -131,6 +131,11 @@ public class MixedBulkWriteOperation<T> implements Operation<BulkWriteResult> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return false;
+    }
+
     private boolean shouldUseWriteCommands(final ServerConnectionProvider provider) {
         return writeConcern.isAcknowledged() && serverSupportsWriteCommands(provider);
     }

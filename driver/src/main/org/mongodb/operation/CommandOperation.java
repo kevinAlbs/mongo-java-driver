@@ -74,6 +74,11 @@ public class CommandOperation implements AsyncOperation<CommandResult>, Operatio
     }
 
     @Override
+    public boolean isIdempotent() {
+        return false;
+    }
+
+    @Override
     public MongoFuture<CommandResult> executeAsync(final Session session) {
         final SingleResultFuture<CommandResult> retVal = new SingleResultFuture<CommandResult>();
         getConnectionAsync(session, new ServerConnectionProviderOptions(false, new PrimaryServerSelector()))

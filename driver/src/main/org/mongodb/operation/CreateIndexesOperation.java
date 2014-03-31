@@ -68,6 +68,11 @@ public class CreateIndexesOperation implements Operation<Void> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     private void executeCollectionBasedProtocol(final Session session) {
         MongoNamespace systemIndexes = new MongoNamespace(namespace.getDatabaseName(), "system.indexes");

@@ -68,6 +68,7 @@ public final class MongoClientOptions {
     private final ServerSettings serverSettings;
     private final SSLSettings sslSettings;
     private final RetryPolicy queryRetryPolicy;
+    private final RetryPolicy idempotentWriteRetryPolicy;
 
     /**
      * Convenience method to create a Builder.
@@ -111,6 +112,7 @@ public final class MongoClientOptions {
         private String requiredReplicaSetName;
 
         private RetryPolicy queryRetryPolicy = new NoRetriesRetryPolicy();
+        private RetryPolicy idempotentWriteRetryPolicy = new NoRetriesRetryPolicy();
 
         /**
          * Sets the description.
@@ -423,16 +425,30 @@ public final class MongoClientOptions {
         }
 
         /**
-         * Sets the retry policy for idempotent operations.
+         * Sets the retry policy for queries.
          *
-         * @param retryPolicy the retry policy for idempotent operations
+         * @param retryPolicy the retry policy for queries
          * @return this
          */
-        public Builder retryPolicy(final RetryPolicy retryPolicy) {
+        public Builder queryRetryPolicy(final RetryPolicy retryPolicy) {
             if (retryPolicy == null) {
-                throw new IllegalArgumentException("queryRetryPolicy can not be null");
+                throw new IllegalArgumentException("retryPolicy can not be null");
             }
             this.queryRetryPolicy = retryPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the retry policy for idempotent writes.
+         *
+         * @param retryPolicy the retry policy for idempotent writes
+         * @return this
+         */
+        public Builder idempotentWriteRetryPolicy(final RetryPolicy retryPolicy) {
+            if (retryPolicy == null) {
+                throw new IllegalArgumentException("retryPolicy can not be null");
+            }
+            this.idempotentWriteRetryPolicy = retryPolicy;
             return this;
         }
 
@@ -728,12 +744,22 @@ public final class MongoClientOptions {
     }
 
     /**
-     * Gets the retry policy for idempotent operations.
+     * Gets the retry policy for queries.
      *
-     * @return the retry policy for idempotent operations
+     * @return the retry policy for queries
      */
     public RetryPolicy getQueryRetryPolicy() {
         return queryRetryPolicy;
+    }
+
+
+    /**
+     * Gets the retry policy for idempotent writes.
+     *
+     * @return the retry policy for idempotent writes
+     */
+    public RetryPolicy getIdempotentWriteRetryPolicy() {
+        return idempotentWriteRetryPolicy;
     }
 
     @Override
@@ -761,6 +787,7 @@ public final class MongoClientOptions {
                + ", heartbeatSocketTimeout=" + heartbeatSocketTimeout
                + ", requiredReplicaSetName=" + requiredReplicaSetName
                + ", queryRetryPolicy=" + queryRetryPolicy
+               + ", idempotentWriteRetryPolicy=" + idempotentWriteRetryPolicy
                + '}';
     }
 
@@ -787,6 +814,7 @@ public final class MongoClientOptions {
         heartbeatSocketTimeout = builder.heartbeatSocketTimeout;
         requiredReplicaSetName = builder.requiredReplicaSetName;
         queryRetryPolicy = builder.queryRetryPolicy;
+        idempotentWriteRetryPolicy = builder.idempotentWriteRetryPolicy;
 
         socketSettings = SocketSettings.builder()
                                        .connectTimeout(connectTimeout, MILLISECONDS)

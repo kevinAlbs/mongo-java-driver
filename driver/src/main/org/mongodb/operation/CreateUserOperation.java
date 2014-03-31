@@ -61,6 +61,11 @@ public class CreateUserOperation implements Operation<Void> {
         return false;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private void executeCommandBasedProtocol(final ServerConnectionProvider serverConnectionProvider) {
         CommandProtocol commandProtocol = new CommandProtocol(user.getCredential().getSource(), asCommandDocument(user, "createUser"),
                                                               new DocumentCodec(), new DocumentCodec());

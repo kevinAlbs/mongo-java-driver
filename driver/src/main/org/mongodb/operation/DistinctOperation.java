@@ -75,6 +75,11 @@ public class DistinctOperation implements Operation<MongoCursor<String>> {
         return true;
     }
 
+    @Override
+    public boolean isIdempotent() {
+        return true;
+    }
+
     private Document getCommandDocument() {
         Document cmd = new Document("distinct", namespace.getCollectionName());
         cmd.put("key", fieldName);
