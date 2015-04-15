@@ -48,6 +48,11 @@ class UpdateMessage extends RequestMessage {
 
     @Override
     protected RequestMessage encodeMessageBody(final BsonOutput bsonOutput, final int messageStartPosition) {
+        return encodeMessageBodyWithMetadata(bsonOutput, messageStartPosition).getNextMessage();
+    }
+
+    @Override
+    protected EncodingMetadata encodeMessageBodyWithMetadata(final BsonOutput bsonOutput, final int messageStartPosition) {
         bsonOutput.writeInt32(0); // reserved
         bsonOutput.writeCString(getCollectionName());
 
@@ -61,6 +66,8 @@ class UpdateMessage extends RequestMessage {
         }
         bsonOutput.writeInt32(flags);
 
+        int firstDocumentStartPosition = bsonOutput.getPosition();
+
         addDocument(updateRequest.getFilter(), bsonOutput, new NoOpFieldNameValidator());
         if (updateRequest.getType() == REPLACE) {
             addCollectibleDocument(updateRequest.getUpdate(), bsonOutput, new CollectibleDocumentFieldNameValidator());
@@ -73,9 +80,10 @@ class UpdateMessage extends RequestMessage {
         }
 
         if (updates.size() == 1) {
-            return null;
+            return new EncodingMetadata(null, firstDocumentStartPosition);
         } else {
-            return new UpdateMessage(getCollectionName(), updates.subList(1, updates.size()), getSettings());
+            return new EncodingMetadata(new UpdateMessage(getCollectionName(), updates.subList(1, updates.size()), getSettings()),
+                                    firstDocumentStartPosition);
         }
     }
 

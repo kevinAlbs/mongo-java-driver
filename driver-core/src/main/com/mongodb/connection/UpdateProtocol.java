@@ -23,10 +23,14 @@ import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.UpdateRequest;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
+import org.bson.BsonArray;
+import org.bson.BsonBoolean;
+import org.bson.BsonDocument;
 
 import java.util.List;
 
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 /**
  * An implementation of the MongoDB OP_UPDATE wire protocol.
@@ -84,6 +88,24 @@ class UpdateProtocol extends WriteProtocol {
         } catch (Throwable t) {
             callback.onResult(null, t);
         }
+    }
+
+    @Override
+    protected BsonDocument getAsWriteCommand(final ByteBufferBsonOutput bsonOutput, final int firstDocumentPosition) {
+        List<ByteBufBsonDocument> documents = ByteBufBsonDocument.create(bsonOutput, firstDocumentPosition);
+        BsonDocument updateDocument = new BsonDocument("q", documents.get(0)).append("u", documents.get(1));
+        if (updates.get(0).isMulti()) {
+            updateDocument.append("multi", BsonBoolean.TRUE);
+        }
+        if (updates.get(0).isUpsert()) {
+            updateDocument.append("upsert", BsonBoolean.TRUE);
+        }
+        return getBaseCommandDocument().append("updates", new BsonArray(singletonList(updateDocument)));
+    }
+
+    @Override
+    protected String getCommandName() {
+        return "update";
     }
 
 

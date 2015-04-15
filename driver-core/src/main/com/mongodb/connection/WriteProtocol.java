@@ -21,13 +21,22 @@ import com.mongodb.WriteConcern;
 import com.mongodb.WriteConcernResult;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
+import com.mongodb.event.CommandListener;
+import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
+import org.bson.BsonString;
 import org.bson.codecs.BsonDocumentCodec;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.mongodb.MongoNamespace.COMMAND_COLLECTION_NAME;
 import static com.mongodb.connection.ProtocolHelper.encodeMessage;
 import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
+import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
 import static java.lang.String.format;
 
 /**
@@ -40,6 +49,7 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
     private final MongoNamespace namespace;
     private final boolean ordered;
     private final WriteConcern writeConcern;
+    private CommandListener commandListener;
 
     /**
      * Construct a new instance.
@@ -52,6 +62,11 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
         this.namespace = namespace;
         this.ordered = ordered;
         this.writeConcern = writeConcern;
+    }
+
+    @Override
+    public void setCommandListener(final CommandListener commandListener) {
+        this.commandListener = commandListener;
     }
 
     @Override
@@ -100,11 +115,13 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
     }
 
 
-    private CommandMessage sendMessage(final InternalConnection connection) {
+    private List<RequestMessage> sendMessage(final InternalConnection connection) {
+        List<RequestMessage> messagesList = new ArrayList<RequestMessage>();
         ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(connection);
         try {
             RequestMessage lastMessage = createRequestMessage(getMessageSettings(connection.getDescription()));
-            RequestMessage nextMessage = lastMessage.encode(bsonOutput);
+            RequestMessage.EncodingMetadata encodingMetadata = lastMessage.encodeWithMetadata(bsonOutput);
+            RequestMessage nextMessage = encodingMetadata.getNextMessage();
             int batchNum = 1;
             if (nextMessage != null) {
                 if (getLogger().isDebugEnabled()) {
@@ -112,12 +129,20 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
                 }
             }
 
+            if (commandListener != null) {
+                sendCommandStartedEvent(lastMessage, namespace.getDatabaseName(), getCommandName(),
+                                        getAsWriteCommand(bsonOutput, encodingMetadata.getFirstDocumentPosition()),
+                                        connection.getDescription(), commandListener);
+            }
+
+            messagesList.add(lastMessage);
             while (nextMessage != null) {
                 batchNum++;
                 if (getLogger().isDebugEnabled()) {
                     getLogger().debug(format("Sending batch %d", batchNum));
                 }
                 lastMessage = nextMessage;
+                messagesList.add(lastMessage);
                 nextMessage = nextMessage.encode(bsonOutput);
             }
             CommandMessage getLastErrorMessage = null;
@@ -128,13 +153,27 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
                                                          getMessageSettings(connection.getDescription()));
                 getLastErrorMessage.encode(bsonOutput);
                 lastMessage = getLastErrorMessage;
+                messagesList.add(lastMessage);
             }
             connection.sendMessage(bsonOutput.getByteBuffers(), lastMessage.getId());
-            return getLastErrorMessage;
+            return messagesList;
         } finally {
             bsonOutput.close();
         }
     }
+
+    protected abstract BsonDocument getAsWriteCommand(ByteBufferBsonOutput bsonOutput, int firstDocumentPosition);
+
+    protected BsonDocument getBaseCommandDocument() {
+        BsonDocument baseCommandDocument = new BsonDocument(getCommandName(), new BsonString(getNamespace().getCollectionName()))
+                               .append("ordered", BsonBoolean.valueOf(isOrdered()));
+        if (!writeConcern.isServerDefault()) {
+            baseCommandDocument.append("writeConcern", writeConcern.asDocument());
+        }
+        return baseCommandDocument;
+    }
+
+    protected abstract String getCommandName();
 
     private BsonDocument createGetLastErrorCommandDocument() {
         BsonDocument command = new BsonDocument("getlasterror", new BsonInt32(1));
@@ -142,15 +181,25 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
         return command;
     }
 
-    private WriteConcernResult receiveMessage(final InternalConnection connection, final RequestMessage requestMessage) {
-        if (requestMessage == null) {
+    private WriteConcernResult receiveMessage(final InternalConnection connection, final List<RequestMessage> requestMessage) {
+
+        if (!(requestMessage.get(requestMessage.size() - 1) instanceof CommandMessage)) { // if no getlasterror
+            if (commandListener != null) {
+                sendCommandCompletedEvent(requestMessage.get(0), getCommandName(), null, connection.getDescription(), 0, commandListener);
+            }
             return WriteConcernResult.unacknowledged();
         }
-        ResponseBuffers responseBuffers = connection.receiveMessage(requestMessage.getId());
+        RequestMessage getLastErrorCommandMessage = requestMessage.get(requestMessage.size() - 1);
+        ResponseBuffers responseBuffers = connection.receiveMessage(getLastErrorCommandMessage.getId());
         try {
             ReplyMessage<BsonDocument> replyMessage = new ReplyMessage<BsonDocument>(responseBuffers, new BsonDocumentCodec(),
-                                                                                     requestMessage.getId());
+                                                                                     getLastErrorCommandMessage.getId());
             return ProtocolHelper.getWriteResult(replyMessage.getDocuments().get(0), connection.getDescription().getServerAddress());
+        } catch (RuntimeException e) {
+            if (commandListener != null) {
+                sendCommandFailedEvent(requestMessage.get(0), getCommandName(), connection.getDescription(), 0, e, commandListener);
+            }
+            throw e;
         } finally {
             responseBuffers.close();
         }

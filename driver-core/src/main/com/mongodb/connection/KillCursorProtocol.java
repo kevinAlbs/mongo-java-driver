@@ -19,9 +19,17 @@ package com.mongodb.connection;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
+import com.mongodb.event.CommandListener;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
+import org.bson.BsonDouble;
+import org.bson.BsonInt64;
 
 import java.util.List;
 
+import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
 import static java.lang.String.format;
 
 /**
@@ -31,8 +39,10 @@ import static java.lang.String.format;
  */
 class KillCursorProtocol implements Protocol<Void> {
     public static final Logger LOGGER = Loggers.getLogger("protocol.killcursor");
+    private static final String COMMAND_NAME = "killCursors";
 
     private final List<Long> cursors;
+    private CommandListener commandListener;
 
     /**
      * Construct an instance.
@@ -50,12 +60,28 @@ class KillCursorProtocol implements Protocol<Void> {
                                 connection.getDescription().getConnectionId(), connection.getDescription().getServerAddress()));
         }
         ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(connection);
+        long startTimeNanos = System.nanoTime();
+        KillCursorsMessage message = null;
         try {
-            KillCursorsMessage message = new KillCursorsMessage(cursors);
+            message = new KillCursorsMessage(cursors);
+            if (commandListener != null) {
+                sendCommandStartedEvent(message, "admin", COMMAND_NAME, asCommandDocument(), connection.getDescription(),
+                                        commandListener);
+            }
             message.encode(bsonOutput);
             connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
+            if (commandListener != null) {
+                sendCommandCompletedEvent(message, COMMAND_NAME, new BsonDocument("ok", new BsonDouble(1)), connection.getDescription(),
+                                          startTimeNanos, commandListener);
+            }
             return null;
-        } finally {
+        } catch (RuntimeException e) {
+            if (commandListener != null) {
+                sendCommandFailedEvent(message, COMMAND_NAME, connection.getDescription(), startTimeNanos, e, commandListener);
+            }
+            throw e;
+        }
+        finally {
             bsonOutput.close();
         }
     }
@@ -80,6 +106,19 @@ class KillCursorProtocol implements Protocol<Void> {
         } catch (Throwable t) {
             callback.onResult(null, t);
         }
+    }
+
+    @Override
+    public void setCommandListener(final CommandListener commandListener) {
+        this.commandListener = commandListener;
+    }
+
+    private BsonDocument asCommandDocument() {
+        BsonArray array = new BsonArray();
+        for (long cursor : cursors) {
+            array.add(new BsonInt64(cursor));
+        }
+        return new BsonDocument(COMMAND_NAME, array);
     }
 
     private String getCursorIdListAsString() {

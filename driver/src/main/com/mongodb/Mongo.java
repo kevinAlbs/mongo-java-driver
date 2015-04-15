@@ -667,7 +667,7 @@ public class Mongo {
                                                                           options.getSslSettings(),
                                                                           options.getSocketFactory()),
                                                   credentialsList,
-                                                  null, new JMXConnectionPoolListener(), null);
+                                                  null, new JMXConnectionPoolListener(), null, options.getCommandListener());
     }
 
     private static List<ServerAddress> createNewSeedList(final List<ServerAddress> seedList) {
