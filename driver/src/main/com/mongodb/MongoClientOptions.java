@@ -22,6 +22,7 @@ import com.mongodb.connection.ConnectionPoolSettings;
 import com.mongodb.connection.ServerSettings;
 import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.SslSettings;
+import com.mongodb.event.CommandListener;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import javax.net.SocketFactory;
@@ -78,6 +79,7 @@ public class MongoClientOptions {
     private final ServerSettings serverSettings;
     private final SocketSettings heartbeatSocketSettings;
     private final SslSettings sslSettings;
+    private final CommandListener commandListener;
 
     private MongoClientOptions(final Builder builder) {
         description = builder.description;
@@ -107,6 +109,7 @@ public class MongoClientOptions {
         dbEncoderFactory = builder.dbEncoderFactory;
         socketFactory = builder.socketFactory;
         cursorFinalizerEnabled = builder.cursorFinalizerEnabled;
+        commandListener = builder.commandListener;
 
         connectionPoolSettings = ConnectionPoolSettings.builder()
                                                        .minSize(getMinConnectionsPerHost())
@@ -440,6 +443,15 @@ public class MongoClientOptions {
     }
 
     /**
+     * Gets the {@code CommandListener}. The default is null.
+     *
+     * @return the command listener
+     */
+    public CommandListener getCommandListener() {
+        return commandListener;
+    }
+
+    /**
      * Override the decoder factory. Default is for the standard Mongo Java driver configuration.
      *
      * @return the decoder factory
@@ -688,6 +700,7 @@ public class MongoClientOptions {
         private ReadPreference readPreference = ReadPreference.primary();
         private WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
         private CodecRegistry codecRegistry = MongoClient.getDefaultCodecRegistry();
+        private CommandListener commandListener;
 
         private int minConnectionsPerHost;
         private int maxConnectionsPerHost = 100;
@@ -759,6 +772,7 @@ public class MongoClientOptions {
             dbEncoderFactory = options.getDbEncoderFactory();
             socketFactory = options.getSocketFactory();
             cursorFinalizerEnabled = options.isCursorFinalizerEnabled();
+            commandListener = options.getCommandListener();
         }
 
         /**
@@ -975,6 +989,17 @@ public class MongoClientOptions {
          */
         public Builder codecRegistry(final CodecRegistry codecRegistry) {
             this.codecRegistry = notNull("codecRegistry", codecRegistry);
+            return this;
+        }
+
+        /**
+         * Sets the command listener.
+         *
+         * @param commandListener the command listener
+         * @return this
+         */
+        public Builder commandListener(final CommandListener commandListener) {
+            this.commandListener = commandListener;
             return this;
         }
 

@@ -27,6 +27,10 @@ import com.mongodb.MongoQueryException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcernException;
 import com.mongodb.WriteConcernResult;
+import com.mongodb.event.CommandCompletedEvent;
+import com.mongodb.event.CommandFailedEvent;
+import com.mongodb.event.CommandListener;
+import com.mongodb.event.CommandStartedEvent;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
@@ -144,6 +148,41 @@ final class ProtocolHelper {
             throw new WriteConcernException(result, serverAddress, createWriteResult(result));
         }
     }
+
+    static void sendCommandStartedEvent(final RequestMessage message, final String databaseName, final String commandName,
+                                        final BsonDocument command, final ConnectionDescription connectionDescription,
+                                        final CommandListener commandListener) {
+        try {
+            commandListener.commandStarted(new CommandStartedEvent(message.getId(), connectionDescription,
+                                                                   databaseName, commandName, command));
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    static void sendCommandCompletedEvent(final RequestMessage message, final String commandName, final BsonDocument response,
+                                          final ConnectionDescription connectionDescription, final long startTimeNanos,
+                                          final CommandListener commandListener) {
+        try {
+            commandListener.commandCompleted(new CommandCompletedEvent(message.getId(), connectionDescription,
+                                                                       commandName,
+                                                                       response, System.nanoTime() - startTimeNanos));
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    static void sendCommandFailedEvent(final RequestMessage message, final String commandName,
+                                       final ConnectionDescription connectionDescription, final long startTimeNanos,
+                                       final Throwable throwable, final CommandListener commandListener) {
+        try {
+            commandListener.commandFailed(new CommandFailedEvent(message.getId(), connectionDescription, commandName,
+                                                                 System.nanoTime() - startTimeNanos, throwable));
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
 
     private ProtocolHelper() {
     }

@@ -24,6 +24,8 @@ import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.InsertRequest;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
 
 import java.util.List;
 
@@ -90,6 +92,18 @@ class InsertProtocol extends WriteProtocol {
         } catch (Throwable t) {
             callback.onResult(null, t);
         }
+    }
+
+    @Override
+    protected BsonDocument getAsWriteCommand(final ByteBufferBsonOutput bsonOutput, final int firstDocumentPosition) {
+        return getBaseCommandDocument()
+               .append("documents", new BsonArray(ByteBufBsonDocument.create(bsonOutput, firstDocumentPosition)));
+
+    }
+
+    @Override
+    protected String getCommandName() {
+        return "insert";
     }
 
     protected RequestMessage createRequestMessage(final MessageSettings settings) {
