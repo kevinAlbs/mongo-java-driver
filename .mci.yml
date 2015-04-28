@@ -1,0 +1,88 @@
+#######################################
+#      Java Driver Config for MCI      #
+#######################################
+
+
+#######################################
+#            Functions                #
+#######################################
+
+functions:
+  "fetch source" :
+      command: git.get_project
+      params:
+          directory: "mongo-java-driver"
+
+  "start_mongod":
+      command: shell.exec
+      params:
+          background: true
+          working_dir: "."
+          script: |
+              wget -O mongodb.tgz https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-latest.tgz
+              tar --extract --file mongodb.tgz --strip-components=2 --wildcards --no-anchored "*/bin/mongod"
+              mkdir -p /data/log
+              mkdir -p /data/db
+              ./mongod --logpath=/data/log --dbpath=/data/db --pidfilepath=/data/pid
+
+  "stop_mongod":
+      command: shell.exec
+      params:
+          working_dir: "."
+          script:
+              kill -TERM $(cat /data/pid)
+
+
+#######################################
+#              Pre Task               #
+#######################################
+
+pre:
+  - command: shell.exec
+    params:
+      script: |
+        rm -rf "mongo-java-driver"
+        rm mongod
+
+#######################################
+#               Tasks                 #
+#######################################
+
+tasks:
+    - name: build
+      commands:
+        - func: "fetch source"
+        - command: git.apply_patch
+          params:
+              directory: "mongo-java-driver"
+#        - command: shell.exec
+#          params:
+#              working_dir: "mongo-java-driver"
+#              script: |
+#                  ./gradlew -PxmlReports.enabled=true --info -x test clean check jar testClasses javadoc
+        - func: "start_mongod"
+#        - command: shell.exec
+#          params:
+#              working_dir: "mongo-java-driver"
+#              script: |
+#                  ./gradlew --stacktrace --info -x classes -x testClasses --rerun-tasks test
+        - command: shell.exec
+          params:
+              working_dir: "mongo-java-driver"
+              script: |
+                  ./gradlew --stacktrace --info test
+        - func: "stop_mongod"
+
+
+#######################################
+#               Variants              #
+#######################################
+
+buildvariants:
+- name: ubuntu-1404
+  display_name: "Ubuntu-1404"
+  expansions:
+  run_on:
+    - ubuntu1404-test
+  tasks:
+  - name: build
