@@ -20,6 +20,7 @@ import org.bson.codecs.BsonDocumentCodec
 import spock.lang.Specification
 
 import static java.util.Arrays.asList
+import static util.GroovyHelpers.areEqual
 
 class RawBsonDocumentSpecification extends Specification {
 
@@ -142,6 +143,19 @@ class RawBsonDocumentSpecification extends Specification {
 
     def 'should decode'() {
         rawDocument.decode(new BsonDocumentCodec()) == document
+    }
+
+    def 'hashCode should equal hash code of identical BsonDocument'() {
+        expect:
+        rawDocument.hashCode() == document.hashCode()
+    }
+
+    def 'equals should equal identical BsonDocument'() {
+        expect:
+        areEqual(rawDocument, document)
+        areEqual(document, rawDocument)
+        areEqual(rawDocument, rawDocument)
+        !areEqual(rawDocument, emptyRawDocument)
     }
 
     class TestEntry implements Map.Entry<String, BsonValue> {

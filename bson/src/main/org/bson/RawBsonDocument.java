@@ -247,12 +247,12 @@ public class RawBsonDocument extends BsonDocument {
 
     @Override
     public boolean equals(final Object o) {
-        return super.equals(o);
+        return toBsonDocument().equals(o);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return toBsonDocument().hashCode();
     }
 
     private BsonValue deserializeBsonValue(final BsonBinaryReader bsonReader) {
