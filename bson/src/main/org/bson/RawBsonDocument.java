@@ -39,7 +39,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
  *
  * @since 3.0
  */
-public class RawBsonDocument extends BsonDocument {
+public final class RawBsonDocument extends BsonDocument {
     private static final CodecRegistry REGISTRY = fromProviders(new BsonValueCodecProvider());
 
     private final byte[] bytes;
