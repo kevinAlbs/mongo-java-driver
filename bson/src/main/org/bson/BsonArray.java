@@ -28,7 +28,7 @@ import java.util.ListIterator;
  *
  * @since 3.0
  */
-public class BsonArray extends BsonValue implements List<BsonValue> {
+public class BsonArray extends BsonValue implements List<BsonValue>, Cloneable {
 
     private final List<BsonValue> values;
 
@@ -205,5 +205,24 @@ public class BsonArray extends BsonValue implements List<BsonValue> {
         return "BsonArray{"
                + "values=" + values
                + '}';
+    }
+
+    @Override
+    public BsonArray clone() {
+        BsonArray to = new BsonArray();
+        for (BsonValue cur : this) {
+            if (cur.isDocument()) {
+                to.add(cur.asDocument().clone());
+            } else if (cur.isArray()) {
+                to.add(cur.asArray().clone());
+            } else if (cur.isBinary()) {
+                to.add(BsonBinary.clone(cur.asBinary()));
+            } else if (cur.isJavaScriptWithScope()) {
+                to.add(BsonJavaScriptWithScope.clone(cur.asJavaScriptWithScope()));
+            } else {
+                to.add(cur);
+            }
+        }
+        return to;
     }
 }

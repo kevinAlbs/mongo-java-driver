@@ -177,6 +177,11 @@ public final class BsonDocumentWrapper<T> extends BsonDocument {
         return getUnwrapped().toString();
     }
 
+    @Override
+    public BsonDocument clone() {
+        return getUnwrapped().clone();
+    }
+
     private BsonDocument getUnwrapped() {
         if (encoder == null) {
             throw new BsonInvalidOperationException("Can not unwrap a BsonDocumentWrapper with no Encoder");

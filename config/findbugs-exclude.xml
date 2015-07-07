@@ -53,6 +53,17 @@
         <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
     </Match>
 
+    <!-- Special handling of clone method for cloneable BsonValue subclasses.  By design, they don't call super.clone() -->
+    <Match>
+        <Or>
+            <Class name="org.bson.BsonArray"/>
+            <Class name="org.bson.BsonDocument"/>
+            <Class name="org.bson.BsonDocumentWrapper"/>
+        </Or>
+        <Method name="clone"/>
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
+    </Match>
+
     <!-- Test exclusions -->
     <!-- All bugs in test classes, except for JUnit-specific bugs -->
     <Match>

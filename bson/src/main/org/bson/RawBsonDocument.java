@@ -254,6 +254,11 @@ public final class RawBsonDocument extends BsonDocument {
         return toBsonDocument().hashCode();
     }
 
+    @Override
+    public BsonDocument clone() {
+        return new RawBsonDocument(bytes.clone());
+    }
+
     private BsonValue deserializeBsonValue(final BsonBinaryReader bsonReader) {
         return REGISTRY.get(getClassForBsonType(bsonReader.getCurrentBsonType())).decode(bsonReader, DecoderContext.builder().build());
     }

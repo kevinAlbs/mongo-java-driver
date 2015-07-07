@@ -199,4 +199,9 @@ class BsonArrayWrapper<T> extends BsonArray {
                 + "wrappedArray=" + wrappedArray
                 + '}';
     }
+
+    @Override
+    public BsonArray clone() {
+        throw new UnsupportedOperationException("This should never be called on an instance of this type");
+    }
 }

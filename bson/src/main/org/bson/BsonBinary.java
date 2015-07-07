@@ -133,4 +133,8 @@ public class BsonBinary extends BsonValue {
                + ", data=" + Arrays.toString(data)
                + '}';
     }
+
+    static BsonBinary clone(final BsonBinary from) {
+        return new BsonBinary(from.type, from.data.clone());
+    }
 }
