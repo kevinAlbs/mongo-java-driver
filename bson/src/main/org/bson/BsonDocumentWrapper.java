@@ -34,7 +34,7 @@ import java.util.Set;
  * @see org.bson.BsonDocumentWriter
  * @since 3.0
  */
-public class BsonDocumentWrapper<T> extends BsonDocument {
+public final class BsonDocumentWrapper<T> extends BsonDocument {
 
     private final T wrappedDocument;
     private final Encoder<T> encoder;
