@@ -36,10 +36,8 @@ import java.util.Set;
  */
 public class BsonDocumentWrapper<T> extends BsonDocument {
 
-    private static final long serialVersionUID = 4164303588753136248L;
-
-    private final transient T wrappedDocument;
-    private final transient Encoder<T> encoder;
+    private final T wrappedDocument;
+    private final Encoder<T> encoder;
     private BsonDocument unwrapped;
 
     /**

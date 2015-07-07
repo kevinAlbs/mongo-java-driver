@@ -16,16 +16,12 @@
 
 package org.bson;
 
-import java.io.Serializable;
-
 /**
  * A representation of the JavaScript Code with Scope BSON type.
  *
  * @since 3.0
  */
-public class BsonJavaScriptWithScope extends BsonValue implements Serializable {
-
-    private static final long serialVersionUID = -6284832275113680002L;
+public class BsonJavaScriptWithScope extends BsonValue {
 
     private final String code;
     private final BsonDocument scope;

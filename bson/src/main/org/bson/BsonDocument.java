@@ -25,7 +25,6 @@ import org.bson.json.JsonReader;
 import org.bson.json.JsonWriter;
 import org.bson.json.JsonWriterSettings;
 
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -40,8 +39,7 @@ import static java.lang.String.format;
  *
  * @since 3.0
  */
-public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Serializable, Bson {
-    private static final long serialVersionUID = -8366220692735186027L;
+public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Bson {
 
     private final Map<String, BsonValue> map = new LinkedHashMap<String, BsonValue>();
 
