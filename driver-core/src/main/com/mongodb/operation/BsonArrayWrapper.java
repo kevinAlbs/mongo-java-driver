@@ -28,7 +28,6 @@ import static org.bson.assertions.Assertions.notNull;
 
 
 class BsonArrayWrapper<T> extends BsonArray {
-    private static final long serialVersionUID = 3213553338060799471L;
 
     private final List<T> wrappedArray;
 

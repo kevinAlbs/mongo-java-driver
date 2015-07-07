@@ -16,7 +16,6 @@
 
 package org.bson;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,9 +28,8 @@ import java.util.ListIterator;
  *
  * @since 3.0
  */
-public class BsonArray extends BsonValue implements List<BsonValue>, Serializable {
+public class BsonArray extends BsonValue implements List<BsonValue> {
 
-    private static final long serialVersionUID = -6848772175446898432L;
     private final List<BsonValue> values;
 
     /**

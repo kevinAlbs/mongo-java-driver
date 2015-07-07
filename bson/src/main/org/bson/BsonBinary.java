@@ -16,7 +16,6 @@
 
 package org.bson;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -25,8 +24,7 @@ import java.util.Arrays;
  *
  * @since 3.0
  */
-public class BsonBinary extends BsonValue implements Serializable {
-    private static final long serialVersionUID = 5065134772326258148L;
+public class BsonBinary extends BsonValue {
 
     private final byte type;
     private final byte[] data;

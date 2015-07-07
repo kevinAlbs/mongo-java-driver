@@ -16,7 +16,6 @@
 
 package org.bson;
 
-import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -24,8 +23,7 @@ import java.util.Date;
  *
  * @since 3.0
  */
-public final class BsonTimestamp extends BsonValue implements Comparable<BsonTimestamp>, Serializable {
-    private static final long serialVersionUID = 2318841189917887752L;
+public final class BsonTimestamp extends BsonValue implements Comparable<BsonTimestamp> {
 
     private final int inc;
     private final Date time;

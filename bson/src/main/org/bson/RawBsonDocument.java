@@ -40,7 +40,6 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
  * @since 3.0
  */
 public class RawBsonDocument extends BsonDocument {
-    private static final long serialVersionUID = 5551249268878132972L;
     private static final CodecRegistry REGISTRY = fromProviders(new BsonValueCodecProvider());
 
     private final byte[] bytes;
