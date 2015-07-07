@@ -16,8 +16,6 @@
 
 package org.bson;
 
-import java.util.Date;
-
 /**
  * A value representing the BSON timestamp type.
  *
@@ -25,25 +23,25 @@ import java.util.Date;
  */
 public final class BsonTimestamp extends BsonValue implements Comparable<BsonTimestamp> {
 
+    private final int seconds;
     private final int inc;
-    private final Date time;
 
     /**
      * Construct a new instance with a null time and a 0 increment.
      */
     public BsonTimestamp() {
+        seconds = 0;
         inc = 0;
-        time = null;
     }
 
     /**
      * Construct a new instance for the given time and increment.
      *
-     * @param time the number of seconds since the epoch
+     * @param seconds the number of seconds since the epoch
      * @param inc  the increment.
      */
-    public BsonTimestamp(final int time, final int inc) {
-        this.time = new Date(time * 1000L);
+    public BsonTimestamp(final int seconds, final int inc) {
+        this.seconds = seconds;
         this.inc = inc;
     }
 
@@ -58,10 +56,7 @@ public final class BsonTimestamp extends BsonValue implements Comparable<BsonTim
      * @return an int representing time in seconds since epoch
      */
     public int getTime() {
-        if (time == null) {
-            return 0;
-        }
-        return (int) (time.getTime() / 1000);
+       return seconds;
     }
 
     /**
@@ -76,8 +71,8 @@ public final class BsonTimestamp extends BsonValue implements Comparable<BsonTim
     @Override
     public String toString() {
         return "Timestamp{"
-               + "inc=" + inc
-               + ", time=" + time
+               + "seconds=" + seconds
+               + ", inc=" + inc
                + '}';
     }
 
@@ -101,10 +96,11 @@ public final class BsonTimestamp extends BsonValue implements Comparable<BsonTim
 
         BsonTimestamp timestamp = (BsonTimestamp) o;
 
-        if (inc != timestamp.inc) {
+        if (seconds != timestamp.seconds) {
             return false;
         }
-        if (!time.equals(timestamp.time)) {
+
+        if (inc != timestamp.inc) {
             return false;
         }
 
@@ -113,8 +109,8 @@ public final class BsonTimestamp extends BsonValue implements Comparable<BsonTim
 
     @Override
     public int hashCode() {
-        int result = inc;
-        result = 31 * result + time.hashCode();
+        int result = seconds;
+        result = 31 * result + inc;
         return result;
     }
 }
