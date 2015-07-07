@@ -158,6 +158,15 @@ class RawBsonDocumentSpecification extends Specification {
         !areEqual(rawDocument, emptyRawDocument)
     }
 
+    def 'clone should make a deep copy'() {
+        when:
+        RawBsonDocument cloned = rawDocument.clone()
+
+        then:
+        cloned == rawDocument
+        !cloned.getByteBuffer().array().is(rawDocument.getByteBuffer().array())
+    }
+
     class TestEntry implements Map.Entry<String, BsonValue> {
 
         private final String key;

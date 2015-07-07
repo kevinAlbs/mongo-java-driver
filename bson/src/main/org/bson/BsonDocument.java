@@ -39,7 +39,7 @@ import static java.lang.String.format;
  *
  * @since 3.0
  */
-public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Bson {
+public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Cloneable, Bson {
 
     private final Map<String, BsonValue> map = new LinkedHashMap<String, BsonValue>();
 
@@ -760,6 +760,25 @@ public class BsonDocument extends BsonValue implements Map<String, BsonValue>, B
     @Override
     public String toString() {
         return toJson();
+    }
+
+    @Override
+    public BsonDocument clone() {
+        BsonDocument to = new BsonDocument();
+        for (Entry<String, BsonValue> cur : entrySet()) {
+            if (cur.getValue().isDocument()) {
+                to.put(cur.getKey(), cur.getValue().asDocument().clone());
+            } else if (cur.getValue().isArray()) {
+                to.put(cur.getKey(), cur.getValue().asArray().clone());
+            } else if (cur.getValue().isBinary()) {
+                to.put(cur.getKey(), BsonBinary.clone(cur.getValue().asBinary()));
+            } else if (cur.getValue().isJavaScriptWithScope()) {
+                to.put(cur.getKey(), BsonJavaScriptWithScope.clone(cur.getValue().asJavaScriptWithScope()));
+            } else {
+                to.put(cur.getKey(), cur.getValue());
+            }
+        }
+        return to;
     }
 
     private void throwIfKeyAbsent(final Object key) {

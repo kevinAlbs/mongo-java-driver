@@ -101,5 +101,9 @@ public class BsonJavaScriptWithScope extends BsonValue {
                + "scope=" + scope
                + '}';
     }
+
+    static BsonJavaScriptWithScope clone(final BsonJavaScriptWithScope from) {
+        return new BsonJavaScriptWithScope(from.code, from.scope.clone());
+    }
 }
 
