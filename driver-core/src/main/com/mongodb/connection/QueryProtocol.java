@@ -28,8 +28,14 @@ import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonString;
+import org.bson.BsonValue;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.Decoder;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.mongodb.connection.ProtocolHelper.encodeMessage;
 import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
@@ -50,7 +56,10 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
     public static final Logger LOGGER = Loggers.getLogger("protocol.query");
     private static final String COMMAND_NAME = "find";
     private final int skip;
+    private final int limit;
+    private final int batchSize;
     private final int numberToReturn;
+    private final boolean withLimitAndBatchSize;
     private final BsonDocument queryDocument;
     private final BsonDocument fields;
     private final Decoder<T> resultDecoder;
@@ -78,7 +87,23 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
                          final BsonDocument fields, final Decoder<T> resultDecoder) {
         this.namespace = namespace;
         this.skip = skip;
+        this.withLimitAndBatchSize = false;
         this.numberToReturn = numberToReturn;
+        this.limit = 0;
+        this.batchSize = 0;
+        this.queryDocument = queryDocument;
+        this.fields = fields;
+        this.resultDecoder = resultDecoder;
+    }
+
+    public QueryProtocol(final MongoNamespace namespace, final int skip, final int limit, final int batchSize,
+                         final BsonDocument queryDocument, final BsonDocument fields, final Decoder<T> resultDecoder) {
+        this.namespace = namespace;
+        this.skip = skip;
+        this.withLimitAndBatchSize = true;
+        this.numberToReturn = 0;
+        this.limit = limit;
+        this.batchSize = batchSize;
         this.queryDocument = queryDocument;
         this.fields = fields;
         this.resultDecoder = resultDecoder;
@@ -307,7 +332,7 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
     }
 
     private QueryMessage createQueryMessage(final ConnectionDescription connectionDescription) {
-        return (QueryMessage) new QueryMessage(namespace.getFullName(), skip, numberToReturn, queryDocument, fields,
+        return (QueryMessage) new QueryMessage(namespace.getFullName(), skip, getNumberToReturn(), queryDocument, fields,
                                                getMessageSettings(connectionDescription))
                                   .tailableCursor(isTailableCursor())
                                   .slaveOk(isSlaveOk())
@@ -317,15 +342,34 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
                                   .partial(isPartial());
     }
 
+    private int getNumberToReturn() {
+        if (withLimitAndBatchSize) {
+            if (limit < 0) {
+                return limit;
+            } else if (limit == 0) {
+                return batchSize;
+            } else if (batchSize == 0) {
+                return limit;
+            } else if (limit < Math.abs(batchSize)) {
+                return limit;
+            } else {
+                return batchSize;
+            }
+        } else {
+            return numberToReturn;
+        }
+    }
+
     private QueryMessage sendMessage(final InternalConnection connection) {
         ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(connection);
         try {
             QueryMessage message = createQueryMessage(connection.getDescription());
+            RequestMessage.EncodingMetadata metadata = message.encodeWithMetadata(bsonOutput);
             if (commandListener != null) {
-                sendCommandStartedEvent(message, namespace.getDatabaseName(), COMMAND_NAME, asFindCommandDocument(),
+                sendCommandStartedEvent(message, namespace.getDatabaseName(), COMMAND_NAME,
+                                        asFindCommandDocument(bsonOutput, metadata.getFirstDocumentPosition()),
                                         connection.getDescription(), commandListener);
             }
-            message.encode(bsonOutput);
 
             connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
             return message;
@@ -334,29 +378,57 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
         }
     }
 
-    // TODO: This is going to require an API change, since at this point we only have 'numberToReturn' and not 'limit' and 'batchSize'
-    // TODO: as separate values.  It would also be better if each piece of the query document was pre-split.  Currently this code is not
-    // TODO: pulling out most of the special $-prefixed fields from the query document.
-    private BsonDocument asFindCommandDocument() {
+    private static final Map<String, String> META_OPERATOR_TO_COMMAND_FIELD_MAP = new HashMap<String, String>();
+
+    static {
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$query", "filter");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$orderby", "sort");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$hint", "hint");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$comment", "comment");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$maxScan", "maxScan");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$maxTimeMS", "maxTimeMS");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$max", "max");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$min", "min");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$returnKey", "returnKey");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$showDiskLoc", "showRecordId");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$snapshot", "snapshot");
+        META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$readPreference", "readPreference");
+    }
+
+    private BsonDocument asFindCommandDocument(final ByteBufferBsonOutput bsonOutput, final int firstDocumentPosition) {
         BsonDocument command = new BsonDocument(COMMAND_NAME, new BsonString(namespace.getCollectionName()));
 
-        if (queryDocument.containsKey("$query")) {
-            command.append("filter", queryDocument.getDocument("$query"));
-        } else {
-            command.append("filter", queryDocument);
+        List<ByteBufBsonDocument> documents = ByteBufBsonDocument.create(bsonOutput, firstDocumentPosition);
+
+        ByteBufBsonDocument rawQueryDocument = documents.get(0);
+        for (Map.Entry<String, BsonValue> cur : rawQueryDocument.entrySet()) {
+            String commandFieldName = META_OPERATOR_TO_COMMAND_FIELD_MAP.get(cur.getKey());
+            if (commandFieldName != null) {
+                command.append(commandFieldName, cur.getValue());
+            }
         }
 
-        if (queryDocument.containsKey("$sort")) {
-            command.append("sort", queryDocument.getDocument("$sort"));
+        if (command.size() == 1) {
+            command.append("filter", rawQueryDocument);
         }
 
-        if (fields != null) {
-            command.append("projection", fields);
+        if (documents.size() == 2) {
+            command.append("projection", documents.get(1));
         }
 
         if (skip != 0) {
             command.append("skip", new BsonInt32(skip));
         }
+
+        if (withLimitAndBatchSize) {
+            if (limit != 0) {
+                command.append("limit", new BsonInt32(limit));
+            }
+            if (batchSize != 0) {
+                command.append("batchSize", new BsonInt32(batchSize));
+            }
+        }
+
         if (tailableCursor) {
             command.append("tailable", BsonBoolean.valueOf(tailableCursor));
         }
@@ -370,20 +442,24 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
             command.append("awaitData", BsonBoolean.valueOf(awaitData));
         }
         if (partial) {
-            command.append("partial", BsonBoolean.valueOf(partial));
+            command.append("allowPartialResults", BsonBoolean.valueOf(partial));
         }
 
         return command;
     }
 
     private BsonDocument asFindCommandResponseDocument(final ResponseBuffers responseBuffers, final QueryResult<T> queryResult) {
-        responseBuffers.getBodyByteBuffer().position(0);
+        List<ByteBufBsonDocument> rawResultDocuments = Collections.emptyList();
+        if (responseBuffers.getReplyHeader().getNumberReturned() > 0) {
+            responseBuffers.getBodyByteBuffer().position(0);
+            rawResultDocuments = ByteBufBsonDocument.create(responseBuffers);
+        }
 
         BsonDocument cursorDocument = new BsonDocument("id",
                                                        queryResult.getCursor() == null
                                                        ? new BsonInt64(0) : new BsonInt64(queryResult.getCursor().getId()))
                                       .append("ns", new BsonString(namespace.getFullName()))
-                                      .append("firstBatch", new BsonArray(ByteBufBsonDocument.create(responseBuffers)));
+                                      .append("firstBatch", new BsonArray(rawResultDocuments));
 
         return new BsonDocument("cursor", cursorDocument)
                .append("ok", new BsonDouble(1));

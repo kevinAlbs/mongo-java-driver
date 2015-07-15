@@ -163,11 +163,30 @@ class TestConnection implements Connection, AsyncConnection {
     }
 
     @Override
+    public <T> QueryResult<T> query(final MongoNamespace namespace, final BsonDocument queryDocument, final BsonDocument fields,
+                                    final int skip, final int limit,
+                                    final int batchSize, final boolean slaveOk, final boolean tailableCursor, final boolean awaitData,
+                                    final boolean noCursorTimeout,
+                                    final boolean partial, final boolean oplogReplay, final Decoder<T> resultDecoder) {
+        return executeEnqueuedProtocol();
+    }
+
+    @Override
     public <T> void queryAsync(final MongoNamespace namespace, final BsonDocument queryDocument, final BsonDocument fields,
                                final int numberToReturn, final int skip,
                                final boolean slaveOk, final boolean tailableCursor, final boolean awaitData, final boolean noCursorTimeout,
                                final boolean partial,
                                final boolean oplogReplay, final Decoder<T> resultDecoder,
+                               final SingleResultCallback<QueryResult<T>> callback) {
+        executeEnqueuedProtocolAsync(callback);
+    }
+
+    @Override
+    public <T> void queryAsync(final MongoNamespace namespace, final BsonDocument queryDocument, final BsonDocument fields, final int skip,
+                               final int limit,
+                               final int batchSize, final boolean slaveOk, final boolean tailableCursor, final boolean awaitData,
+                               final boolean noCursorTimeout,
+                               final boolean partial, final boolean oplogReplay, final Decoder<T> resultDecoder,
                                final SingleResultCallback<QueryResult<T>> callback) {
         executeEnqueuedProtocolAsync(callback);
     }

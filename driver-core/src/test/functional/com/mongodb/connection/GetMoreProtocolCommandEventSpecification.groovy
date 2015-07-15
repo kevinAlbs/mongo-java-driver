@@ -66,12 +66,12 @@ class GetMoreProtocolCommandEventSpecification extends OperationFunctionalSpecif
         protocol.commandListener = commandListener
 
         when:
-        protocol.execute(connection)
-
+        def getMoreResult = protocol.execute(connection)
 
         then:
         def response = new BsonDocument('cursor',
-                                        new BsonDocument('id', new BsonInt64(result.cursor.id))
+                                        new BsonDocument('id', getMoreResult.cursor ? new BsonInt64(getMoreResult.cursor.id)
+                                                                                    : new BsonInt64(0))
                                                 .append('ns', new BsonString(getNamespace().getFullName()))
                                                 .append('nextBatch', new BsonArray(documents.subList(3, 5))))
                 .append('ok', new BsonDouble(1.0))

@@ -31,6 +31,9 @@ import org.bson.BsonString;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.Decoder;
 
+import java.util.Collections;
+import java.util.List;
+
 import static com.mongodb.connection.ProtocolHelper.getQueryFailureException;
 import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
@@ -170,15 +173,17 @@ class GetMoreProtocol<T> implements Protocol<QueryResult<T>> {
 
 
     private BsonDocument asGetMoreCommandResponseDocument(final QueryResult<T> queryResult, final ResponseBuffers responseBuffers) {
+        List<ByteBufBsonDocument> rawResultDocuments = Collections.emptyList();
         if (responseBuffers.getReplyHeader().getNumberReturned() != 0) {
             responseBuffers.getBodyByteBuffer().position(0);
+            rawResultDocuments = ByteBufBsonDocument.create(responseBuffers);
         }
 
         BsonDocument cursorDocument = new BsonDocument("id",
                                                        queryResult.getCursor() == null
                                                        ? new BsonInt64(0) : new BsonInt64(queryResult.getCursor().getId()))
                                       .append("ns", new BsonString(namespace.getFullName()))
-                                      .append("nextBatch", new BsonArray(ByteBufBsonDocument.create(responseBuffers)));
+                                      .append("nextBatch", new BsonArray(rawResultDocuments));
 
         return new BsonDocument("cursor", cursorDocument)
                .append("ok", new BsonDouble(1));
