@@ -20,21 +20,27 @@ package com.mongodb.connection
 
 import com.mongodb.MongoQueryException
 import com.mongodb.OperationFunctionalSpecification
+import com.mongodb.ReadPreference
+import com.mongodb.client.model.CreateCollectionOptions
 import com.mongodb.connection.netty.NettyStreamFactory
 import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
 import org.bson.BsonArray
+import org.bson.BsonBoolean
 import org.bson.BsonDocument
 import org.bson.BsonDouble
 import org.bson.BsonInt32
 import org.bson.BsonInt64
 import org.bson.BsonString
+import org.bson.BsonTimestamp
 import org.bson.codecs.BsonDocumentCodec
+import spock.lang.IgnoreIf
 
 import static com.mongodb.ClusterFixture.getCredentialList
 import static com.mongodb.ClusterFixture.getPrimary
 import static com.mongodb.ClusterFixture.getSslSettings
+import static com.mongodb.ClusterFixture.serverVersionAtLeast
 import static org.bson.BsonDocument.parse
 
 class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecification {
@@ -51,7 +57,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
         connection?.close()
     }
 
-    def 'should deliver start and completed command events'() {
+    def 'should deliver start and completed command events with numberToReturn'() {
         given:
         def documents = [new BsonDocument('_id', new BsonInt32(1)),
                          new BsonDocument('_id', new BsonInt32(2)),
@@ -82,6 +88,184 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('filter', filter)
                                                                              .append('projection', projection)
                                                                              .append('skip', new BsonInt32(skip))),
+                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+    }
+
+    def 'should deliver start and completed command events with limit and batchSize'() {
+        given:
+        def documents = [new BsonDocument('_id', new BsonInt32(1)),
+                         new BsonDocument('_id', new BsonInt32(2)),
+                         new BsonDocument('_id', new BsonInt32(3)),
+                         new BsonDocument('_id', new BsonInt32(4)),
+                         new BsonDocument('_id', new BsonInt32(5))]
+        collectionHelper.insertDocuments(documents)
+
+        def filter = parse('{_id : {$gt : 0}}')
+        def projection = parse('{_id : 1}')
+        def skip = 1
+        def limit = 1000
+        def batchSize = 2
+        def protocol = new QueryProtocol(getNamespace(), skip, limit, batchSize, filter, projection, new BsonDocumentCodec())
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        def result = protocol.execute(connection)
+
+        then:
+        def response = new BsonDocument('cursor',
+                                        new BsonDocument('id', new BsonInt64(result.cursor.id))
+                                                .append('ns', new BsonString(getNamespace().getFullName()))
+                                                .append('firstBatch', new BsonArray(documents.subList(1, 3))))
+                .append('ok', new BsonDouble(1.0))
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'find',
+                                                                     new BsonDocument('find', new BsonString(getCollectionName()))
+                                                                             .append('filter', filter)
+                                                                             .append('projection', projection)
+                                                                             .append('skip', new BsonInt32(skip))
+                                                                             .append('limit', new BsonInt32(limit))
+                                                                             .append('batchSize', new BsonInt32(batchSize))),
+                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+    }
+
+    def 'should deliver start and completed command events when there is no projection'() {
+        given:
+        def filter = parse('{_id : {$gt : 0}}')
+        def projection = null
+        def skip = 0
+        def limit = 0
+        def batchSize = 0
+        def protocol = new QueryProtocol(getNamespace(), skip, limit, batchSize, filter, projection, new BsonDocumentCodec())
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        def response = new BsonDocument('cursor',
+                                        new BsonDocument('id', new BsonInt64(0))
+                                                .append('ns', new BsonString(getNamespace().getFullName()))
+                                                .append('firstBatch', new BsonArray()))
+                .append('ok', new BsonDouble(1.0))
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'find',
+                                                                     new BsonDocument('find', new BsonString(getCollectionName()))
+                                                                             .append('filter', filter)),
+                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+    }
+
+    def 'should deliver start and completed command events when there are boolean options'() {
+        given:
+        collectionHelper.create(getCollectionName(), new CreateCollectionOptions().capped(true).sizeInBytes(10000))
+        def filter = new BsonDocument('ts', new BsonDocument('$gte', new BsonTimestamp(0, 0)))
+        def projection = null
+        def skip = 0
+        def limit = 0
+        def batchSize = 0
+        def protocol = new QueryProtocol(getNamespace(), skip, limit, batchSize, filter, projection, new BsonDocumentCodec())
+        protocol.partial = true
+        protocol.noCursorTimeout = true
+        protocol.tailableCursor = true
+        protocol.awaitData = true
+        protocol.partial = true
+        protocol.oplogReplay = true
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        def response = new BsonDocument('cursor',
+                                        new BsonDocument('id', new BsonInt64(0))
+                                                .append('ns', new BsonString(getNamespace().getFullName()))
+                                                .append('firstBatch', new BsonArray()))
+                .append('ok', new BsonDouble(1.0))
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'find',
+                                                                     new BsonDocument('find', new BsonString(getCollectionName()))
+                                                                             .append('filter', filter)
+                                                                             .append('tailable', BsonBoolean.TRUE)
+                                                                             .append('oplogReplay', BsonBoolean.TRUE)
+                                                                             .append('noCursorTimeout', BsonBoolean.TRUE)
+                                                                             .append('awaitData', BsonBoolean.TRUE)
+                                                                             .append('allowPartialResults', BsonBoolean.TRUE)),
+                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+    }
+
+    @IgnoreIf({ !serverVersionAtLeast([2, 6, 0]) })
+    def 'should deliver start and completed command events with meta operators'() {
+        given:
+        def documents = [new BsonDocument('_id', new BsonInt32(1)),
+                         new BsonDocument('_id', new BsonInt32(2)),
+                         new BsonDocument('_id', new BsonInt32(3)),
+                         new BsonDocument('_id', new BsonInt32(4)),
+                         new BsonDocument('_id', new BsonInt32(5))]
+        collectionHelper.insertDocuments(documents)
+
+        def filter = parse('{_id : {$gt : 0}}')
+        def sort = parse('{_id : -1}')
+        def comment = new BsonString('this is a comment')
+        def hint = parse('{_id : 1}')
+        def maxScan = new BsonInt32(5000)
+        def maxTimeMS = new BsonInt64(6000)
+        def min = parse('{_id : 0}')
+        def max = parse('{_id : 6}')
+        def returnKey = BsonBoolean.FALSE
+        def showDiskLoc = BsonBoolean.FALSE
+        def snapshot = BsonBoolean.FALSE
+        def readPreference = ReadPreference.secondary().toDocument()
+        def query = new BsonDocument().append('$query', filter)
+                                      .append('$orderby', sort)
+                                      .append('$comment', comment)
+                                      .append('$hint', hint)
+                                      .append('$maxTimeMS', maxTimeMS)
+                                      .append('$maxScan', maxScan)
+                                      .append('$min', min)
+                                      .append('$max', max)
+                                      .append('$returnKey', returnKey)
+                                      .append('$showDiskLoc', showDiskLoc)
+                                      .append('$snapshot', snapshot)
+                                      .append('$readPreference', readPreference)
+        def projection = parse('{_id : 1}')
+        def skip = 1
+        def limit = 1000
+        def batchSize = 2
+        def protocol = new QueryProtocol(getNamespace(), skip, limit, batchSize, query, projection, new BsonDocumentCodec())
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        def result = protocol.execute(connection)
+        def cursorId = result.cursor ? new BsonInt64(result.cursor.id) : new BsonInt64(0)
+
+        then:
+        def response = new BsonDocument('cursor',
+                                        new BsonDocument('id', cursorId)
+                                                .append('ns', new BsonString(getNamespace().getFullName()))
+                                                .append('firstBatch', new BsonArray([documents[3], documents[2]])))
+                .append('ok', new BsonDouble(1.0))
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'find',
+                                                                     new BsonDocument('find', new BsonString(getCollectionName()))
+                                                                             .append('filter', filter)
+                                                                             .append('sort', sort)
+                                                                             .append('comment', comment)
+                                                                             .append('hint', hint)
+                                                                             .append('maxTimeMS', maxTimeMS)
+                                                                             .append('maxScan', maxScan)
+                                                                             .append('min', min)
+                                                                             .append('max', max)
+                                                                             .append('returnKey', returnKey)
+                                                                             .append('showRecordId', showDiskLoc)
+                                                                             .append('snapshot', snapshot)
+                                                                             .append('readPreference', readPreference)
+                                                                             .append('projection', projection)
+                                                                             .append('skip', new BsonInt32(skip))
+                                                                             .append('limit', new BsonInt32(limit))
+                                                                             .append('batchSize', new BsonInt32(batchSize))),
                                              new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
