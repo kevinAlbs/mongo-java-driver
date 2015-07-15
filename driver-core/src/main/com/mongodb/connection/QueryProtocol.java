@@ -54,7 +54,8 @@ import static java.lang.String.format;
 class QueryProtocol<T> implements Protocol<QueryResult<T>> {
 
     public static final Logger LOGGER = Loggers.getLogger("protocol.query");
-    private static final String COMMAND_NAME = "find";
+    private static final String FIND_COMMAND_NAME = "find";
+    private static final String EXPLAIN_COMMAND_NAME = "explain";
     private final int skip;
     private final int limit;
     private final int batchSize;
@@ -273,8 +274,26 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
         }
         long startTimeNanos = System.nanoTime();
         QueryMessage message = null;
+        boolean isExplain = false;
         try {
-            message = sendMessage(connection);
+            ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(connection);
+            try {
+                message = createQueryMessage(connection.getDescription());
+                RequestMessage.EncodingMetadata metadata = message.encodeWithMetadata(bsonOutput);
+                if (commandListener != null) {
+                    BsonDocument command = asFindCommandDocument(bsonOutput, metadata.getFirstDocumentPosition());
+                    isExplain = command.keySet().iterator().next().equals(EXPLAIN_COMMAND_NAME);
+                    sendCommandStartedEvent(message, namespace.getDatabaseName(),
+                                            isExplain ? EXPLAIN_COMMAND_NAME : FIND_COMMAND_NAME,
+                                            command,
+                                            connection.getDescription(), commandListener);
+                }
+
+                connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
+            } finally {
+                bsonOutput.close();
+            }
+
             ResponseBuffers responseBuffers = connection.receiveMessage(message.getId());
             try {
                 if (responseBuffers.getReplyHeader().isQueryFailure()) {
@@ -290,8 +309,10 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
                 LOGGER.debug("Query completed");
 
                 if (commandListener != null) {
-                    BsonDocument response = asFindCommandResponseDocument(responseBuffers, queryResult);
-                    sendCommandCompletedEvent(message, COMMAND_NAME, response, connection.getDescription(),
+                    BsonDocument response = asFindCommandResponseDocument(responseBuffers, queryResult, isExplain);
+                    sendCommandCompletedEvent(message,
+                                              isExplain ? EXPLAIN_COMMAND_NAME : FIND_COMMAND_NAME,
+                                              response, connection.getDescription(),
                                               startTimeNanos, commandListener);
                 }
                 return queryResult;
@@ -301,7 +322,7 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
 
         } catch (RuntimeException e) {
             if (commandListener != null) {
-                sendCommandFailedEvent(message, COMMAND_NAME, connection.getDescription(), startTimeNanos, e, commandListener);
+                sendCommandFailedEvent(message, FIND_COMMAND_NAME, connection.getDescription(), startTimeNanos, e, commandListener);
             }
             throw e;
         }
@@ -360,24 +381,6 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
         }
     }
 
-    private QueryMessage sendMessage(final InternalConnection connection) {
-        ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(connection);
-        try {
-            QueryMessage message = createQueryMessage(connection.getDescription());
-            RequestMessage.EncodingMetadata metadata = message.encodeWithMetadata(bsonOutput);
-            if (commandListener != null) {
-                sendCommandStartedEvent(message, namespace.getDatabaseName(), COMMAND_NAME,
-                                        asFindCommandDocument(bsonOutput, metadata.getFirstDocumentPosition()),
-                                        connection.getDescription(), commandListener);
-            }
-
-            connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
-            return message;
-        } finally {
-            bsonOutput.close();
-        }
-    }
-
     private static final Map<String, String> META_OPERATOR_TO_COMMAND_FIELD_MAP = new HashMap<String, String>();
 
     static {
@@ -396,7 +399,9 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
     }
 
     private BsonDocument asFindCommandDocument(final ByteBufferBsonOutput bsonOutput, final int firstDocumentPosition) {
-        BsonDocument command = new BsonDocument(COMMAND_NAME, new BsonString(namespace.getCollectionName()));
+        BsonDocument command = new BsonDocument(FIND_COMMAND_NAME, new BsonString(namespace.getCollectionName()));
+
+        boolean isExplain = false;
 
         List<ByteBufBsonDocument> documents = ByteBufBsonDocument.create(bsonOutput, firstDocumentPosition);
 
@@ -405,6 +410,8 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
             String commandFieldName = META_OPERATOR_TO_COMMAND_FIELD_MAP.get(cur.getKey());
             if (commandFieldName != null) {
                 command.append(commandFieldName, cur.getValue());
+            } else if (cur.getKey().equals("$explain")) {
+                isExplain = true;
             }
         }
 
@@ -445,23 +452,34 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
             command.append("allowPartialResults", BsonBoolean.valueOf(partial));
         }
 
+        if (isExplain) {
+            command = new BsonDocument(EXPLAIN_COMMAND_NAME, command);
+        }
+
         return command;
     }
 
-    private BsonDocument asFindCommandResponseDocument(final ResponseBuffers responseBuffers, final QueryResult<T> queryResult) {
+    private BsonDocument asFindCommandResponseDocument(final ResponseBuffers responseBuffers, final QueryResult<T> queryResult,
+                                                       final boolean isExplain) {
         List<ByteBufBsonDocument> rawResultDocuments = Collections.emptyList();
         if (responseBuffers.getReplyHeader().getNumberReturned() > 0) {
             responseBuffers.getBodyByteBuffer().position(0);
             rawResultDocuments = ByteBufBsonDocument.create(responseBuffers);
         }
 
-        BsonDocument cursorDocument = new BsonDocument("id",
-                                                       queryResult.getCursor() == null
-                                                       ? new BsonInt64(0) : new BsonInt64(queryResult.getCursor().getId()))
-                                      .append("ns", new BsonString(namespace.getFullName()))
-                                      .append("firstBatch", new BsonArray(rawResultDocuments));
+        if (isExplain) {
+            BsonDocument explainCommandResponseDocument = new BsonDocument("ok", new BsonDouble(1));
+            explainCommandResponseDocument.putAll(rawResultDocuments.get(0));
+            return explainCommandResponseDocument;
+        } else {
+            BsonDocument cursorDocument = new BsonDocument("id",
+                                                           queryResult.getCursor() == null
+                                                           ? new BsonInt64(0) : new BsonInt64(queryResult.getCursor().getId()))
+                                          .append("ns", new BsonString(namespace.getFullName()))
+                                          .append("firstBatch", new BsonArray(rawResultDocuments));
 
-        return new BsonDocument("cursor", cursorDocument)
-               .append("ok", new BsonDouble(1));
+            return new BsonDocument("cursor", cursorDocument)
+                   .append("ok", new BsonDouble(1));
+        }
     }
 }

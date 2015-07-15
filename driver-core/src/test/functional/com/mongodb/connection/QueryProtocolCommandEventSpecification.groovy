@@ -269,6 +269,36 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                              new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
+    def 'should deliver start and completed command events for an explain command when there is a $explain meta operator'() {
+        given:
+        def filter = new BsonDocument('ts', new BsonDocument('$gte', new BsonTimestamp(0, 0)))
+        def query = new BsonDocument('$query', filter).append('$explain', new BsonInt32(1))
+        def projection = new BsonDocument('_id', new BsonInt32(1))
+        def skip = 10
+        def limit = -20
+        def batchSize = 0
+        def protocol = new QueryProtocol(getNamespace(), skip, limit, batchSize, query, projection, new BsonDocumentCodec())
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        def response = protocol.execute(connection)
+        def expectedResponse = new BsonDocument('ok', new BsonDouble(1));
+        expectedResponse.putAll(response.results[0]);
+
+        then:
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'explain',
+                                                                     new BsonDocument('explain',
+                                                                                      new BsonDocument('find',
+                                                                                                       new BsonString(getCollectionName()))
+                                                                                              .append('filter', filter)
+                                                                                              .append('skip', new BsonInt32(skip))
+                                                                                              .append('limit', new BsonInt32(limit))
+                                                                                              .append('projection', projection))),
+                                             new CommandCompletedEvent(1, connection.getDescription(), 'explain', expectedResponse, 0)])
+    }
+
     def 'should deliver start and failed command events'() {
         given:
         def filter = parse('{_id : {$fakeOp : 1}}')
