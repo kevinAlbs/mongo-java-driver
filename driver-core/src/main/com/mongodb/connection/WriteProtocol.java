@@ -117,7 +117,10 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
                                                                        connection.getDescription().getServerAddress());
                 } catch (WriteConcernException e) {
                     if (commandListener != null) {
-                        sendCommandSucceededEvent(nextMessage, getCommandName(), new BsonDocument("ok", new BsonInt32(1)),
+                        sendCommandSucceededEvent(nextMessage, getCommandName(), getResponseDocument(nextMessage,
+                                                                                                     encodingMetadata.getNextMessage(),
+                                                                                                     e.getWriteConcernResult(),
+                                                                                                     e),
                                                   connection.getDescription(), 0, commandListener);
                     }
                     throw e;
@@ -132,8 +135,8 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
             }
 
             if (commandListener != null) {
-                // TODO: send full write result if writeConcern.isAcknowledged()
-                sendCommandSucceededEvent(nextMessage, getCommandName(), new BsonDocument("ok", new BsonInt32(1)),
+                sendCommandSucceededEvent(nextMessage, getCommandName(), getResponseDocument(nextMessage, encodingMetadata.getNextMessage(),
+                                                                                             writeConcernResult, null),
                                           connection.getDescription(), startTimeNanos, commandListener);
             }
 
@@ -142,6 +145,21 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
 
         return writeConcern.isAcknowledged() ? writeConcernResult : WriteConcernResult.unacknowledged();
     }
+
+    private BsonDocument getResponseDocument(final RequestMessage curMessage, final RequestMessage nextMessage,
+                                             final WriteConcernResult writeConcernResult,
+                                             final WriteConcernException writeConcernException) {
+        BsonDocument response = new BsonDocument("ok", new BsonInt32(1));
+        if (writeConcern.isAcknowledged()) {
+            if (writeConcernException == null) {
+                appendToWriteCommandResponseDocument(curMessage, nextMessage, writeConcernResult, response);
+            }
+        }
+        return response;
+    }
+
+    protected abstract void appendToWriteCommandResponseDocument(final RequestMessage curMessage, final RequestMessage nextMessage,
+                                                                 final WriteConcernResult writeConcernResult, final BsonDocument response);
 
     @Override
     public void executeAsync(final InternalConnection connection, final SingleResultCallback<WriteConcernResult> callback) {
