@@ -21,9 +21,9 @@ package com.mongodb.connection
 import com.mongodb.MongoQueryException
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonArray
 import org.bson.BsonDocument
 import org.bson.BsonDouble
@@ -79,7 +79,7 @@ class GetMoreProtocolCommandEventSpecification extends OperationFunctionalSpecif
                                                                      new BsonDocument('getMore', new BsonInt64(result.cursor.id))
                                                                              .append('collection', new BsonString(getCollectionName()))
                                                                              .append('batchSize', new BsonInt32(2))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'getMore',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'getMore',
                                                                        response,
                                                                        0)])
     }

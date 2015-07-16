@@ -32,7 +32,7 @@ public interface CommandListener {
      *
      * @param event the event
      */
-    void commandCompleted(CommandCompletedEvent event);
+    void commandSucceeded(CommandSucceededEvent event);
 
     /**
      * Listener for command failure events

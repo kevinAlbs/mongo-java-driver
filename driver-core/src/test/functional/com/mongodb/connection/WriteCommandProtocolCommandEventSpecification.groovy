@@ -22,9 +22,9 @@ import com.mongodb.MongoBulkWriteException
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.bulk.InsertRequest
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonArray
 import org.bson.BsonBoolean
 import org.bson.BsonDocument
@@ -72,7 +72,7 @@ class WriteCommandProtocolCommandEventSpecification extends OperationFunctionalS
                                                                              .append('ordered', BsonBoolean.TRUE)
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'insert',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
                                                                        new BsonDocument('ok', new BsonInt32(1))
                                                                                .append('n', new BsonInt32(1)),
                                                                        0)])

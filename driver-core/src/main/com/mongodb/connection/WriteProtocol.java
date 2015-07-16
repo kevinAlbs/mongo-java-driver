@@ -31,9 +31,9 @@ import org.bson.codecs.BsonDocumentCodec;
 import static com.mongodb.MongoNamespace.COMMAND_COLLECTION_NAME;
 import static com.mongodb.connection.ProtocolHelper.encodeMessage;
 import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 
 /**
  * Base class for wire protocol messages that perform writes.  In particular, it handles the write followed by the getlasterror command to
@@ -126,7 +126,7 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
 
             if (commandListener != null) {
                 // TODO: send full write result if writeConcern.isAcknowledged()
-                sendCommandCompletedEvent(nextMessage, getCommandName(), new BsonDocument("ok", new BsonInt32(1)),
+                sendCommandSucceededEvent(nextMessage, getCommandName(), new BsonDocument("ok", new BsonInt32(1)),
                                           connection.getDescription(), startTimeNanos, commandListener);
             }
 

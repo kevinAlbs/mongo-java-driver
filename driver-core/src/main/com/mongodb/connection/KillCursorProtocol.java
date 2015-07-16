@@ -27,9 +27,9 @@ import org.bson.BsonInt64;
 
 import java.util.List;
 
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static java.lang.String.format;
 
 /**
@@ -71,7 +71,7 @@ class KillCursorProtocol implements Protocol<Void> {
             message.encode(bsonOutput);
             connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
             if (commandListener != null) {
-                sendCommandCompletedEvent(message, COMMAND_NAME, new BsonDocument("ok", new BsonDouble(1)), connection.getDescription(),
+                sendCommandSucceededEvent(message, COMMAND_NAME, new BsonDocument("ok", new BsonDouble(1)), connection.getDescription(),
                                           startTimeNanos, commandListener);
             }
             return null;

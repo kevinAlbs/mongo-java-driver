@@ -27,10 +27,10 @@ import com.mongodb.MongoQueryException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcernException;
 import com.mongodb.WriteConcernResult;
-import com.mongodb.event.CommandCompletedEvent;
 import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandStartedEvent;
+import com.mongodb.event.CommandSucceededEvent;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
@@ -160,11 +160,11 @@ final class ProtocolHelper {
         }
     }
 
-    static void sendCommandCompletedEvent(final RequestMessage message, final String commandName, final BsonDocument response,
+    static void sendCommandSucceededEvent(final RequestMessage message, final String commandName, final BsonDocument response,
                                           final ConnectionDescription connectionDescription, final long startTimeNanos,
                                           final CommandListener commandListener) {
         try {
-            commandListener.commandCompleted(new CommandCompletedEvent(message.getId(), connectionDescription,
+            commandListener.commandSucceeded(new CommandSucceededEvent(message.getId(), connectionDescription,
                                                                        commandName,
                                                                        response, System.nanoTime() - startTimeNanos));
         } catch (Exception e) {

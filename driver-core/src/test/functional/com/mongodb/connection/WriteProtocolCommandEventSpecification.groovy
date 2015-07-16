@@ -24,9 +24,9 @@ import com.mongodb.bulk.DeleteRequest
 import com.mongodb.bulk.InsertRequest
 import com.mongodb.bulk.UpdateRequest
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonArray
 import org.bson.BsonBinary
 import org.bson.BsonBoolean
@@ -75,7 +75,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                                      new BsonDocument('w', new BsonInt32(0)))
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'insert',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 
@@ -105,7 +105,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('documents',
                                                                                      new BsonArray([documentOne, documentTwo,
                                                                                                     documentThree]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'insert',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0),
                                              new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'insert',
                                                                      new BsonDocument('insert', new BsonString(getCollectionName()))
@@ -113,7 +113,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('writeConcern',
                                                                                      new BsonDocument('w', new BsonInt32(0)))
                                                                              .append('documents', new BsonArray([documentFour]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'insert',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 
@@ -164,7 +164,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                                       .append('u', update)
                                                                                       .append('multi', BsonBoolean.TRUE)
                                                                                       .append('upsert', BsonBoolean.TRUE)]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'update',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'update',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 
@@ -188,7 +188,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('deletes', new BsonArray(
                                                                              [new BsonDocument('q', filter)
                                                                                       .append('limit', new BsonInt32(0))]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'delete',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'delete',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 
@@ -210,7 +210,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('ordered', BsonBoolean.TRUE)
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'insert',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 }

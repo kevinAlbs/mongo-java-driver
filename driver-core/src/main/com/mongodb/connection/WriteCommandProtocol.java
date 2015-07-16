@@ -30,9 +30,9 @@ import org.bson.codecs.BsonDocumentCodec;
 import static com.mongodb.connection.ByteBufBsonDocument.createOne;
 import static com.mongodb.connection.ProtocolHelper.getCommandFailureException;
 import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static com.mongodb.connection.WriteCommandResultHelper.getBulkWriteException;
 import static com.mongodb.connection.WriteCommandResultHelper.getBulkWriteResult;
 import static java.lang.String.format;
@@ -107,7 +107,7 @@ abstract class WriteCommandProtocol implements Protocol<BulkWriteResult> {
                 } else {
                     bulkWriteBatchCombiner.addResult(getBulkWriteResult(getType(), result), indexMap);
                     if (commandListener != null) {
-                        sendCommandCompletedEvent(message, message.getCommandName(), result, connection.getDescription(),
+                        sendCommandSucceededEvent(message, message.getCommandName(), result, connection.getDescription(),
                                                   startTimeNanos, commandListener);
                     }
                 }

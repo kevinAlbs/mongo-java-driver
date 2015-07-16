@@ -20,8 +20,8 @@ package com.mongodb.connection
 
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonArray
 import org.bson.BsonDocument
 import org.bson.BsonDouble
@@ -64,7 +64,7 @@ class KillCursorProtocolCommandEventSpecification extends OperationFunctionalSpe
         commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), 'admin', 'killCursors',
                                                                      new BsonDocument('killCursors',
                                                                                       new BsonArray([new BsonInt64(result.cursor.id)]))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'killCursors',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'killCursors',
                                                                        new BsonDocument('ok', new BsonDouble(1.0)), 0)])
     }
 }
