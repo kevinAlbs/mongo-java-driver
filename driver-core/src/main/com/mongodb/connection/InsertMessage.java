@@ -54,6 +54,10 @@ class InsertMessage extends RequestMessage {
         this.insertRequestList = insertRequestList;
     }
 
+    public List<InsertRequest> getInsertRequestList() {
+        return insertRequestList;
+    }
+
     @Override
     protected RequestMessage encodeMessageBody(final BsonOutput outputStream, final int messageStartPosition) {
         return encodeMessageBodyWithMetadata(outputStream, messageStartPosition).getNextMessage();

@@ -46,6 +46,10 @@ class UpdateMessage extends RequestMessage {
         this.updates = updates;
     }
 
+    public List<UpdateRequest> getUpdateRequests() {
+        return updates;
+    }
+
     @Override
     protected RequestMessage encodeMessageBody(final BsonOutput bsonOutput, final int messageStartPosition) {
         return encodeMessageBodyWithMetadata(bsonOutput, messageStartPosition).getNextMessage();

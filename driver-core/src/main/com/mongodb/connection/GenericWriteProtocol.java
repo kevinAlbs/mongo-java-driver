@@ -18,6 +18,7 @@ package com.mongodb.connection;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.WriteConcern;
+import com.mongodb.WriteConcernResult;
 import org.bson.BsonDocument;
 
 class GenericWriteProtocol extends WriteProtocol {
@@ -27,6 +28,12 @@ class GenericWriteProtocol extends WriteProtocol {
                                 final WriteConcern writeConcern) {
         super(namespace, ordered, writeConcern);
         this.requestMessage = requestMessage;
+    }
+
+    @Override
+    protected void appendToWriteCommandResponseDocument(final RequestMessage curMessage, final RequestMessage nextMessage,
+                                                        final WriteConcernResult writeConcernResult, final BsonDocument response) {
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 
     @Override
