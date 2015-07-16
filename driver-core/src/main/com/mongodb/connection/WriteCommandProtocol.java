@@ -101,8 +101,8 @@ abstract class WriteCommandProtocol implements Protocol<BulkWriteResult> {
                                                                                        connection.getDescription().getServerAddress());
                     bulkWriteBatchCombiner.addErrorResult(bulkWriteException, indexMap);
                     if (commandListener != null) {
-                        sendCommandFailedEvent(message, message.getCommandName(), connection.getDescription(),
-                                               startTimeNanos, bulkWriteException, commandListener);
+                        sendCommandSucceededEvent(message, message.getCommandName(), result, connection.getDescription(),
+                                                  startTimeNanos, commandListener);
                     }
                 } else {
                     bulkWriteBatchCombiner.addResult(getBulkWriteResult(getType(), result), indexMap);
