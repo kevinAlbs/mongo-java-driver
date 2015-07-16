@@ -21,9 +21,9 @@ package com.mongodb.connection
 import com.mongodb.MongoCommandException
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import com.mongodb.internal.validator.NoOpFieldNameValidator
 import org.bson.BsonDocument
 import org.bson.BsonDouble
@@ -62,7 +62,7 @@ class CommandProtocolCommandEventSpecification extends OperationFunctionalSpecif
         then:
         commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), 'admin', 'ping',
                                                                      pingCommand),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'ping',
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'ping',
                                                                        new BsonDocument('ok', new BsonDouble(1)), 1000)])
     }
 

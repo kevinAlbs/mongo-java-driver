@@ -35,9 +35,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.mongodb.connection.ProtocolHelper.getQueryFailureException;
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static java.lang.String.format;
 
 /**
@@ -101,7 +101,7 @@ class GetMoreProtocol<T> implements Protocol<QueryResult<T>> {
                                                  connection.getDescription().getServerAddress());
 
                 if (commandListener != null) {
-                    sendCommandCompletedEvent(message, COMMAND_NAME,
+                    sendCommandSucceededEvent(message, COMMAND_NAME,
                                               asGetMoreCommandResponseDocument(queryResult, responseBuffers), connection.getDescription(),
                                               startTimeNanos, commandListener);
                 }

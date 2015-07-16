@@ -40,9 +40,9 @@ import java.util.Map;
 import static com.mongodb.connection.ProtocolHelper.encodeMessage;
 import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
 import static com.mongodb.connection.ProtocolHelper.getQueryFailureException;
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static java.lang.String.format;
 
 /**
@@ -310,7 +310,7 @@ class QueryProtocol<T> implements Protocol<QueryResult<T>> {
 
                 if (commandListener != null) {
                     BsonDocument response = asFindCommandResponseDocument(responseBuffers, queryResult, isExplain);
-                    sendCommandCompletedEvent(message,
+                    sendCommandSucceededEvent(message,
                                               isExplain ? EXPLAIN_COMMAND_NAME : FIND_COMMAND_NAME,
                                               response, connection.getDescription(),
                                               startTimeNanos, commandListener);

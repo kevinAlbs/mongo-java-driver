@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 3.1
  */
-public final class CommandCompletedEvent extends CommandEvent {
+public final class CommandSucceededEvent extends CommandEvent {
     private final BsonDocument response;
     private final long elapsedTimeNanos;
 
@@ -36,7 +36,7 @@ public final class CommandCompletedEvent extends CommandEvent {
      * @param response the command response
      * @param elapsedTimeNanos the elapsed time in nanoseconds for the operation to complete
      */
-    public CommandCompletedEvent(final int requestId, final ConnectionDescription connectionDescription,
+    public CommandSucceededEvent(final int requestId, final ConnectionDescription connectionDescription,
                                  final String commandName, final BsonDocument response, final long elapsedTimeNanos) {
         super(requestId, connectionDescription, commandName);
         this.response = response;

@@ -23,9 +23,9 @@ import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.ReadPreference
 import com.mongodb.client.model.CreateCollectionOptions
 import com.mongodb.connection.netty.NettyStreamFactory
-import com.mongodb.event.CommandCompletedEvent
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonArray
 import org.bson.BsonBoolean
 import org.bson.BsonDocument
@@ -88,7 +88,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('filter', filter)
                                                                              .append('projection', projection)
                                                                              .append('skip', new BsonInt32(skip))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
     def 'should deliver start and completed command events with limit and batchSize'() {
@@ -126,7 +126,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('skip', new BsonInt32(skip))
                                                                              .append('limit', new BsonInt32(limit))
                                                                              .append('batchSize', new BsonInt32(batchSize))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
     def 'should deliver start and completed command events when there is no projection'() {
@@ -153,7 +153,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
         commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'find',
                                                                      new BsonDocument('find', new BsonString(getCollectionName()))
                                                                              .append('filter', filter)),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
     def 'should deliver start and completed command events when there are boolean options'() {
@@ -192,7 +192,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('noCursorTimeout', BsonBoolean.TRUE)
                                                                              .append('awaitData', BsonBoolean.TRUE)
                                                                              .append('allowPartialResults', BsonBoolean.TRUE)),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
     @IgnoreIf({ !serverVersionAtLeast([2, 6, 0]) })
@@ -266,7 +266,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('skip', new BsonInt32(skip))
                                                                              .append('limit', new BsonInt32(limit))
                                                                              .append('batchSize', new BsonInt32(batchSize))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'find', response, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'find', response, 0)])
     }
 
     def 'should deliver start and completed command events for an explain command when there is a $explain meta operator'() {
@@ -296,7 +296,7 @@ class QueryProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                                               .append('skip', new BsonInt32(skip))
                                                                                               .append('limit', new BsonInt32(limit))
                                                                                               .append('projection', projection))),
-                                             new CommandCompletedEvent(1, connection.getDescription(), 'explain', expectedResponse, 0)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'explain', expectedResponse, 0)])
     }
 
     def 'should deliver start and failed command events'() {

@@ -31,9 +31,9 @@ import org.bson.codecs.DecoderContext;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.connection.ByteBufBsonDocument.createOne;
 import static com.mongodb.connection.ProtocolHelper.getCommandFailureException;
-import static com.mongodb.connection.ProtocolHelper.sendCommandCompletedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
+import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static java.lang.String.format;
 
 /**
@@ -106,7 +106,7 @@ class CommandProtocol<T> implements Protocol<T> {
 
             T retval = commandResultDecoder.decode(new BsonDocumentReader(response), DecoderContext.builder().build());
             if (commandListener != null) {
-                sendCommandCompletedEvent(commandMessage, getCommandName(), response, connection.getDescription(), startTimeNanos,
+                sendCommandSucceededEvent(commandMessage, getCommandName(), response, connection.getDescription(), startTimeNanos,
                                           commandListener);
             }
             LOGGER.debug("Command execution completed");

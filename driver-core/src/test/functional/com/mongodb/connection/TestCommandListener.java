@@ -18,11 +18,11 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.event.CommandCompletedEvent;
 import com.mongodb.event.CommandEvent;
 import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandStartedEvent;
+import com.mongodb.event.CommandSucceededEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +38,8 @@ public class TestCommandListener implements CommandListener {
     }
 
     @Override
-    public void commandCompleted(final CommandCompletedEvent event) {
-        events.add(new CommandCompletedEvent(event.getRequestId(), event.getConnectionDescription(), event.getCommandName(),
+    public void commandSucceeded(final CommandSucceededEvent event) {
+        events.add(new CommandSucceededEvent(event.getRequestId(), event.getConnectionDescription(), event.getCommandName(),
                                              event.getResponse() == null ? null : event.getResponse().clone(),
                                              event.getElapsedTime(TimeUnit.NANOSECONDS)));
     }
@@ -81,8 +81,8 @@ public class TestCommandListener implements CommandListener {
                 if (!isEquivalent((CommandStartedEvent) actual, (CommandStartedEvent) expected)) {
                     return false;
                 }
-            } else if (actual.getClass().equals(CommandCompletedEvent.class)) {
-                if (!isEquivalent((CommandCompletedEvent) actual, (CommandCompletedEvent) expected)) {
+            } else if (actual.getClass().equals(CommandSucceededEvent.class)) {
+                if (!isEquivalent((CommandSucceededEvent) actual, (CommandSucceededEvent) expected)) {
                     return false;
                 }
             } else if (actual.getClass().equals(CommandFailedEvent.class)) {
@@ -104,7 +104,7 @@ public class TestCommandListener implements CommandListener {
         return true;
     }
 
-    private boolean isEquivalent(final CommandCompletedEvent actual, final CommandCompletedEvent expected) {
+    private boolean isEquivalent(final CommandSucceededEvent actual, final CommandSucceededEvent expected) {
         if (actual.getResponse() == null) {
             return expected.getResponse() == null;
         }
