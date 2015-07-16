@@ -19,8 +19,13 @@
 package com.mongodb.connection
 
 import com.mongodb.MongoBulkWriteException
+import com.mongodb.MongoCommandException
 import com.mongodb.OperationFunctionalSpecification
+import com.mongodb.ServerAddress
+import com.mongodb.bulk.DeleteRequest
 import com.mongodb.bulk.InsertRequest
+import com.mongodb.bulk.UpdateRequest
+import com.mongodb.bulk.WriteRequest
 import com.mongodb.connection.netty.NettyStreamFactory
 import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
@@ -37,6 +42,7 @@ import static com.mongodb.ClusterFixture.getPrimary
 import static com.mongodb.ClusterFixture.getSslSettings
 import static com.mongodb.ClusterFixture.serverVersionAtLeast
 import static com.mongodb.WriteConcern.ACKNOWLEDGED
+import static com.mongodb.connection.MessageHelper.buildSuccessfulReply
 
 @IgnoreIf({ !serverVersionAtLeast([2, 6, 0]) })
 class WriteCommandProtocolCommandEventSpecification extends OperationFunctionalSpecification {
@@ -53,7 +59,7 @@ class WriteCommandProtocolCommandEventSpecification extends OperationFunctionalS
         connection?.close()
     }
 
-    def 'should deliver start and completed command events'() {
+    def 'should deliver start and completed insert command events'() {
         given:
         def document = new BsonDocument('_id', new BsonInt32(1))
 
@@ -78,7 +84,61 @@ class WriteCommandProtocolCommandEventSpecification extends OperationFunctionalS
                                                                        0)])
     }
 
-    def 'should deliver start and failed command events'() {
+    def 'should deliver start and completed delete command events'() {
+        given:
+        def filter = new BsonDocument('_id', new BsonInt32(1))
+
+        def deleteRequest = [new DeleteRequest(filter)]
+        def protocol = new DeleteCommandProtocol(getNamespace(), true, ACKNOWLEDGED, deleteRequest)
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'delete',
+                                                                     new BsonDocument('delete', new BsonString(getCollectionName()))
+                                                                             .append('ordered', BsonBoolean.TRUE)
+                                                                             .append('deletes', new BsonArray(
+                                                                             [new BsonDocument('q', filter)
+                                                                                      .append('limit', new BsonInt32(0))]))),
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'delete',
+                                                                       new BsonDocument('ok', new BsonInt32(1))
+                                                                               .append('n', new BsonInt32(0)),
+                                                                       0)])
+    }
+
+    def 'should deliver start and completed update command events'() {
+        given:
+        def filter = new BsonDocument('_id', new BsonInt32(1))
+        def update = new BsonDocument('$set', new BsonDocument('x', new BsonInt32(1)))
+        def updateRequest = [new UpdateRequest(filter, update, WriteRequest.Type.UPDATE)]
+        def protocol = new UpdateCommandProtocol(getNamespace(), true, ACKNOWLEDGED, updateRequest)
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'update',
+                                                                     new BsonDocument('update', new BsonString(getCollectionName()))
+                                                                             .append('ordered', BsonBoolean.TRUE)
+                                                                             .append('updates', new BsonArray(
+                                                                             [new BsonDocument('q', filter)
+                                                                                      .append('u', update)
+                                                                                      .append('multi', BsonBoolean.TRUE)]))),
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'update',
+                                                                       new BsonDocument('ok', new BsonInt32(1))
+                                                                               .append('nModified', new BsonInt32(0))
+                                                                               .append('n', new BsonInt32(0)),
+                                                                       0)])
+    }
+
+    def 'should deliver start and completed command events when there is a write error'() {
         given:
         def document = new BsonDocument('_id', new BsonInt32(1))
 
@@ -94,11 +154,47 @@ class WriteCommandProtocolCommandEventSpecification extends OperationFunctionalS
 
         then:
         def e = thrown(MongoBulkWriteException)
+        def writeError = e.getWriteErrors()[0]
+        def writeErrorDocument = new BsonDocument('index', new BsonInt32(writeError.getIndex()))
+                .append('code', new BsonInt32(writeError.getCode()))
+                .append('errmsg', new BsonString(writeError.getMessage()))
         commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'insert',
                                                                      new BsonDocument('insert', new BsonString(getCollectionName()))
                                                                              .append('ordered', BsonBoolean.TRUE)
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
-                                             new CommandFailedEvent(1, connection.getDescription(), 'insert', 0, e)])
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
+                                                                       new BsonDocument('ok', new BsonInt32(1))
+                                                                               .append('n', new BsonInt32(0))
+                                                                               .append('writeErrors', new BsonArray([writeErrorDocument])),
+                                                                       0)])
+    }
+
+    def 'should deliver start and failed command events'() {
+        given:
+        // need a test connection to generate an ok : 0 response
+        def connection = new TestInternalConnection(new ServerId(new ClusterId(), new ServerAddress('localhost', 27017)));
+        connection.enqueueReply(buildSuccessfulReply('{ ok : 0, errmsg : "some error"}'))
+        def filter = new BsonDocument('_id', new BsonInt32(1))
+
+        def deleteRequest = [new DeleteRequest(filter)]
+        def protocol = new DeleteCommandProtocol(getNamespace(), true, ACKNOWLEDGED, deleteRequest)
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        def e = thrown(MongoCommandException)
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'delete',
+                                                                     new BsonDocument('delete', new BsonString(getCollectionName()))
+                                                                             .append('ordered', BsonBoolean.TRUE)
+                                                                             .append('deletes', new BsonArray(
+                                                                             [new BsonDocument('q', filter)
+                                                                                      .append('limit', new BsonInt32(0))]))),
+                                             new CommandFailedEvent(1, connection.getDescription(),
+                                                                    'delete', 0, e)])
     }
 }
