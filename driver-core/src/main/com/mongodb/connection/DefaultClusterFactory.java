@@ -59,6 +59,8 @@ public final class DefaultClusterFactory implements ClusterFactory {
      * @param connectionListener     an optional listener for connection-related events
      * @param commandListener        an optional listener for command-related events
      * @return the cluster
+     *
+     * @since 3.1
      */
     public Cluster create(final ClusterSettings settings, final ServerSettings serverSettings,
                           final ConnectionPoolSettings connectionPoolSettings, final StreamFactory streamFactory,
