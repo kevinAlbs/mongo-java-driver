@@ -19,7 +19,9 @@
 package com.mongodb.connection
 
 import com.mongodb.DuplicateKeyException
+import com.mongodb.MongoCommandException
 import com.mongodb.OperationFunctionalSpecification
+import com.mongodb.ServerAddress
 import com.mongodb.bulk.DeleteRequest
 import com.mongodb.bulk.InsertRequest
 import com.mongodb.bulk.UpdateRequest
@@ -40,6 +42,7 @@ import static com.mongodb.ClusterFixture.getSslSettings
 import static com.mongodb.WriteConcern.ACKNOWLEDGED
 import static com.mongodb.WriteConcern.UNACKNOWLEDGED
 import static com.mongodb.bulk.WriteRequest.Type.UPDATE
+import static com.mongodb.connection.MessageHelper.buildSuccessfulReply
 
 class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecification {
     static InternalStreamConnection connection;
@@ -117,7 +120,7 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                        new BsonDocument('ok', new BsonInt32(1)), 0)])
     }
 
-    def 'should deliver started and failed command events'() {
+    def 'should deliver started and completed command events when there is a write error'() {
         given:
         def document = new BsonDocument('_id', new BsonInt32(1))
 
@@ -138,8 +141,38 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
                                                                              .append('ordered', BsonBoolean.TRUE)
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
+                                             new CommandSucceededEvent(1, connection.getDescription(), 'insert',
+                                                                       new BsonDocument('ok', new BsonInt32(1)), 0)])
+    }
+
+    def 'should deliver started and failed command events when there is a command failure'() {
+        given:
+        // need a test connection to generate an ok : 0 response
+        def connection = new TestInternalConnection(new ServerId(new ClusterId(), new ServerAddress('localhost', 27017)));
+        connection.enqueueReply(buildSuccessfulReply('{ ok : 0, errmsg : "some error"}'))
+
+        def document = new BsonDocument('_id', new BsonInt32(1))
+
+        def insertRequest = [new InsertRequest(document)]
+        def protocol = new InsertProtocol(getNamespace(), true, ACKNOWLEDGED, insertRequest)
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        def e = thrown(MongoCommandException)
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'insert',
+                                                                     new BsonDocument('insert', new BsonString(getCollectionName()))
+                                                                             .append('ordered', BsonBoolean.TRUE)
+                                                                             .append('documents', new BsonArray(
+                                                                             [new BsonDocument('_id', new BsonInt32(1))]))),
                                              new CommandFailedEvent(1, connection.getDescription(), 'insert', 0, e)])
     }
+
+
 
     def 'should deliver started and completed command events for a single unacknowleded update'() {
         given:

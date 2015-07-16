@@ -18,6 +18,7 @@ package com.mongodb.connection;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.WriteConcern;
+import com.mongodb.WriteConcernException;
 import com.mongodb.WriteConcernResult;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
@@ -114,6 +115,12 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
                                                                                              messageId);
                     writeConcernResult = ProtocolHelper.getWriteResult(replyMessage.getDocuments().get(0),
                                                                        connection.getDescription().getServerAddress());
+                } catch (WriteConcernException e) {
+                    if (commandListener != null) {
+                        sendCommandSucceededEvent(nextMessage, getCommandName(), new BsonDocument("ok", new BsonInt32(1)),
+                                                  connection.getDescription(), 0, commandListener);
+                    }
+                    throw e;
                 } catch (RuntimeException e) {
                     if (commandListener != null) {
                         sendCommandFailedEvent(nextMessage, getCommandName(), connection.getDescription(), 0, e, commandListener);
