@@ -21,11 +21,17 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
+import org.bson.io.BasicOutputBuffer;
 import org.bson.json.JsonReader;
 import org.bson.json.JsonWriter;
 import org.bson.json.JsonWriterSettings;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,11 +41,12 @@ import java.util.Set;
 import static java.lang.String.format;
 
 /**
- * A type-safe container for a BSON document.
+ * A type-safe container for a BSON document.  This class should NOT be sub-classed by third parties.
  *
  * @since 3.0
  */
-public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Cloneable, Bson {
+public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Cloneable, Bson, Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final Map<String, BsonValue> map = new LinkedHashMap<String, BsonValue>();
 
@@ -784,6 +791,37 @@ public class BsonDocument extends BsonValue implements Map<String, BsonValue>, C
     private void throwIfKeyAbsent(final Object key) {
         if (!containsKey(key)) {
             throw new BsonInvalidOperationException("Document does not contain key " + key);
+        }
+    }
+
+    private Object writeReplace() {
+        return new SerializationProxy(this);
+    }
+
+    private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
+        throw new InvalidObjectException("Proxy required");
+    }
+
+    private static class SerializationProxy implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final byte[] bytes;
+
+        public SerializationProxy(final BsonDocument document) {
+            BasicOutputBuffer buffer = new BasicOutputBuffer();
+            new BsonDocumentCodec().encode(new BsonBinaryWriter(buffer), document, EncoderContext.builder().build());
+            this.bytes = new byte[buffer.size()];
+            int curPos = 0;
+            for (ByteBuf cur : buffer.getByteBuffers()) {
+                System.arraycopy(cur.array(), cur.position(), bytes, curPos, cur.limit());
+                curPos += cur.position();
+            }
+        }
+
+        private Object readResolve() {
+            return new BsonDocumentCodec().decode(new BsonBinaryReader(ByteBuffer.wrap(bytes)
+                                                                                 .order(ByteOrder.LITTLE_ENDIAN)),
+                                                  DecoderContext.builder().build());
         }
     }
 }

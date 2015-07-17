@@ -167,6 +167,21 @@ class RawBsonDocumentSpecification extends Specification {
         !cloned.getByteBuffer().array().is(rawDocument.getByteBuffer().array())
     }
 
+    def 'should serialize and deserialize'() {
+        given:
+        def baos = new ByteArrayOutputStream()
+        def oos = new ObjectOutputStream(baos)
+
+        when:
+        oos.writeObject(rawDocument)
+        def bais = new ByteArrayInputStream(baos.toByteArray())
+        def ois = new ObjectInputStream(bais)
+        def deserializedDocument = ois.readObject()
+
+        then:
+        rawDocument == deserializedDocument
+    }
+
     class TestEntry implements Map.Entry<String, BsonValue> {
 
         private final String key;
