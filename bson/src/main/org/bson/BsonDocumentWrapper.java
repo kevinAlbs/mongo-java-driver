@@ -20,6 +20,8 @@ import org.bson.codecs.Encoder;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -35,9 +37,10 @@ import java.util.Set;
  * @since 3.0
  */
 public final class BsonDocumentWrapper<T> extends BsonDocument {
+    private static final long serialVersionUID = 1L;
 
-    private final T wrappedDocument;
-    private final Encoder<T> encoder;
+    private final transient T wrappedDocument;
+    private final transient Encoder<T> encoder;
     private BsonDocument unwrapped;
 
     /**
@@ -193,5 +196,13 @@ public final class BsonDocumentWrapper<T> extends BsonDocument {
             this.unwrapped = unwrapped;
         }
         return unwrapped;
+    }
+
+    private Object writeReplace() {
+        return getUnwrapped();
+    }
+
+    private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
+        throw new InvalidObjectException("Proxy required");
     }
 }

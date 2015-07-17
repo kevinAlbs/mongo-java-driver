@@ -306,4 +306,29 @@ class BsonDocumentSpecification extends Specification {
         then:
         thrown(BsonInvalidOperationException)
     }
+
+    def 'should serialize and deserialize'() {
+        given:
+        def document = new BsonDocument('d', new BsonDocument().append('i2', new BsonInt32(1)))
+                .append('i', new BsonInt32(2))
+                .append('a', new BsonArray([new BsonInt32(3),
+                                            new BsonArray([new BsonInt32(11)]),
+                                            new BsonDocument('i3', new BsonInt32(6)),
+                                            new BsonBinary([1, 2, 3] as byte[]),
+                                            new BsonJavaScriptWithScope('code', new BsonDocument('a', new BsonInt32(4)))]))
+                .append('b', new BsonBinary([1, 2, 3] as byte[]))
+                .append('js', new BsonJavaScriptWithScope('code', new BsonDocument('a', new BsonInt32(4))))
+
+        def baos = new ByteArrayOutputStream()
+        def oos = new ObjectOutputStream(baos)
+
+        when:
+        oos.writeObject(document)
+        def bais = new ByteArrayInputStream(baos.toByteArray())
+        def ois = new ObjectInputStream(bais)
+        def deserializedDocument = ois.readObject()
+
+        then:
+        document == deserializedDocument
+    }
 }

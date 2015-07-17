@@ -30,6 +30,8 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.io.ByteBufferBsonInput;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,9 +43,11 @@ import static org.bson.codecs.BsonValueCodecProvider.getClassForBsonType;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 
 class ByteBufBsonDocument extends BsonDocument implements Cloneable {
+    private static final long serialVersionUID = 1L;
+
     private static final CodecRegistry REGISTRY = fromProviders(new BsonValueCodecProvider());
 
-    private final ByteBuf byteBuf;
+    private final transient ByteBuf byteBuf;
 
     static List<ByteBufBsonDocument> create(final ResponseBuffers responseBuffers) {
         int numDocuments = responseBuffers.getReplyHeader().getNumberReturned();
@@ -284,5 +288,13 @@ class ByteBufBsonDocument extends BsonDocument implements Cloneable {
 
     ByteBufBsonDocument(final ByteBuf byteBuf) {
         this.byteBuf = byteBuf;
+    }
+
+    private Object writeReplace() {
+        return toBsonDocument();
+    }
+
+    private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
+        throw new InvalidObjectException("Proxy required");
     }
 }
