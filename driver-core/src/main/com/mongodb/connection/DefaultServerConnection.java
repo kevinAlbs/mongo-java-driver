@@ -34,6 +34,7 @@ import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.connection.ServerType.SHARD_ROUTER;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 
+@SuppressWarnings("deprecation")  // because this class implements deprecated methods
 class DefaultServerConnection extends AbstractReferenceCounted implements Connection, AsyncConnection {
     private final InternalConnection wrapped;
     private final ProtocolExecutor protocolExecutor;
