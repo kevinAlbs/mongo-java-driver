@@ -71,7 +71,8 @@ class KillCursorProtocol implements Protocol<Void> {
             message.encode(bsonOutput);
             connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
             if (commandListener != null) {
-                sendCommandSucceededEvent(message, COMMAND_NAME, new BsonDocument("ok", new BsonDouble(1)), connection.getDescription(),
+                sendCommandSucceededEvent(message, COMMAND_NAME, asCommandResponseDocument(),
+                                          connection.getDescription(),
                                           startTimeNanos, commandListener);
             }
             return null;
@@ -119,6 +120,16 @@ class KillCursorProtocol implements Protocol<Void> {
             array.add(new BsonInt64(cursor));
         }
         return new BsonDocument(COMMAND_NAME, array);
+    }
+
+    private BsonDocument asCommandResponseDocument() {
+        BsonArray cursorIdArray = new BsonArray();
+        for (long cursorId : cursors) {
+            cursorIdArray.add(new BsonInt64(cursorId));
+        }
+        return new BsonDocument("ok", new BsonDouble(1))
+               .append("cursorsUnknown", cursorIdArray);
+
     }
 
     private String getCursorIdListAsString() {
