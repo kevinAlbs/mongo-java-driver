@@ -185,11 +185,11 @@ public interface ByteBuf  {
     byte get();
 
     /**
-     * Absolute <em>get</em> method.  Reads the byte at the given index. </p>
+     * Absolute <em>get</em> method.  Reads the byte at the given index.
      *
      * @param index The index from which the byte will be read
      * @return The byte at the given index
-     * @throws IndexOutOfBoundsException If <tt>index</tt> is negative or not smaller than the buffer's limit
+     * @throws IndexOutOfBoundsException If {@code index} is negative or not smaller than the buffer's limit
      */
     byte get(int index);
 
@@ -211,10 +211,10 @@ public interface ByteBuf  {
 
     /**
      * <p>Absolute bulk {@code get} method.</p>
-     * <p/>
+     *
      * <p>This method transfers bytes from this buffer into the given destination array.  An invocation of this method of the form {@code
      * src.get(a)} behaves in exactly the same way as the invocation:</p>
-     * <p/>
+     *
      * <pre>
      * src.get(index, a, 0, a.length)
      * </pre>
@@ -282,35 +282,34 @@ public interface ByteBuf  {
 
     /**
      * Absolute bulk <i>get</i> method.
-     * <p/>
+     *
      * <p> This method transfers bytes from this buffer into the given destination array.  If there are fewer bytes remaining in the buffer
-     * than are required to satisfy the request, that is, if <tt>length</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>, then no bytes are
-     * transferred and a {@link java.nio.BufferUnderflowException} is thrown.
-     * <p/>
-     * <p> Otherwise, this method copies <tt>length</tt> bytes from this buffer into the given array, starting at the given index buffer
-     * and at the given offset in the array.
-     * <p/>
-     * <p> In other words, an invocation of this method of the form <tt>src.get(dst,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
-     * the loop
-     * <p/>
+     * than are required to satisfy the request, that is, if {@code length &gt; remaining}, then no bytes are
+     * transferred and a {@link java.nio.BufferUnderflowException} is thrown.</p>
+     *
+     * <p> Otherwise, this method copies {@code length} bytes from this buffer into the given array, starting at the given index buffer
+     * and at the given offset in the array.</p>
+     *
+     * <p> In other words, an invocation of this method of the form {@code src.get(dst, off, len)} has exactly the same
+     * effect as the loop </p>
      * <pre>
      * {@code
      *     for (int i = off; i < off + len; i++)
      *         dst[i] = src.get(i);
      * }
      * </pre>
-     * <p/>
+     *
      * except that it first checks that there are sufficient bytes in this buffer and it is potentially much more efficient.
      *
      * @param index  The index from which the bytes will be read
      * @param bytes  The array into which bytes are to be written
      * @param offset The offset within the array of the first byte to be written; must be non-negative and no larger than
-     *               <tt>dst.length</tt>
-     * @param length The maximum number of bytes to be written to the given array; must be non-negative and no larger than <tt>dst.length -
-     *               offset</tt>
+     *               {@code dst.length}
+     * @param length The maximum number of bytes to be written to the given array; must be non-negative and no larger than
+     *               {@code dst.length - offset}
      * @return This buffer
-     * @throws java.nio.BufferUnderflowException If there are fewer than <tt>length</tt> bytes remaining in this buffer
-     * @throws IndexOutOfBoundsException         If the preconditions on the <tt>offset</tt> and <tt>length</tt> parameters do not hold
+     * @throws java.nio.BufferUnderflowException If there are fewer than {@code length} bytes remaining in this buffer
+     * @throws IndexOutOfBoundsException         If the preconditions on the {@code offset} and {@code length} parameters do not hold
      */
     ByteBuf get(int index, byte[] bytes, int offset, int length);
 
@@ -332,7 +331,7 @@ public interface ByteBuf  {
      *
      * @return The long value at the given index
      *
-     * @throws IndexOutOfBoundsException If <tt>index</tt> is negative or not smaller than the buffer's limit, minus seven
+     * @throws IndexOutOfBoundsException If {@code index} is negative or not smaller than the buffer's limit, minus seven
      */
     long getLong(int index);
 
@@ -348,12 +347,14 @@ public interface ByteBuf  {
     double getDouble();
 
     /**
-     * Absolute <i>get</i> method for reading a double value. <p> Reads eight bytes at the given index, composing them into a double value
+     * Absolute <em>get</em> method for reading a double value.
+     *
+     * <p> Reads eight bytes at the given index, composing them into a double value
      * according to the current byte order.  </p>
      *
      * @param index The index from which the bytes will be read
      * @return The double value at the given index
-     * @throws IndexOutOfBoundsException If <tt>index</tt> is negative or not smaller than the buffer's limit, minus seven
+     * @throws IndexOutOfBoundsException If {@code index} is negative or not smaller than the buffer's limit, minus seven
      */
     double getDouble(int index);
 
@@ -374,7 +375,7 @@ public interface ByteBuf  {
      *
      * @param index The index from which the bytes will be read
      * @return The int value at the given index
-     * @throws IndexOutOfBoundsException If <tt>index</tt> is negative or not smaller than the buffer's limit, minus three
+     * @throws IndexOutOfBoundsException If {@code index} is negative or not smaller than the buffer's limit, minus three
      */
     int getInt(int index);
 
