@@ -773,16 +773,21 @@ public class BsonDocument extends BsonValue implements Map<String, BsonValue>, C
     public BsonDocument clone() {
         BsonDocument to = new BsonDocument();
         for (Entry<String, BsonValue> cur : entrySet()) {
-            if (cur.getValue().isDocument()) {
-                to.put(cur.getKey(), cur.getValue().asDocument().clone());
-            } else if (cur.getValue().isArray()) {
-                to.put(cur.getKey(), cur.getValue().asArray().clone());
-            } else if (cur.getValue().isBinary()) {
-                to.put(cur.getKey(), BsonBinary.clone(cur.getValue().asBinary()));
-            } else if (cur.getValue().isJavaScriptWithScope()) {
-                to.put(cur.getKey(), BsonJavaScriptWithScope.clone(cur.getValue().asJavaScriptWithScope()));
-            } else {
-                to.put(cur.getKey(), cur.getValue());
+            switch (cur.getValue().getBsonType()) {
+                case DOCUMENT:
+                    to.put(cur.getKey(), cur.getValue().asDocument().clone());
+                    break;
+                case ARRAY:
+                    to.put(cur.getKey(), cur.getValue().asArray().clone());
+                    break;
+                case BINARY:
+                    to.put(cur.getKey(), BsonBinary.clone(cur.getValue().asBinary()));
+                    break;
+                case JAVASCRIPT_WITH_SCOPE:
+                    to.put(cur.getKey(), BsonJavaScriptWithScope.clone(cur.getValue().asJavaScriptWithScope()));
+                    break;
+                default:
+                    to.put(cur.getKey(), cur.getValue());
             }
         }
         return to;
