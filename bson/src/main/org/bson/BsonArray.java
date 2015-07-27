@@ -211,16 +211,21 @@ public class BsonArray extends BsonValue implements List<BsonValue>, Cloneable {
     public BsonArray clone() {
         BsonArray to = new BsonArray();
         for (BsonValue cur : this) {
-            if (cur.isDocument()) {
-                to.add(cur.asDocument().clone());
-            } else if (cur.isArray()) {
-                to.add(cur.asArray().clone());
-            } else if (cur.isBinary()) {
-                to.add(BsonBinary.clone(cur.asBinary()));
-            } else if (cur.isJavaScriptWithScope()) {
-                to.add(BsonJavaScriptWithScope.clone(cur.asJavaScriptWithScope()));
-            } else {
-                to.add(cur);
+            switch (cur.getBsonType()) {
+                case DOCUMENT:
+                    to.add(cur.asDocument().clone());
+                    break;
+                case ARRAY:
+                    to.add(cur.asArray().clone());
+                    break;
+                case BINARY:
+                    to.add(BsonBinary.clone(cur.asBinary()));
+                    break;
+                case JAVASCRIPT_WITH_SCOPE:
+                    to.add(BsonJavaScriptWithScope.clone(cur.asJavaScriptWithScope()));
+                    break;
+                default:
+                    to.add(cur);
             }
         }
         return to;
