@@ -151,7 +151,8 @@ public interface Connection extends ReferenceCounted {
      * @param resultDecoder   the decoder for the query result documents
      * @param <T>             the query result document type
      * @return the query results
-     * @deprecated
+     * @deprecated Replaced by {@link #query(MongoNamespace, BsonDocument, BsonDocument, int, int, int, boolean, boolean, boolean,
+     * boolean, boolean, boolean, Decoder)}
      */
     @Deprecated
     <T> QueryResult<T> query(MongoNamespace namespace, BsonDocument queryDocument, BsonDocument fields,

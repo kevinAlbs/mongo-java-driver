@@ -156,7 +156,8 @@ public interface AsyncConnection extends ReferenceCounted {
      * @param resultDecoder   the decoder for the query result documents
      * @param <T>             the query result document type
      * @param callback     the callback to be passed the write result
-     * @deprecated
+     * @deprecated Replaced by {@link #queryAsync(MongoNamespace, BsonDocument, BsonDocument, int, int, int, boolean, boolean, boolean,
+     * boolean, boolean, boolean, Decoder, SingleResultCallback)}
      */
     @Deprecated
     <T> void queryAsync(MongoNamespace namespace, BsonDocument queryDocument, BsonDocument fields,
