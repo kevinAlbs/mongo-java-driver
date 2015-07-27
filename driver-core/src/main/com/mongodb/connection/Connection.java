@@ -205,7 +205,6 @@ public interface Connection extends ReferenceCounted {
      *
      * @param cursors the cursors
      * @deprecated Replaced by {@link #killCursor(MongoNamespace, List)}
-     * @see #killCursor(MongoNamespace, List)
      */
     @Deprecated
     void killCursor(List<Long> cursors);
