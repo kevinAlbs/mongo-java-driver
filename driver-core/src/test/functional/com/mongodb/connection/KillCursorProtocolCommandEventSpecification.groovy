@@ -26,6 +26,7 @@ import org.bson.BsonArray
 import org.bson.BsonDocument
 import org.bson.BsonDouble
 import org.bson.BsonInt64
+import org.bson.BsonString
 import org.bson.Document
 import org.bson.codecs.BsonDocumentCodec
 
@@ -52,7 +53,7 @@ class KillCursorProtocolCommandEventSpecification extends OperationFunctionalSpe
         collectionHelper.insertDocuments(new Document(), new Document(), new Document(), new Document(), new Document())
         def result = new QueryProtocol(getNamespace(), 1, 2, new BsonDocument(), null, new BsonDocumentCodec())
                 .execute(connection)
-        def protocol = new KillCursorProtocol([result.cursor.id])
+        def protocol = new KillCursorProtocol(getNamespace(), [result.cursor.id])
 
         def commandListener = new TestCommandListener()
         protocol.commandListener = commandListener
@@ -61,13 +62,32 @@ class KillCursorProtocolCommandEventSpecification extends OperationFunctionalSpe
         protocol.execute(connection)
 
         then:
-        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), 'admin', 'killCursors',
-                                                                     new BsonDocument('killCursors',
-                                                                                      new BsonArray([new BsonInt64(result.cursor.id)]))),
+        commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'killCursors',
+                                                                     new BsonDocument('killCursors', new BsonString(getCollectionName()))
+                                                                                      .append('cursors',
+                                                                                              new BsonArray([new BsonInt64(result.cursor
+                                                                                                                                 .id)]))),
                                              new CommandSucceededEvent(1, connection.getDescription(), 'killCursors',
                                                                        new BsonDocument('ok', new BsonDouble(1.0))
                                                                                .append('cursorsUnknown',
                                                                                        new BsonArray([new BsonInt64(result.cursor.id)])),
                                                                        0)])
+    }
+
+    def 'should not deliver start and completed command events if no namespace is provided'() {
+        given:
+        collectionHelper.insertDocuments(new Document(), new Document(), new Document(), new Document(), new Document())
+        def result = new QueryProtocol(getNamespace(), 1, 2, new BsonDocument(), null, new BsonDocumentCodec())
+                .execute(connection)
+        def protocol = new KillCursorProtocol(null, [result.cursor.id])
+
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        commandListener.eventsWereDelivered([])
     }
 }

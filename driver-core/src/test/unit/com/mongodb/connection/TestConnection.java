@@ -210,7 +210,17 @@ class TestConnection implements Connection, AsyncConnection {
     }
 
     @Override
+    public void killCursor(final MongoNamespace namespace, final List<Long> cursors) {
+        executeEnqueuedProtocol();
+    }
+
+    @Override
     public void killCursorAsync(final List<Long> cursors, final SingleResultCallback<Void> callback) {
+        executeEnqueuedProtocolAsync(callback);
+    }
+
+    @Override
+    public void killCursorAsync(final MongoNamespace namespace, final List<Long> cursors, final SingleResultCallback<Void> callback) {
         executeEnqueuedProtocolAsync(callback);
     }
 
