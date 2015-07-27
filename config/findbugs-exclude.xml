@@ -55,11 +55,19 @@
 
     <!-- Special handling of clone method for cloneable BsonValue subclasses.  By design, they don't call super.clone() -->
     <Match>
-        <Or>
-            <Class name="org.bson.BsonArray"/>
-            <Class name="org.bson.BsonDocument"/>
-            <Class name="org.bson.BsonDocumentWrapper"/>
-        </Or>
+        <Class name="org.bson.BsonArray"/>
+        <Method name="clone"/>
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
+    </Match>
+
+    <Match>
+        <Class name="org.bson.BsonDocument"/>
+        <Method name="clone"/>
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
+    </Match>
+
+    <Match>
+        <Class name="org.bson.BsonDocumentWrapper"/>
         <Method name="clone"/>
         <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
     </Match>
