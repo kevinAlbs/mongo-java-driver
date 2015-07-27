@@ -100,16 +100,12 @@ abstract class WriteCommandProtocol implements Protocol<BulkWriteResult> {
                     MongoBulkWriteException bulkWriteException = getBulkWriteException(getType(), result,
                                                                                        connection.getDescription().getServerAddress());
                     bulkWriteBatchCombiner.addErrorResult(bulkWriteException, indexMap);
-                    if (commandListener != null) {
-                        sendCommandSucceededEvent(message, message.getCommandName(), result, connection.getDescription(),
-                                                  startTimeNanos, commandListener);
-                    }
                 } else {
                     bulkWriteBatchCombiner.addResult(getBulkWriteResult(getType(), result), indexMap);
-                    if (commandListener != null) {
-                        sendCommandSucceededEvent(message, message.getCommandName(), result, connection.getDescription(),
-                                                  startTimeNanos, commandListener);
-                    }
+                }
+                if (commandListener != null) {
+                    sendCommandSucceededEvent(message, message.getCommandName(), result, connection.getDescription(),
+                                              startTimeNanos, commandListener);
                 }
                 currentRangeStartIndex += itemCount;
                 message = nextMessage;
