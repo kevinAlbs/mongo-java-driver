@@ -799,10 +799,12 @@ public class BsonDocument extends BsonValue implements Map<String, BsonValue>, C
         }
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/output.html
     private Object writeReplace() {
         return new SerializationProxy(this);
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/input.html
     private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
         throw new InvalidObjectException("Proxy required");
     }

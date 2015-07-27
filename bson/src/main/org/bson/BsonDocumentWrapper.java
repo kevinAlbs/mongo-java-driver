@@ -198,10 +198,12 @@ public final class BsonDocumentWrapper<T> extends BsonDocument {
         return unwrapped;
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/output.html
     private Object writeReplace() {
         return getUnwrapped();
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/input.html
     private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
         throw new InvalidObjectException("Proxy required");
     }

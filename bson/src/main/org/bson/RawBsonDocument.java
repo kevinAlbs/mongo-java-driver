@@ -281,10 +281,12 @@ public final class RawBsonDocument extends BsonDocument {
         }
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/output.html
     private Object writeReplace() {
         return new SerializationProxy(this.bytes);
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/input.html
     private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
         throw new InvalidObjectException("Proxy required");
     }
