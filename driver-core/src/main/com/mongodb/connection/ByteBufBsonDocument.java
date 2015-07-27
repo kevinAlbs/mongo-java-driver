@@ -290,10 +290,12 @@ class ByteBufBsonDocument extends BsonDocument implements Cloneable {
         this.byteBuf = byteBuf;
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/output.html
     private Object writeReplace() {
         return toBsonDocument();
     }
 
+    // see https://docs.oracle.com/javase/6/docs/platform/serialization/spec/input.html
     private void readObject(final ObjectInputStream stream) throws InvalidObjectException {
         throw new InvalidObjectException("Proxy required");
     }
