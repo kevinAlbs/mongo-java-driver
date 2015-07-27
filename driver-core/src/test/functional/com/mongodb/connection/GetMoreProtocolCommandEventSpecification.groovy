@@ -89,7 +89,7 @@ class GetMoreProtocolCommandEventSpecification extends OperationFunctionalSpecif
         collectionHelper.insertDocuments(new Document(), new Document(), new Document(), new Document(), new Document())
         def result = new QueryProtocol(getNamespace(), 1, 2, new BsonDocument(), null, new BsonDocumentCodec())
                 .execute(connection)
-        new KillCursorProtocol([result.cursor.id]).execute(connection)
+        new KillCursorProtocol(getNamespace(), [result.cursor.id]).execute(connection)
         def protocol = new GetMoreProtocol(getNamespace(), result.cursor.id, 2, new BsonDocumentCodec())
 
         def commandListener = new TestCommandListener()

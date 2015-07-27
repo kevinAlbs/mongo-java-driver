@@ -233,12 +233,22 @@ class DefaultServerConnection extends AbstractReferenceCounted implements Connec
 
     @Override
     public void killCursor(final List<Long> cursors) {
-        executeProtocol(new KillCursorProtocol(cursors));
+        killCursor(null, cursors);
+    }
+
+    @Override
+    public void killCursor(final MongoNamespace namespace, final List<Long> cursors) {
+        executeProtocol(new KillCursorProtocol(namespace, cursors));
     }
 
     @Override
     public void killCursorAsync(final List<Long> cursors, final SingleResultCallback<Void> callback) {
-        executeProtocolAsync(new KillCursorProtocol(cursors), callback);
+        killCursorAsync(null, cursors, callback);
+    }
+
+    @Override
+    public void killCursorAsync(final MongoNamespace namespace, final List<Long> cursors, final SingleResultCallback<Void> callback) {
+        executeProtocolAsync(new KillCursorProtocol(namespace, cursors), callback);
     }
 
     private boolean getSlaveOk(final boolean slaveOk) {

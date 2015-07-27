@@ -206,6 +206,17 @@ public interface AsyncConnection extends ReferenceCounted {
      *
      * @param cursors   the cursors
      * @param callback  the callback that is called once the cursors have been killed
+     * @deprecated Replace by {@link #killCursorAsync(MongoNamespace, List, SingleResultCallback)}
      */
+    @Deprecated
     void killCursorAsync(List<Long> cursors, SingleResultCallback<Void> callback);
+
+    /**
+     * Asynchronously Kills the given list of cursors.
+     *
+     * @param namespace the namespace in which the cursors live
+     * @param cursors   the cursors
+     * @param callback  the callback that is called once the cursors have been killed
+     */
+    void killCursorAsync(MongoNamespace namespace, List<Long> cursors, SingleResultCallback<Void> callback);
 }
