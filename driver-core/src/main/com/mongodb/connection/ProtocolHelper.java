@@ -27,6 +27,8 @@ import com.mongodb.MongoQueryException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcernException;
 import com.mongodb.WriteConcernResult;
+import com.mongodb.diagnostics.logging.Logger;
+import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandStartedEvent;
@@ -38,7 +40,10 @@ import org.bson.BsonString;
 import org.bson.BsonValue;
 import org.bson.io.BsonOutput;
 
+import static java.lang.String.format;
+
 final class ProtocolHelper {
+    private static final Logger PROTOCOL_EVENT_LOGGER = Loggers.getLogger("protocol.event");
 
     static WriteConcernResult getWriteResult(final BsonDocument result, final ServerAddress serverAddress) {
         if (!isCommandOk(result)) {
@@ -156,7 +161,9 @@ final class ProtocolHelper {
             commandListener.commandStarted(new CommandStartedEvent(message.getId(), connectionDescription,
                                                                    databaseName, commandName, command));
         } catch (Exception e) {
-            // ignore
+            if (PROTOCOL_EVENT_LOGGER.isWarnEnabled()) {
+                PROTOCOL_EVENT_LOGGER.warn(format("Exception thrown raising command started event to listener %s", commandListener), e);
+            }
         }
     }
 
@@ -168,7 +175,9 @@ final class ProtocolHelper {
                                                                        commandName,
                                                                        response, System.nanoTime() - startTimeNanos));
         } catch (Exception e) {
-            // ignore
+            if (PROTOCOL_EVENT_LOGGER.isWarnEnabled()) {
+                PROTOCOL_EVENT_LOGGER.warn(format("Exception thrown raising command succeeded event to listener %s", commandListener), e);
+            }
         }
     }
 
@@ -179,7 +188,9 @@ final class ProtocolHelper {
             commandListener.commandFailed(new CommandFailedEvent(message.getId(), connectionDescription, commandName,
                                                                  System.nanoTime() - startTimeNanos, throwable));
         } catch (Exception e) {
-            // ignore
+            if (PROTOCOL_EVENT_LOGGER.isWarnEnabled()) {
+                PROTOCOL_EVENT_LOGGER.warn(format("Exception thrown raising command failed event to listener %s", commandListener), e);
+            }
         }
     }
 
