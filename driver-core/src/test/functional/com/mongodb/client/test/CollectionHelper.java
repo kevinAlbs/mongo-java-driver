@@ -93,6 +93,10 @@ public final class CollectionHelper<T> {
         }
     }
 
+    public void drop() {
+        new DropCollectionOperation(namespace).execute(getBinding());
+    }
+
     public void create(final String collectionName, final CreateCollectionOptions options) {
         drop(namespace);
         new CreateCollectionOperation(namespace.getDatabaseName(), collectionName)

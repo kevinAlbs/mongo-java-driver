@@ -71,11 +71,15 @@ public final class Fixture {
         }
     }
 
+    public static synchronized String getMongoClientURIString() {
+        String mongoURIProperty = System.getProperty(MONGODB_URI_SYSTEM_PROPERTY_NAME);
+        return mongoURIProperty == null || mongoURIProperty.isEmpty()
+               ? DEFAULT_URI : mongoURIProperty;
+    }
+
     public static synchronized MongoClientURI getMongoClientURI() {
         if (mongoClientURI == null) {
-            String mongoURIProperty = System.getProperty(MONGODB_URI_SYSTEM_PROPERTY_NAME);
-            String mongoURIString = mongoURIProperty == null || mongoURIProperty.isEmpty()
-                                    ? DEFAULT_URI : mongoURIProperty;
+            String mongoURIString = getMongoClientURIString();
             MongoClientOptions.Builder builder = MongoClientOptions.builder();
             if (System.getProperty("java.version").startsWith("1.6.")) {
                 builder.sslInvalidHostNameAllowed(true);

@@ -23,6 +23,15 @@ import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandStartedEvent;
 import com.mongodb.event.CommandSucceededEvent;
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentWriter;
+import org.bson.codecs.BsonDocumentCodec;
+import org.bson.codecs.BsonValueCodecProvider;
+import org.bson.codecs.Codec;
+import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecProvider;
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +39,45 @@ import java.util.concurrent.TimeUnit;
 
 public class TestCommandListener implements CommandListener {
     private final List<CommandEvent> events = new ArrayList<CommandEvent>();
-    private final int firstRequestId = RequestMessage.getCurrentGlobalId();
+    private int firstRequestId = RequestMessage.getCurrentGlobalId();
+    private static final CodecRegistry CODEC_REGISTRY_HACK;
+
+    static {
+        CODEC_REGISTRY_HACK = CodecRegistries.fromProviders(new BsonValueCodecProvider(),
+                                                          new CodecProvider() {
+                                                              @Override
+                                                              @SuppressWarnings("unchecked")
+                                                              public <T> Codec<T> get(final Class<T> clazz, final CodecRegistry registry) {
+                                                                  // Use BsonDocumentCodec even for a private sub-class of BsonDocument
+                                                                  if (BsonDocument.class.isAssignableFrom(clazz)) {
+                                                                      return (Codec<T>) new BsonDocumentCodec(registry);
+                                                                  }
+                                                                  return null;
+                                                              }
+                                                          });
+    }
+
+    public void reset() {
+        events.clear();
+        firstRequestId = RequestMessage.getCurrentGlobalId();
+    }
+
+    public List<CommandEvent> getEvents() {
+        return events;
+    }
+
     @Override
     public void commandStarted(final CommandStartedEvent event) {
         events.add(new CommandStartedEvent(event.getRequestId(), event.getConnectionDescription(), event.getDatabaseName(),
-                                           event.getCommandName(), event.getCommand() == null ? null : event.getCommand().clone()));
+                                           event.getCommandName(),
+                                           event.getCommand() == null ? null : getWritableCloneOfCommand(event.getCommand())));
+    }
+
+    private BsonDocument getWritableCloneOfCommand(final BsonDocument original) {
+        BsonDocument clone = new BsonDocument();
+        BsonDocumentWriter writer = new BsonDocumentWriter(clone);
+        new BsonDocumentCodec(CODEC_REGISTRY_HACK).encode(writer, original, EncoderContext.builder().build());
+        return clone;
     }
 
     @Override
@@ -49,7 +92,7 @@ public class TestCommandListener implements CommandListener {
         events.add(event);
     }
 
-    boolean eventsWereDelivered(final List<CommandEvent> expectedEvents) {
+    public boolean eventsWereDelivered(final List<CommandEvent> expectedEvents) {
         if (expectedEvents.size() != events.size()) {
             return false;
         }
