@@ -193,7 +193,11 @@ final class NettyByteBuf implements ByteBuf {
 
     @Override
     public ByteBuf limit(final int newLimit) {
-        proxied = proxied.slice(proxied.readerIndex(), newLimit);
+        if (isWriting) {
+            throw new UnsupportedOperationException("Can not set the limit while writing");
+        } else {
+            proxied.writerIndex(newLimit);
+        }
         return this;
     }
 

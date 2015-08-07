@@ -58,7 +58,7 @@ class ByteBufBsonDocument extends BsonDocument implements Cloneable {
             int documentSizeInBytes = documentsBuffer.getInt();
             documentsBuffer.position(documentsBuffer.position() - 4);
             ByteBuf documentBuffer = documentsBuffer.duplicate();
-            documentBuffer.limit(documentSizeInBytes);
+            documentBuffer.limit(documentBuffer.position() + documentSizeInBytes);
             documents.add(new ByteBufBsonDocument(documentBuffer));
             documentsBuffer.position(documentsBuffer.position() + documentSizeInBytes);
         }
