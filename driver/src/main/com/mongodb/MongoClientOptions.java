@@ -446,7 +446,7 @@ public class MongoClientOptions {
     }
 
     /**
-     * Gets the list of added {@code CommandListener}. The default is null.
+     * Gets the list of added {@code CommandListener}. The default is an empty list.
      *
      * @return the unmodifiable list of command listeners
      * @since 3.1

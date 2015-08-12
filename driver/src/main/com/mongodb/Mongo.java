@@ -32,6 +32,7 @@ import com.mongodb.connection.Connection;
 import com.mongodb.connection.DefaultClusterFactory;
 import com.mongodb.connection.ServerDescription;
 import com.mongodb.connection.SocketStreamFactory;
+import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandListenerMulticaster;
 import com.mongodb.internal.connection.PowerOfTwoBufferPool;
 import com.mongodb.management.JMXConnectionPoolListener;
@@ -670,7 +671,18 @@ public class Mongo {
                                                                           options.getSocketFactory()),
                                                   credentialsList,
                                                   null, new JMXConnectionPoolListener(), null,
-                                                  new CommandListenerMulticaster(options.getCommandListeners()));
+                                                  createCommandListener(options.getCommandListeners()));
+    }
+
+    private static CommandListener createCommandListener(final List<CommandListener> commandListeners) {
+        switch (commandListeners.size()) {
+            case 0:
+                return null;
+            case 1:
+                return commandListeners.get(0);
+            default:
+                return new CommandListenerMulticaster(commandListeners);
+        }
     }
 
     private static List<ServerAddress> createNewSeedList(final List<ServerAddress> seedList) {

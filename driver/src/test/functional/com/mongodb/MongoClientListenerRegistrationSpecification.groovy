@@ -23,12 +23,28 @@ import static com.mongodb.Fixture.mongoClientURI
 
 class MongoClientListenerRegistrationSpecification extends FunctionalSpecification {
 
-    def 'should register command listeners'() {
+    def 'should register single command listener'() {
+        given:
+        def first = Mock(CommandListener)
+        def client = new MongoClient(mongoClientURI.getHosts().collect { new ServerAddress(it) },
+                MongoClientOptions.builder(mongoClientURI.options)
+                                                       .addCommandListener(first)
+                                                       .build());
+
+        when:
+        client.getDatabase('admin').runCommand(new Document('ping', 1))
+
+        then:
+        1 * first.commandStarted(_)
+        1 * first.commandSucceeded(_)
+    }
+
+    def 'should register multiple command listeners'() {
         given:
         def first = Mock(CommandListener)
         def second = Mock(CommandListener)
         def client = new MongoClient(mongoClientURI.getHosts().collect { new ServerAddress(it) },
-                MongoClientOptions.builder(mongoClientURI.options)
+                                     MongoClientOptions.builder(mongoClientURI.options)
                                                        .addCommandListener(first)
                                                        .addCommandListener(second).build());
 
