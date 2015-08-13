@@ -23,6 +23,7 @@ import com.mongodb.WriteConcernResult;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.event.CommandListener;
+import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
@@ -35,6 +36,7 @@ import static com.mongodb.connection.ProtocolHelper.getMessageSettings;
 import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
+import static java.util.Collections.singletonList;
 
 /**
  * Base class for wire protocol messages that perform writes.  In particular, it handles the write followed by the getlasterror command to
@@ -153,6 +155,14 @@ abstract class WriteProtocol implements Protocol<WriteConcernResult> {
         if (writeConcern.isAcknowledged()) {
             if (writeConcernException == null) {
                 appendToWriteCommandResponseDocument(curMessage, nextMessage, writeConcernResult, response);
+            } else {
+                response.put("n", new BsonInt32(0));
+                BsonDocument writeErrorDocument = new BsonDocument("index", new BsonInt32(0))
+                                                  .append("code", new BsonInt32(writeConcernException.getErrorCode()));
+                if (writeConcernException.getErrorMessage() != null) {
+                    writeErrorDocument.append("errmsg", new BsonString(writeConcernException.getErrorMessage()));
+                }
+                response.put("writeErrors", new BsonArray(singletonList(writeErrorDocument)));
             }
         }
         return response;

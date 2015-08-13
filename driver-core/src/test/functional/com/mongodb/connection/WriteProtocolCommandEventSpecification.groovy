@@ -135,14 +135,24 @@ class WriteProtocolCommandEventSpecification extends OperationFunctionalSpecific
         protocol.execute(connection)
 
         then:
-        thrown(DuplicateKeyException)
+        def e = thrown(DuplicateKeyException)
         commandListener.eventsWereDelivered([new CommandStartedEvent(1, connection.getDescription(), getDatabaseName(), 'insert',
                                                                      new BsonDocument('insert', new BsonString(getCollectionName()))
                                                                              .append('ordered', BsonBoolean.TRUE)
                                                                              .append('documents', new BsonArray(
                                                                              [new BsonDocument('_id', new BsonInt32(1))]))),
                                              new CommandSucceededEvent(1, connection.getDescription(), 'insert',
-                                                                       new BsonDocument('ok', new BsonInt32(1)), 0)])
+                                                                       new BsonDocument('ok', new BsonInt32(1))
+                                                                               .append('n', new BsonInt32(0))
+                                                                               .append('writeErrors',
+                                                                                       new BsonArray(
+                                                                                               [new BsonDocument()
+                                                                                                        .append('index',
+                                                                                                                new BsonInt32(0))
+                                                                                                        .append('code',
+                                                                                                                new BsonInt32(e.getCode()))
+                                                                                                        .append('errmsg', new BsonString(
+                                                                                                       e.getErrorMessage()))])), 0)])
     }
 
     def 'should deliver started and failed command events when there is a command failure'() {
