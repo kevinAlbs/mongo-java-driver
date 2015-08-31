@@ -29,9 +29,12 @@ import org.bson.codecs.BsonValueCodecProvider;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.io.ByteBufferBsonInput;
+import org.bson.json.JsonWriter;
+import org.bson.json.JsonWriterSettings;
 
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.StringWriter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -226,6 +229,20 @@ class ByteBufBsonDocument extends BsonDocument implements Cloneable {
         }
 
         return null;
+    }
+
+    @Override
+    public String toJson() {
+        return toJson(new JsonWriterSettings());
+    }
+
+    @Override
+    public String toJson(final JsonWriterSettings settings) {
+        StringWriter stringWriter = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(stringWriter, settings);
+        BsonBinaryReader reader = new BsonBinaryReader(new ByteBufferBsonInput(byteBuf));
+        jsonWriter.pipe(reader);
+        return stringWriter.toString();
     }
 
     /**

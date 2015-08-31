@@ -27,6 +27,8 @@ import org.bson.ByteBufNIO
 import org.bson.codecs.BsonDocumentCodec
 import org.bson.codecs.EncoderContext
 import org.bson.io.BasicOutputBuffer
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
 import spock.lang.Specification
 
 import java.nio.ByteBuffer
@@ -214,6 +216,27 @@ class ByteBufBsonDocumentSpecification extends Specification {
 
         then:
         rawDocument == deserializedDocument
+    }
+
+    def 'toJson should return equivalent'() {
+        expect:
+        document.toJson() == rawDocument.toJson()
+    }
+
+    def 'toJson should respect JsonWriteSettings'() {
+        given:
+        def settings = new JsonWriterSettings(JsonMode.SHELL);
+
+        expect:
+        document.toJson(settings) == rawDocument.toJson(settings)
+    }
+
+    def 'toJson should return equivalent when a ByteBufBsonDocument is nested in a BsonDocument'() {
+        given:
+        def topLevel = new BsonDocument('nested', rawDocument)
+
+        expect:
+        new BsonDocument('nested', document).toJson() == topLevel.toJson()
     }
 
     class TestEntry implements Map.Entry<String, BsonValue> {
