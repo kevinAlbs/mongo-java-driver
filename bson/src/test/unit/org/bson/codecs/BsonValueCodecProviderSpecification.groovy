@@ -75,5 +75,6 @@ class BsonValueCodecProviderSpecification extends Specification {
         provider.get(BsonDocument, codecRegistry).class == BsonDocumentCodec
         provider.get(BsonDocumentWrapper, codecRegistry).class == BsonDocumentWrapperCodec
         provider.get(RawBsonDocument, codecRegistry).class == RawBsonDocumentCodec
+        provider.get(BsonDocumentSubclass, codecRegistry).class == BsonDocumentCodec
     }
 }

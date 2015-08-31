@@ -84,8 +84,12 @@ public class BsonValueCodecProvider implements CodecProvider {
             return (Codec<T>) new BsonArrayCodec(registry);
         }
 
-        if (clazz == BsonDocument.class) {
-            return (Codec<T>) new BsonDocumentCodec(registry);
+        if (clazz == BsonJavaScriptWithScope.class) {
+            return (Codec<T>) new BsonJavaScriptWithScopeCodec(registry.get(BsonDocument.class));
+        }
+
+        if (clazz == BsonValue.class) {
+            return (Codec<T>) new BsonValueCodec(registry);
         }
 
         if (clazz == BsonDocumentWrapper.class) {
@@ -96,12 +100,8 @@ public class BsonValueCodecProvider implements CodecProvider {
             return (Codec<T>) new RawBsonDocumentCodec();
         }
 
-        if (clazz == BsonJavaScriptWithScope.class) {
-            return (Codec<T>) new BsonJavaScriptWithScopeCodec(registry.get(BsonDocument.class));
-        }
-
-        if (clazz == BsonValue.class) {
-            return (Codec<T>) new BsonValueCodec(registry);
+        if (BsonDocument.class.isAssignableFrom(clazz)) {
+            return (Codec<T>) new BsonDocumentCodec(registry);
         }
 
         return null;
