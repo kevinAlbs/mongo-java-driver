@@ -69,4 +69,18 @@ class ByteBufSpecification extends Specification {
                 new NettyByteBuf(ByteBufAllocator.DEFAULT.buffer(16))
         ]
     }
+
+    // the fact that setting the limit on a NettyByteBuf throws an exception is a design flaw in the ByteBuf interface, but one that
+    // doesn't need to be addressed immediately, as the driver does not need to be able to set the limit while writing to a the buffer,
+    // only when reading.
+    def 'should throw when setting limit while writing'() {
+        given:
+        def buf = new NettyByteBuf(ByteBufAllocator.DEFAULT.buffer(16))
+
+        when:
+        buf.limit(10)
+
+        then:
+        thrown(UnsupportedOperationException)
+    }
 }
