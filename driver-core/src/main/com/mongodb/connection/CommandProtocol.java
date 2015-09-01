@@ -28,6 +28,9 @@ import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.Decoder;
 import org.bson.codecs.DecoderContext;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.connection.ByteBufBsonDocument.createOne;
 import static com.mongodb.connection.ProtocolHelper.getCommandFailureException;
@@ -35,6 +38,7 @@ import static com.mongodb.connection.ProtocolHelper.sendCommandFailedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandStartedEvent;
 import static com.mongodb.connection.ProtocolHelper.sendCommandSucceededEvent;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 
 /**
  * A protocol for executing a command against a MongoDB server using the OP_QUERY wire protocol message.
@@ -46,12 +50,22 @@ class CommandProtocol<T> implements Protocol<T> {
 
     public static final Logger LOGGER = Loggers.getLogger("protocol.command");
 
+    private static final Set<String> SECURITY_SENSITIVE_COMMANDS = new HashSet<String>(asList("authenticate",
+                                                                                              "saslStart",
+                                                                                              "saslContinue",
+                                                                                              "getnonce",
+                                                                                              "createUser",
+                                                                                              "updateUser",
+                                                                                              "copydbgetnonce",
+                                                                                              "copydbsaslstart",
+                                                                                              "copydb"));
     private final MongoNamespace namespace;
     private final BsonDocument command;
     private final Decoder<T> commandResultDecoder;
     private final FieldNameValidator fieldNameValidator;
     private boolean slaveOk;
     private CommandListener commandListener;
+    private volatile String commandName;
 
     /**
      * Construct an instance.
@@ -106,8 +120,10 @@ class CommandProtocol<T> implements Protocol<T> {
 
             T retval = commandResultDecoder.decode(new BsonDocumentReader(response), DecoderContext.builder().build());
             if (commandListener != null) {
-                sendCommandSucceededEvent(commandMessage, getCommandName(), response, connection.getDescription(), startTimeNanos,
-                                          commandListener);
+                BsonDocument responseDocumentForEvent = (SECURITY_SENSITIVE_COMMANDS.contains(getCommandName()))
+                                                        ? new BsonDocument() : response;
+                sendCommandSucceededEvent(commandMessage, getCommandName(), responseDocumentForEvent, connection.getDescription(),
+                                          startTimeNanos, commandListener);
             }
             LOGGER.debug("Command execution completed");
             return retval;
@@ -151,7 +167,7 @@ class CommandProtocol<T> implements Protocol<T> {
     }
 
     private String getCommandName() {
-        return command.keySet().iterator().next();
+        return commandName != null ? commandName : command.keySet().iterator().next();
     }
 
     private CommandMessage sendMessage(final InternalConnection connection) {
@@ -162,8 +178,11 @@ class CommandProtocol<T> implements Protocol<T> {
             int documentPosition = message.encodeWithMetadata(bsonOutput).getFirstDocumentPosition();
             if (commandListener != null) {
                 ByteBufBsonDocument rawDocument = createOne(bsonOutput, documentPosition);
-                sendCommandStartedEvent(message, namespace.getDatabaseName(), rawDocument.getFirstKey(),
-                                        rawDocument, connection.getDescription(), commandListener);
+                commandName = rawDocument.getFirstKey();
+                BsonDocument commandDocumentForEvent = (SECURITY_SENSITIVE_COMMANDS.contains(commandName))
+                                                       ? new BsonDocument() : rawDocument;
+                sendCommandStartedEvent(message, namespace.getDatabaseName(), commandName,
+                                        commandDocumentForEvent, connection.getDescription(), commandListener);
             }
 
             connection.sendMessage(bsonOutput.getByteBuffers(), message.getId());
