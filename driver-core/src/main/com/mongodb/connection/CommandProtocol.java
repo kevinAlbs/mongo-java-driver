@@ -16,6 +16,7 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.MongoCommandException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
@@ -129,7 +130,12 @@ class CommandProtocol<T> implements Protocol<T> {
             return retval;
         } catch (RuntimeException e) {
             if (commandListener != null) {
-                sendCommandFailedEvent(commandMessage, getCommandName(), connection.getDescription(), startTimeNanos, e, commandListener);
+                RuntimeException commandEventException = e;
+                if (e instanceof MongoCommandException && (SECURITY_SENSITIVE_COMMANDS.contains(getCommandName()))) {
+                    commandEventException = new MongoCommandException(new BsonDocument(), connection.getDescription().getServerAddress());
+                }
+                sendCommandFailedEvent(commandMessage, getCommandName(), connection.getDescription(), startTimeNanos, commandEventException,
+                                       commandListener);
             }
             throw e;
         }

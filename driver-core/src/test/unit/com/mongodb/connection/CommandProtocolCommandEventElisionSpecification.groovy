@@ -16,7 +16,9 @@
 
 package com.mongodb.connection
 
+import com.mongodb.MongoCommandException
 import com.mongodb.ServerAddress
+import com.mongodb.event.CommandFailedEvent
 import com.mongodb.event.CommandStartedEvent
 import com.mongodb.event.CommandSucceededEvent
 import com.mongodb.internal.validator.NoOpFieldNameValidator
@@ -25,6 +27,7 @@ import org.bson.BsonInt32
 import org.bson.codecs.DocumentCodec
 import spock.lang.Specification
 
+import static com.mongodb.connection.MessageHelper.buildFailedReply
 import static com.mongodb.connection.MessageHelper.buildSuccessfulReply
 
 // Testing security-senstive command elision with a unit test to avoid having to actually execute the commands without error, which can
@@ -36,7 +39,7 @@ class CommandProtocolCommandEventElisionSpecification extends Specification {
         connection = new TestInternalConnection(new ServerId(new ClusterId(), new ServerAddress('localhost', 27017)));
     }
 
-    def 'should elide successful security-sensitive commands'() {
+    def 'should elide command and response successful security-sensitive commands'() {
         given:
         def securitySensitiveCommandName = securitySensitiveCommand.keySet().iterator().next()
         def protocol = new CommandProtocol('admin', securitySensitiveCommand, new NoOpFieldNameValidator(), new DocumentCodec())
@@ -65,7 +68,38 @@ class CommandProtocolCommandEventElisionSpecification extends Specification {
         ]
     }
 
-    def 'should not elide successful normal commands'() {
+    def 'should elide response in MongoCommandException in failed security-sensitive commands'() {
+        given:
+        def protocol = new CommandProtocol('admin', securitySensitiveCommand, new NoOpFieldNameValidator(), new DocumentCodec())
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+        connection.enqueueReply(buildFailedReply('{ok: 0}'));
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        thrown(MongoCommandException)
+
+        def commandFailedEvent = commandListener.events[1] as CommandFailedEvent
+        commandFailedEvent.throwable instanceof MongoCommandException
+        def commandException = commandFailedEvent.throwable as MongoCommandException
+        commandException.response == new BsonDocument()
+
+        where:
+        securitySensitiveCommand << [new BsonDocument('authenticate', new BsonInt32(1)),
+                                     new BsonDocument('saslStart', new BsonInt32(1)),
+                                     new BsonDocument('saslContinue', new BsonInt32(1)),
+                                     new BsonDocument('getnonce', new BsonInt32(1)),
+                                     new BsonDocument('createUser', new BsonInt32(1)),
+                                     new BsonDocument('updateUser', new BsonInt32(1)),
+                                     new BsonDocument('copydbgetnonce', new BsonInt32(1)),
+                                     new BsonDocument('copydbsaslstart', new BsonInt32(1)),
+                                     new BsonDocument('copydb', new BsonInt32(1))
+        ]
+    }
+
+    def 'should not elide command or response in successful normal commands'() {
         given:
         def commandName = command.keySet().iterator().next()
         def protocol = new CommandProtocol('admin', command, new NoOpFieldNameValidator(), new DocumentCodec())
@@ -81,6 +115,28 @@ class CommandProtocolCommandEventElisionSpecification extends Specification {
                                                                      command),
                                              new CommandSucceededEvent(1, connection.getDescription(), commandName,
                                                                        new BsonDocument('ok', new BsonInt32(1)), 1)])
+        where:
+        command << [new BsonDocument('isMaster', new BsonInt32(1)),
+                    new BsonDocument('ping', new BsonInt32(1))
+        ]
+    }
+
+    def 'should not elide response in MongoCommandException in failed normal commands'() {
+        given:
+        def protocol = new CommandProtocol('admin', command, new NoOpFieldNameValidator(), new DocumentCodec())
+        def commandListener = new TestCommandListener()
+        protocol.commandListener = commandListener
+        connection.enqueueReply(buildFailedReply('{ok: 0}'));
+
+        when:
+        protocol.execute(connection)
+
+        then:
+        def e = thrown(MongoCommandException)
+
+        def commandFailedEvent = commandListener.events[1] as CommandFailedEvent
+        commandFailedEvent.throwable == e
+
         where:
         command << [new BsonDocument('isMaster', new BsonInt32(1)),
                     new BsonDocument('ping', new BsonInt32(1))
