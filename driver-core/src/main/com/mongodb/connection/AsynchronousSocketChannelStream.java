@@ -31,6 +31,7 @@ import java.nio.channels.CompletionHandler;
 import java.nio.channels.InterruptedByTimeoutException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.mongodb.assertions.Assertions.isTrue;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -75,21 +76,7 @@ final class AsynchronousSocketChannelStream implements Stream {
                 channel.setOption(StandardSocketOptions.SO_SNDBUF, settings.getSendBufferSize());
             }
 
-            channel.connect(serverAddress.getSocketAddress(), null, new CompletionHandler<Void, Object>() {
-                @Override
-                public void completed(final Void result, final Object attachment) {
-                    handler.completed(null);
-                }
-
-                @Override
-                public void failed(final Throwable exc, final Object attachment) {
-                    if (exc instanceof ConnectException) {
-                        handler.failed(new MongoSocketOpenException("Exception opening socket", getAddress(), exc));
-                    } else {
-                        handler.failed(exc);
-                    }
-                }
-            });
+            channel.connect(serverAddress.getSocketAddress(), null, new OpenCompletionHandler(handler));
         } catch (IOException e) {
             handler.failed(new MongoSocketOpenException("Exception opening socket", serverAddress, e));
         } catch (Throwable t) {
@@ -188,50 +175,86 @@ final class AsynchronousSocketChannelStream implements Stream {
     private class AsyncWritableByteChannelAdapter implements AsyncWritableByteChannel {
         @Override
         public void write(final ByteBuffer src, final AsyncCompletionHandler<Void> handler) {
-            channel.write(src, null, new CompletionHandler<Integer, Object>() {
-                @Override
-                public void completed(final Integer result, final Object attachment) {
-                    handler.completed(null);
-                }
+            channel.write(src, null, new WriteCompletionHandler(handler));
+        }
 
-                @Override
-                public void failed(final Throwable exc, final Object attachment) {
-                    handler.failed(exc);
-                }
-            });
+        private class WriteCompletionHandler implements CompletionHandler<Integer, Object> {
+            private final AtomicReference<AsyncCompletionHandler<Void>> handlerReference;
+
+            public WriteCompletionHandler(final AsyncCompletionHandler<Void> handler) {
+                this.handlerReference = new AtomicReference<AsyncCompletionHandler<Void>>(handler);
+            }
+
+            @Override
+            public void completed(final Integer result, final Object attachment) {
+                AsyncCompletionHandler<Void> localHandler = handlerReference.getAndSet(null);
+                localHandler.completed(null);
+            }
+
+            @Override
+            public void failed(final Throwable exc, final Object attachment) {
+                AsyncCompletionHandler<Void> localHandler = handlerReference.getAndSet(null);
+                localHandler.failed(exc);
+            }
         }
     }
 
     private final class BasicCompletionHandler implements CompletionHandler<Integer, Void> {
         private final ByteBuf dst;
-        private final AsyncCompletionHandler<ByteBuf> handler;
+        private final AtomicReference<AsyncCompletionHandler<ByteBuf>> handler;
 
         private BasicCompletionHandler(final ByteBuf dst, final AsyncCompletionHandler<ByteBuf> handler) {
             this.dst = dst;
-            this.handler = handler;
+            this.handler = new AtomicReference<AsyncCompletionHandler<ByteBuf>>(handler);
         }
 
         @Override
         public void completed(final Integer result, final Void attachment) {
+            AsyncCompletionHandler<ByteBuf> localHandler = handler.getAndSet(null);
             if (result == -1) {
                 dst.release();
-                handler.failed(new MongoSocketReadException("Prematurely reached end of stream", serverAddress));
+                localHandler.failed(new MongoSocketReadException("Prematurely reached end of stream", serverAddress));
             } else if (!dst.hasRemaining()) {
                 dst.flip();
-                handler.completed(dst);
+                localHandler.completed(dst);
             } else {
                 channel.read(dst.asNIO(), settings.getReadTimeout(MILLISECONDS), MILLISECONDS, null,
-                             new BasicCompletionHandler(dst, handler));
+                             new BasicCompletionHandler(dst, localHandler));
             }
         }
 
         @Override
         public void failed(final Throwable t, final Void attachment) {
+            AsyncCompletionHandler<ByteBuf> localHandler = handler.getAndSet(null);
             dst.release();
             if (t instanceof InterruptedByTimeoutException) {
-                handler.failed(new MongoSocketReadTimeoutException("Timeout while receiving message", serverAddress, t));
+                localHandler.failed(new MongoSocketReadTimeoutException("Timeout while receiving message", serverAddress, t));
             } else {
-                handler.failed(t);
+                localHandler.failed(t);
+            }
+        }
+    }
+
+    private class OpenCompletionHandler implements CompletionHandler<Void, Object> {
+        private final AtomicReference<AsyncCompletionHandler<Void>> handler;
+
+        public OpenCompletionHandler(final AsyncCompletionHandler<Void> handler) {
+            this.handler = new AtomicReference<AsyncCompletionHandler<Void>>(handler);
+        }
+
+        @Override
+        public void completed(final Void result, final Object attachment) {
+            AsyncCompletionHandler<Void> localHandler = handler.getAndSet(null);
+            localHandler.completed(null);
+        }
+
+        @Override
+        public void failed(final Throwable exc, final Object attachment) {
+            AsyncCompletionHandler<Void> localHandler = handler.getAndSet(null);
+            if (exc instanceof ConnectException) {
+                localHandler.failed(new MongoSocketOpenException("Exception opening socket", getAddress(), exc));
+            } else {
+                localHandler.failed(exc);
             }
         }
     }
