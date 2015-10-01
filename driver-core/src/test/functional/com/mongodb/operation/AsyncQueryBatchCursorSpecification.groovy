@@ -16,16 +16,19 @@
 
 package com.mongodb.operation
 
+import category.Slow
 import com.mongodb.MongoTimeoutException
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.async.FutureResultCallback
 import com.mongodb.binding.AsyncConnectionSource
 import com.mongodb.client.model.CreateCollectionOptions
+import com.mongodb.connection.AsyncConnection
 import com.mongodb.connection.QueryResult
 import org.bson.BsonDocument
 import org.bson.BsonTimestamp
 import org.bson.Document
 import org.bson.codecs.DocumentCodec
+import org.junit.experimental.categories.Category
 
 import java.util.concurrent.CountDownLatch
 
@@ -39,22 +42,25 @@ import static java.util.concurrent.TimeUnit.SECONDS
 class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecification {
     AsyncConnectionSource connectionSource
     AsyncQueryBatchCursor<Document> cursor
+    AsyncConnection connection
 
     def setup() {
         for (int i = 0; i < 10; i++) {
             collectionHelper.insertDocuments(new DocumentCodec(), new Document('_id', i))
         }
         connectionSource = getReadConnectionSource(getAsyncBinding())
+        connection = getConnection(connectionSource)
     }
 
     def cleanup() {
         cursor?.close()
+        connection?.release()
         waitForLastCheckin(connectionSource.getServerDescription().getAddress(), getAsyncCluster())
     }
 
     def 'should exhaust single batch'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(), 0, 0, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(), 0, 0, new DocumentCodec(), connectionSource, connection)
 
         expect:
         nextBatch().size() == 10
@@ -62,19 +68,22 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         connectionSource.count == 1
     }
 
+    @Category(Slow)
     def 'should exhaust single batch with limit'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(1), 1, 0, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(1), 1, 0, new DocumentCodec(), connectionSource, connection)
 
         expect:
         nextBatch().size() == 1
         !nextBatch()
+        sleep(500) // racy test, but have to wait for the kill cursor to complete asynchronously
         connectionSource.count == 1
     }
 
+    @Category(Slow)
     def 'should exhaust multiple batches'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource, connection)
 
         expect:
         nextBatch().size() == 3
@@ -83,12 +92,13 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         nextBatch().size() == 2
         nextBatch().size() == 1
         !nextBatch()
+        sleep(500) // racy test, but have to wait for the kill cursor to complete asynchronously
         connectionSource.count == 1
     }
 
     def 'should respect batch size'() {
         when:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource, connection)
 
         then:
         cursor.batchSize == 2
@@ -103,7 +113,7 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
 
     def 'should close when exhausted'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(), 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(), 0, 2, new DocumentCodec(), connectionSource, connection)
 
         when:
         cursor.close()
@@ -118,9 +128,10 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         thrown(IllegalStateException)
     }
 
+    @Category(Slow)
     def 'should close when not exhausted'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource, connection)
 
         when:
         cursor.close()
@@ -130,13 +141,14 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         connectionSource.count == 1
     }
 
+    @Category(Slow)
     def 'should block waiting for first batch on a tailable cursor'() {
         collectionHelper.create(collectionName, new CreateCollectionOptions().capped(true).sizeInBytes(1000))
         collectionHelper.insertDocuments(new DocumentCodec(), new Document('_id', 1).append('ts', new BsonTimestamp(4, 0)))
         def firstBatch = executeQueryProtocol(new BsonDocument('ts', new BsonDocument('$gte', new BsonTimestamp(5, 0))), 2, true, false);
 
         when:
-        cursor = new AsyncQueryBatchCursor<Document>(firstBatch, 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(firstBatch, 0, 2, new DocumentCodec(), connectionSource, connection)
         def latch = new CountDownLatch(1)
         Thread.start {
             sleep(500)
@@ -157,6 +169,7 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         }
     }
 
+    @Category(Slow)
     def 'should block waiting for next batch on a tailable cursor'() {
         collectionHelper.create(collectionName, new CreateCollectionOptions().capped(true).sizeInBytes(1000))
         collectionHelper.insertDocuments(new DocumentCodec(), new Document('_id', 1).append('ts', new BsonTimestamp(5, 0)))
@@ -164,7 +177,7 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
 
 
         when:
-        cursor = new AsyncQueryBatchCursor<Document>(firstBatch, 0, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(firstBatch, 0, 2, new DocumentCodec(), connectionSource, connection)
         def batch = nextBatch()
 
         then:
@@ -194,7 +207,7 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
 
     def 'should respect limit'() {
         given:
-        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 6, 2, new DocumentCodec(), connectionSource)
+        cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 6, 2, new DocumentCodec(), connectionSource, connection)
 
         expect:
         nextBatch().size() == 3
@@ -218,15 +231,10 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
     }
 
     private QueryResult<Document> executeQueryProtocol(BsonDocument query, int numberToReturn, boolean tailable, boolean awaitData) {
-        def connection = getConnection(connectionSource)
-        try {
-            def futureResultCallback = new FutureResultCallback<QueryResult<Document>>();
-            connection.queryAsync(getNamespace(), query, null, numberToReturn, 0,
-                                  false, tailable, awaitData, false, false, false,
-                                  new DocumentCodec(), futureResultCallback);
-            futureResultCallback.get(60, SECONDS);
-        } finally {
-            connection.release()
-        }
+        def futureResultCallback = new FutureResultCallback<QueryResult<Document>>();
+        connection.queryAsync(getNamespace(), query, null, numberToReturn, 0,
+                              false, tailable, awaitData, false, false, false,
+                              new DocumentCodec(), futureResultCallback);
+        futureResultCallback.get(60, SECONDS);
     }
 }
