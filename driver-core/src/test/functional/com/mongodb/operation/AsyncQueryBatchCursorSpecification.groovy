@@ -36,7 +36,8 @@ import static com.mongodb.ClusterFixture.getAsyncBinding
 import static com.mongodb.ClusterFixture.getAsyncCluster
 import static com.mongodb.ClusterFixture.getConnection
 import static com.mongodb.ClusterFixture.getReadConnectionSource
-import static com.mongodb.connection.ServerHelper.waitForLastCheckin
+import static com.mongodb.connection.ServerHelper.waitForLastRelease
+import static com.mongodb.connection.ServerHelper.waitForRelease
 import static java.util.concurrent.TimeUnit.SECONDS
 
 class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecification {
@@ -55,7 +56,9 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
     def cleanup() {
         cursor?.close()
         connection?.release()
-        waitForLastCheckin(connectionSource.getServerDescription().getAddress(), getAsyncCluster())
+        connectionSource.release();
+        waitForLastRelease(connectionSource.getServerDescription().getAddress(), getAsyncCluster())
+        waitForRelease(connectionSource, 0)
     }
 
     def 'should exhaust single batch'() {
@@ -65,10 +68,8 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         expect:
         nextBatch().size() == 10
         !nextBatch()
-        connectionSource.count == 1
     }
 
-    @Category(Slow)
     def 'should exhaust single batch with limit'() {
         given:
         cursor = new AsyncQueryBatchCursor<Document>(executeQuery(1), 1, 0, new DocumentCodec(), connectionSource, connection)
@@ -76,11 +77,8 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         expect:
         nextBatch().size() == 1
         !nextBatch()
-        sleep(500) // racy test, but have to wait for the kill cursor to complete asynchronously
-        connectionSource.count == 1
     }
 
-    @Category(Slow)
     def 'should exhaust multiple batches'() {
         given:
         cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource, connection)
@@ -92,8 +90,6 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         nextBatch().size() == 2
         nextBatch().size() == 1
         !nextBatch()
-        sleep(500) // racy test, but have to wait for the kill cursor to complete asynchronously
-        connectionSource.count == 1
     }
 
     def 'should respect batch size'() {
@@ -128,7 +124,6 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         thrown(IllegalStateException)
     }
 
-    @Category(Slow)
     def 'should close when not exhausted'() {
         given:
         cursor = new AsyncQueryBatchCursor<Document>(executeQuery(3), 0, 2, new DocumentCodec(), connectionSource, connection)
@@ -137,8 +132,7 @@ class AsyncQueryBatchCursorSpecification extends OperationFunctionalSpecificatio
         cursor.close()
 
         then:
-        sleep(500) // racy test, but have to wait for the kill cursor to complete asynchronously
-        connectionSource.count == 1
+        waitForRelease(connectionSource, 1)
     }
 
     @Category(Slow)
