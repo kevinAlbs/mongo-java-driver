@@ -163,20 +163,8 @@ class DBCollectionImpl extends DBCollection {
         }
     }
 
-    public WriteResult insert(List<DBObject> list, WriteConcern concern, DBEncoder encoder ){
-        return insert(list, concern, encoder, null);
-    }
-
-    WriteResult insert(List<DBObject> list, WriteConcern concern, DBEncoder encoder, Boolean bypassDocumentValidation) {
-        return insert(list, true, concern, encoder, bypassDocumentValidation);
-    }
-
-    protected WriteResult insert(List<DBObject> list, boolean shouldApply, WriteConcern concern, DBEncoder encoder) {
-        return insert(list, shouldApply, concern, encoder, null);
-    }
-
-    WriteResult insert(List<DBObject> list, boolean shouldApply, WriteConcern concern, DBEncoder encoder,
-                       Boolean bypassDocumentValidation) {
+    @Override
+    protected WriteResult insertImpl(List<DBObject> list, WriteConcern concern, DBEncoder encoder, Boolean bypassDocumentValidation) {
         if (concern == null) {
             throw new IllegalArgumentException("Write concern can not be null");
         }
@@ -194,7 +182,7 @@ class DBCollectionImpl extends DBCollection {
         try {
             if (useWriteCommands(concern, port)) {
                 try {
-                    return translateBulkWriteResult(insertWithCommandProtocol(list, concern, encoder, port, shouldApply,
+                    return translateBulkWriteResult(insertWithCommandProtocol(list, concern, encoder, port,
                                                                               bypassDocumentValidation),
                                                     INSERT, concern, port.getAddress());
                 } catch (BulkWriteException e) {
@@ -202,7 +190,7 @@ class DBCollectionImpl extends DBCollection {
                 }
             }
             else {
-                return insertWithWriteProtocol(list, concern, encoder, port, shouldApply);
+                return insertWithWriteProtocol(list, concern, encoder, port, true);
             }
         } finally {
             db.getConnector().releasePort(port);
@@ -247,14 +235,8 @@ class DBCollectionImpl extends DBCollection {
     }
 
     @Override
-    public WriteResult update( DBObject query , DBObject o , boolean upsert , boolean multi , WriteConcern concern,
-                               DBEncoder encoder ) {
-         return update(query, o, upsert, multi, concern, null, encoder);
-    }
-
-    @Override
-    public WriteResult update(DBObject query, DBObject o, boolean upsert, boolean multi, WriteConcern concern,
-                       Boolean bypassDocumentValidation, DBEncoder encoder) {
+    protected WriteResult updateImpl(DBObject query, DBObject o, boolean upsert, boolean multi, WriteConcern concern,
+                                     Boolean bypassDocumentValidation, DBEncoder encoder) {
         if (o == null) {
             throw new IllegalArgumentException("update can not be null");
         }
@@ -430,11 +412,9 @@ class DBCollectionImpl extends DBCollection {
 
     private BulkWriteResult insertWithCommandProtocol(final List<DBObject> list, final WriteConcern writeConcern,
                                                       final DBEncoder encoder,
-                                                      final DBPort port, final boolean shouldApply,
+                                                      final DBPort port,
                                                       final Boolean bypassDocumentValidation) {
-        if ( shouldApply ){
-            applyRulesForInsert(list);
-        }
+        applyRulesForInsert(list);
 
         BaseWriteCommandMessage message = new InsertCommandMessage(getNamespace(), writeConcern,
                                                                   getBypassDocumentValidationForServerVersion(bypassDocumentValidation,
@@ -875,7 +855,7 @@ class DBCollectionImpl extends DBCollection {
                     for (InsertRequest cur : insertRequests) {
                         documents.add(cur.getDocument());
                     }
-                    return insertWithCommandProtocol(documents, writeConcern, encoder, port, true, null);  // TODO
+                    return insertWithCommandProtocol(documents, writeConcern, encoder, port, null);  // TODO
                 }
 
                 @Override

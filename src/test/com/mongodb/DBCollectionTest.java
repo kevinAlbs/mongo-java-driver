@@ -787,7 +787,7 @@ public class DBCollectionTest extends TestCase {
 
         try {
             c.update(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1).append("level", 9), true, false, WriteConcern.ACKNOWLEDGED,
-                     null, null);
+                     null);
             if (serverIsAtLeastVersion(3.2)) {
                 fail();
             }
@@ -810,6 +810,41 @@ public class DBCollectionTest extends TestCase {
                      true, null);
         } catch (MongoException e) {
                 fail();
+        }
+    }
+
+    @Test
+    public void testBypassDocumentValidationForFindAndModify() {
+
+        //given
+        DBObject options = new BasicDBObject("validator", QueryBuilder.start("level").greaterThanEquals(10).get());
+        DBCollection c = getDatabase().createCollection(getClass().getName(), options);
+        c.insert(new BasicDBObject("_id", 1).append("level", 11));
+
+        try {
+            c.findAndModify(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1).append("level", 9));
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            c.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject("_id", 1).append("level", 9), false, false,
+                            false, 0, TimeUnit.SECONDS);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            c.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject("_id", 1).append("level", 9), false, false,
+                            true, 0, TimeUnit.SECONDS);
+        } catch (MongoException e) {
+            fail();
         }
     }
 }
