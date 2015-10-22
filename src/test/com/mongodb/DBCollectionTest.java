@@ -777,6 +777,19 @@ public class DBCollectionTest extends TestCase {
         } catch (MongoException e) {
                 fail();
         }
+
+        // should fail if write concern is unacknowledged
+        try {
+            c.insert(Collections.<DBObject>singletonList(new BasicDBObject("level", 9)),
+                     new InsertOptions()
+                     .bypassDocumentValidation(true)
+                     .writeConcern(WriteConcern.UNACKNOWLEDGED));
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
     }
 
     @Test
@@ -811,6 +824,18 @@ public class DBCollectionTest extends TestCase {
                      true, null);
         } catch (MongoException e) {
                 fail();
+        }
+
+        // should fail if write concern is unacknowledged
+        try {
+            c.update(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1).append("level", 9), true, false,
+                     WriteConcern.UNACKNOWLEDGED,
+                     true, null);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
         }
     }
 
@@ -904,6 +929,19 @@ public class DBCollectionTest extends TestCase {
         } catch (MongoException e) {
             fail();
         }
+
+        // should fail if write concern is unacknowledged
+        try {
+            BulkWriteOperation bulk = c.initializeUnorderedBulkOperation();
+            bulk.setBypassDocumentValidation(true);
+            bulk.insert(new BasicDBObject("level", 9));
+            bulk.execute(WriteConcern.UNACKNOWLEDGED);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
     }
 
     @Test
@@ -961,6 +999,19 @@ public class DBCollectionTest extends TestCase {
         } catch (MongoException e) {
             fail();
         }
+
+        // should fail if write concern is unacknowledged
+        try {
+            BulkWriteOperation bulk = c.initializeUnorderedBulkOperation();
+            bulk.setBypassDocumentValidation(true);
+            bulk.find(new BasicDBObject("_id", 1)).upsert().update(new BasicDBObject("$set", new BasicDBObject("level", 9)));
+            bulk.execute(WriteConcern.UNACKNOWLEDGED);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
     }
 
     @Test
@@ -1017,6 +1068,19 @@ public class DBCollectionTest extends TestCase {
             bulk.execute(WriteConcern.ACKNOWLEDGED);
         } catch (MongoException e) {
             fail();
+        }
+
+        // should fail if write concern is unacknowledged
+        try {
+            BulkWriteOperation bulk = c.initializeUnorderedBulkOperation();
+            bulk.setBypassDocumentValidation(true);
+            bulk.find(new BasicDBObject("_id", 1)).upsert().replaceOne(new BasicDBObject("level", 9));
+            bulk.execute(WriteConcern.UNACKNOWLEDGED);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
         }
     }
 }

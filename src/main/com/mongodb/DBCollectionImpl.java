@@ -144,6 +144,7 @@ class DBCollectionImpl extends DBCollection {
 
         DBPort port = db.getConnector().getPrimaryPort();
         try {
+            throwIfBypassDocumentValidationNotSupported(writeConcern, bypassDocumentValidation, port);
             BulkWriteBatchCombiner bulkWriteBatchCombiner = new BulkWriteBatchCombiner(port.getAddress(), writeConcern);
             for (Run run : getRunGenerator(ordered, bypassDocumentValidation, writeRequests, writeConcern, encoder, port)) {
                 try {
@@ -181,6 +182,7 @@ class DBCollectionImpl extends DBCollection {
 
         DBPort port = db.getConnector().getPrimaryPort();
         try {
+            throwIfBypassDocumentValidationNotSupported(concern, bypassDocumentValidation, port);
             if (useWriteCommands(concern, port)) {
                 try {
                     return translateBulkWriteResult(insertWithCommandProtocol(list, concern, encoder, port,
@@ -262,6 +264,7 @@ class DBCollectionImpl extends DBCollection {
 
         DBPort port = db.getConnector().getPrimaryPort();
         try {
+            throwIfBypassDocumentValidationNotSupported(concern, bypassDocumentValidation, port);
             if (useWriteCommands(concern, port)) {
                 try {
                     BulkWriteResult bulkWriteResult =
@@ -503,6 +506,15 @@ class DBCollectionImpl extends DBCollection {
     private boolean useWriteCommands(final WriteConcern concern, final DBPort port) {
         return concern.callGetLastError() &&
                port.getServerVersion().compareTo(new ServerVersion(2, 6)) >= 0;
+    }
+
+    private void throwIfBypassDocumentValidationNotSupported(final WriteConcern concern, final Boolean bypassDocumentValidation,
+                                                             final DBPort port) {
+        if (!concern.callGetLastError()
+            && port.getServerVersion().compareTo(new ServerVersion(3, 2)) >= 0
+            && bypassDocumentValidation != null) {
+            throw new MongoException("Specifying bypassDocumentValidation with an unacknowledged WriteConcern is not supported");
+        }
     }
 
     private MessageSettings getMessageSettings(final DBPort port) {
