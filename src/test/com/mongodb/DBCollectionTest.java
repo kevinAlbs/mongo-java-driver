@@ -1083,4 +1083,106 @@ public class DBCollectionTest extends TestCase {
             // success
         }
     }
+
+    @Test
+    public void testBypassDocumentValidationForAggregateDollarOut() {
+        //given
+        DBObject options = new BasicDBObject("validator", QueryBuilder.start("level").greaterThanEquals(10).get());
+        DBCollection cOut = getDatabase().createCollection(getClass().getName() + ".out", options);
+        DBCollection c = collection;
+
+        c.insert(new BasicDBObject("level", 9));
+
+        try {
+            c.aggregate(Collections.<DBObject>singletonList(new BasicDBObject("$out", cOut.getName())));
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            c.aggregate(Collections.<DBObject>singletonList(new BasicDBObject("$out", cOut.getName())),
+                        AggregationOptions.builder()
+                        .bypassDocumentValidation(false)
+                        .build());
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            c.aggregate(Collections.<DBObject>singletonList(new BasicDBObject("$out", cOut.getName())),
+                        AggregationOptions.builder()
+                        .bypassDocumentValidation(true)
+                        .build());
+        } catch (MongoException e) {
+            fail();
+        }
+
+        try {
+            c.aggregate(Collections.<DBObject>singletonList(new BasicDBObject("$match", new BasicDBObject("_id", 1))),
+                        AggregationOptions.builder()
+                        .bypassDocumentValidation(true)
+                        .build());
+        } catch (MongoException e) {
+            fail();
+        }
+    }
+
+    @Test
+    public void testBypassDocumentValidationForNonInlineMapReduce() {
+        //given
+        DBObject options = new BasicDBObject("validator", QueryBuilder.start("level").greaterThanEquals(10).get());
+        DBCollection cOut = getDatabase().createCollection(getClass().getName() + ".out", options);
+        DBCollection c = collection;
+
+        c.insert(new BasicDBObject("level", 9));
+
+        String map = "function() { emit(this.level, this._id); }";
+        String reduce = "function(level, _id) { return 1; }";
+        try {
+            MapReduceCommand mapReduceCommand = new MapReduceCommand(c, map, reduce, cOut.getName(), MapReduceCommand.OutputType.REPLACE,
+                                                                     new BasicDBObject());
+            c.mapReduce(mapReduceCommand);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            MapReduceCommand mapReduceCommand = new MapReduceCommand(c, map, reduce, cOut.getName(), MapReduceCommand.OutputType.REPLACE,
+                                                                     new BasicDBObject());
+            mapReduceCommand.setBypassDocumentValidation(false);
+            c.mapReduce(mapReduceCommand);
+            if (serverIsAtLeastVersion(3.2)) {
+                fail();
+            }
+        } catch (MongoException e) {
+            // success
+        }
+
+        try {
+            MapReduceCommand mapReduceCommand = new MapReduceCommand(c, map, reduce, cOut.getName(), MapReduceCommand.OutputType.REPLACE,
+                                                                     new BasicDBObject());
+            mapReduceCommand.setBypassDocumentValidation(true);
+            c.mapReduce(mapReduceCommand);
+        } catch (MongoException e) {
+            fail();
+        }
+
+        try {
+            MapReduceCommand mapReduceCommand = new MapReduceCommand(c, map, reduce, null, MapReduceCommand.OutputType.INLINE,
+                                                                     new BasicDBObject());
+            mapReduceCommand.setBypassDocumentValidation(true);
+            c.mapReduce(mapReduceCommand);
+        } catch (MongoException e) {
+            fail();
+        }
+    }
 }

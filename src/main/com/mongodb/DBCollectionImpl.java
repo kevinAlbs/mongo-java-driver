@@ -92,20 +92,31 @@ class DBCollectionImpl extends DBCollection {
         if(options == null) {
             throw new IllegalArgumentException("options can not be null");
         }
-        DBObject last = pipeline.get(pipeline.size() - 1);
+        final DBPort port = db.getConnector().getPort(readPreference);
+        try {
+            final DBObject command = prepareAggregationCommand(pipeline, options, port.getServerVersion());
+            CommandResult res = db.getConnector().doOperation(db, port, new DBPort.Operation<CommandResult>() {
+                @Override
+                public CommandResult execute() throws IOException {
+                    return port.runCommand(db, command);
+                }
+            });
 
-        DBObject command = prepareCommand(pipeline, options);
+            res.throwOnError();
 
-        final CommandResult res = _db.command(command, getOptions(), readPreference);
-        res.throwOnError();
+            DBObject last = pipeline.get(pipeline.size() - 1);
+            String outCollection = (String) last.get("$out");
+            if (outCollection != null) {
+                DBCollection collection = _db.getCollection(outCollection);
+                return new DBCursor(collection, new BasicDBObject(), null, ReadPreference.primary());
+            } else {
+                Integer batchSize = options.getBatchSize();
+                return new QueryResultIterator(res, db.getMongo(), batchSize == null ? 0 : batchSize, getDecoder(),
+                                               res.getServerUsed());
+            }
 
-        String outCollection = (String) last.get("$out");
-        if (outCollection != null) {
-            DBCollection collection = _db.getCollection(outCollection);
-            return new DBCursor(collection, new BasicDBObject(), null, ReadPreference.primary());
-        } else {
-            Integer batchSize = options.getBatchSize();
-            return new QueryResultIterator(res, db.getMongo(), batchSize == null ? 0 : batchSize, getDecoder(), res.getServerUsed());
+        } finally {
+            db.getConnector().releasePort(port);
         }
     }
 
@@ -403,6 +414,7 @@ class DBCollectionImpl extends DBCollection {
                         throw new MongoException.DuplicateKey(commandResult);
                     } else { 
                         throw e;
+
                     }
                 }
             } else {
@@ -461,11 +473,6 @@ class DBCollectionImpl extends DBCollection {
                                                                    DefaultDBEncoder.FACTORY.create(), encoder,
                                                                    getMessageSettings(port));
         return writeWithCommandProtocol(port, UPDATE, message, writeConcern);
-    }
-
-    Boolean getBypassDocumentValidationForServerVersion(final Boolean bypassDocumentValidation, final ServerVersion serverVersion) {
-        return serverVersion.compareTo(new ServerVersion(3, 2)) >= 0 ? bypassDocumentValidation : null;
-
     }
 
     private BulkWriteResult writeWithCommandProtocol(final DBPort port, final WriteRequest.Type type, final BaseWriteCommandMessage message,

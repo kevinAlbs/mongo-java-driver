@@ -1728,7 +1728,7 @@ public abstract class DBCollection {
                 .outputMode(AggregationOptions.OutputMode.INLINE)
                 .build();
 
-        DBObject command = prepareCommand(pipeline, options);
+        DBObject command = prepareAggregationCommand(pipeline, options, null);
 
         CommandResult res = _db.command(command, getOptions(), readPreference);
         res.throwOnError();
@@ -1773,7 +1773,7 @@ public abstract class DBCollection {
      * @mongodb.server.release 2.6
      */
     public CommandResult explainAggregate(final List<DBObject> pipeline, final AggregationOptions options) {
-        DBObject command = prepareCommand(pipeline, options);
+        DBObject command = prepareAggregationCommand(pipeline, options, null);
         command.put("explain", true);
         final CommandResult res = _db.command(command, getOptions(), getReadPreference());
         res.throwOnError();
@@ -1845,7 +1845,7 @@ public abstract class DBCollection {
                                                        final DBEncoder encoder);
 
     @SuppressWarnings("unchecked")
-    DBObject prepareCommand(final List<DBObject> pipeline, final AggregationOptions options) {
+    DBObject prepareAggregationCommand(final List<DBObject> pipeline, final AggregationOptions options, final ServerVersion serverVersion) {
         if (pipeline.isEmpty()) {
             throw new MongoException("Aggregation pipelines can not be empty");
         }
@@ -1868,7 +1868,18 @@ public abstract class DBCollection {
             command.put("allowDiskUse", options.getAllowDiskUse());
         }
 
+        if (getBypassDocumentValidationForServerVersion(options.getBypassDocumentValidation(), serverVersion) != null) {
+            command.put("bypassDocumentValidation", options.getBypassDocumentValidation());
+        }
+
         return command;
+    }
+
+    Boolean getBypassDocumentValidationForServerVersion(final Boolean bypassDocumentValidation, final ServerVersion serverVersion) {
+        if (bypassDocumentValidation == null) {
+            return null;
+        }
+        return serverVersion.compareTo(new ServerVersion(3, 2)) >= 0 ? bypassDocumentValidation : null;
     }
 
     /**
