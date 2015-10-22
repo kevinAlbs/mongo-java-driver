@@ -1384,7 +1384,7 @@ public abstract class DBCollection {
     }
 
     CommandResult command(DBObject cmd, int options, ReadPreference readPrefs){
-    	return _db.command(cmd,getOptions(),readPrefs);
+    	return _db.command(cmd, getOptions(), readPrefs);
     }
 
     /**
@@ -1414,7 +1414,7 @@ public abstract class DBCollection {
                       .get() );
         ret.throwOnError();
         resetIndexCache();
-        return _db.getCollection( newName );
+        return _db.getCollection(newName);
     }
 
     /**
@@ -1431,7 +1431,7 @@ public abstract class DBCollection {
      * @mongodb.driver.manual reference/command/group/ Group Command
      */
     public DBObject group( DBObject key , DBObject cond , DBObject initial , String reduce ){
-        return group( key , cond , initial , reduce , null );
+        return group(key, cond, initial, reduce, null);
     }
 
     /**
@@ -1830,16 +1830,19 @@ public abstract class DBCollection {
         return new BulkWriteOperation(false, this);
     }
 
-    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final List<WriteRequest> requests) {
-        return executeBulkWriteOperation(ordered, requests, getWriteConcern());
+    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final Boolean bypassDocumentValidation,
+                                              final List<WriteRequest> requests) {
+        return executeBulkWriteOperation(ordered, bypassDocumentValidation, requests, getWriteConcern());
     }
 
-    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final List<WriteRequest> requests, final WriteConcern writeConcern) {
-        return executeBulkWriteOperation(ordered, requests, writeConcern, getDBEncoder());
+    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final Boolean bypassDocumentValidation,
+                                              final List<WriteRequest> requests, final WriteConcern writeConcern) {
+        return executeBulkWriteOperation(ordered, bypassDocumentValidation, requests, writeConcern, getDBEncoder());
     }
 
-    abstract BulkWriteResult executeBulkWriteOperation(final boolean ordered, final List<WriteRequest> requests,
-                                                       final WriteConcern writeConcern, final DBEncoder encoder);
+    abstract BulkWriteResult executeBulkWriteOperation(final boolean ordered, final Boolean bypassDocumentValidation,
+                                                       final List<WriteRequest> requests, final WriteConcern writeConcern,
+                                                       final DBEncoder encoder);
 
     @SuppressWarnings("unchecked")
     DBObject prepareCommand(final List<DBObject> pipeline, final AggregationOptions options) {

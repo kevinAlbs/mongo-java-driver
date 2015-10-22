@@ -127,7 +127,8 @@ class DBCollectionImpl extends DBCollection {
 
 
     @Override
-    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final List<WriteRequest> writeRequests,
+    BulkWriteResult executeBulkWriteOperation(final boolean ordered, final Boolean bypassDocumentValidation,
+                                              final List<WriteRequest> writeRequests,
                                               WriteConcern writeConcern, DBEncoder encoder) {
         isTrue("no operations", !writeRequests.isEmpty());
 
@@ -144,7 +145,7 @@ class DBCollectionImpl extends DBCollection {
         DBPort port = db.getConnector().getPrimaryPort();
         try {
             BulkWriteBatchCombiner bulkWriteBatchCombiner = new BulkWriteBatchCombiner(port.getAddress(), writeConcern);
-            for (Run run : getRunGenerator(ordered, writeRequests, writeConcern, encoder, port)) {
+            for (Run run : getRunGenerator(ordered, bypassDocumentValidation, writeRequests, writeConcern, encoder, port)) {
                 try {
                     BulkWriteResult result = run.execute(port);
                     if (result.isAcknowledged()) {
@@ -577,12 +578,13 @@ class DBCollectionImpl extends DBCollection {
         return last;
     }
 
-    private Iterable<Run> getRunGenerator(final boolean ordered, final List<WriteRequest> writeRequests,
+    private Iterable<Run> getRunGenerator(final boolean ordered, final Boolean bypassDocumentValidation,
+                                          final List<WriteRequest> writeRequests,
                                           final WriteConcern writeConcern, final DBEncoder encoder, final DBPort port) {
         if (ordered) {
-            return new OrderedRunGenerator(writeRequests, writeConcern, encoder, port);
+            return new OrderedRunGenerator(writeRequests, bypassDocumentValidation,writeConcern, encoder, port);
         } else {
-            return new UnorderedRunGenerator(writeRequests, writeConcern, encoder, port);
+            return new UnorderedRunGenerator(writeRequests, bypassDocumentValidation, writeConcern, encoder, port);
         }
     }
 
@@ -603,13 +605,16 @@ class DBCollectionImpl extends DBCollection {
 
     private class OrderedRunGenerator implements Iterable<Run> {
         private final List<WriteRequest> writeRequests;
+        private final Boolean bypassDocumentValidation;
         private final WriteConcern writeConcern;
         private final DBEncoder encoder;
         private final int maxBatchWriteSize;
 
-        public OrderedRunGenerator(final List<WriteRequest> writeRequests, final WriteConcern writeConcern, final DBEncoder encoder,
+        public OrderedRunGenerator(final List<WriteRequest> writeRequests, final Boolean bypassDocumentValidation,
+                                   final WriteConcern writeConcern, final DBEncoder encoder,
                                    final DBPort port) {
             this.writeRequests = writeRequests;
+            this.bypassDocumentValidation = bypassDocumentValidation;
             this.writeConcern = writeConcern.continueOnError(false);
             this.encoder = encoder;
             this.maxBatchWriteSize = getMaxWriteBatchSize(port);
@@ -627,7 +632,7 @@ class DBCollectionImpl extends DBCollection {
 
                 @Override
                 public Run next() {
-                    Run run = new Run(writeRequests.get(curIndex).getType(), writeConcern, encoder);
+                    Run run = new Run(writeRequests.get(curIndex).getType(), bypassDocumentValidation, writeConcern, encoder);
                     int startIndexOfNextRun = getStartIndexOfNextRun();
                     for (int i = curIndex; i < startIndexOfNextRun; i++) {
                         run.add(writeRequests.get(i), i);
@@ -657,13 +662,16 @@ class DBCollectionImpl extends DBCollection {
 
     private class UnorderedRunGenerator implements Iterable<Run> {
         private final List<WriteRequest> writeRequests;
+        private final Boolean bypassDocumentValidation;
         private final WriteConcern writeConcern;
         private final DBEncoder encoder;
         private final int maxBatchWriteSize;
 
-        public UnorderedRunGenerator(final List<WriteRequest> writeRequests, final WriteConcern writeConcern,
+        public UnorderedRunGenerator(final List<WriteRequest> writeRequests, final Boolean bypassDocumentValidation,
+                                     final WriteConcern writeConcern,
                                      final DBEncoder encoder, final DBPort port) {
             this.writeRequests = writeRequests;
+            this.bypassDocumentValidation = bypassDocumentValidation;
             this.writeConcern = writeConcern.continueOnError(true);
             this.encoder = encoder;
             this.maxBatchWriteSize = getMaxWriteBatchSize(port);
@@ -692,7 +700,7 @@ class DBCollectionImpl extends DBCollection {
                         WriteRequest writeRequest = writeRequests.get(curIndex);
                         Run run = runs.get(writeRequest.getType());
                         if (run == null) {
-                            run = new Run(writeRequest.getType(), writeConcern, encoder);
+                            run = new Run(writeRequest.getType(), bypassDocumentValidation, writeConcern, encoder);
                             runs.put(run.type, run);
                         }
                         run.add(writeRequest, curIndex);
@@ -716,12 +724,14 @@ class DBCollectionImpl extends DBCollection {
     private class Run {
         private final List<WriteRequest> writeRequests = new ArrayList<WriteRequest>();
         private final WriteRequest.Type type;
+        private final Boolean bypassDocumentValidation;
         private final WriteConcern writeConcern;
         private final DBEncoder encoder;
         private IndexMap indexMap;
 
-        Run(final WriteRequest.Type type, final WriteConcern writeConcern, final DBEncoder encoder) {
+        Run(final WriteRequest.Type type, final Boolean bypassDocumentValidation, final WriteConcern writeConcern, final DBEncoder encoder) {
             this.type = type;
+            this.bypassDocumentValidation = bypassDocumentValidation;
             this.indexMap = IndexMap.create();
             this.writeConcern = writeConcern;
             this.encoder = encoder;
@@ -783,7 +793,7 @@ class DBCollectionImpl extends DBCollection {
             return new RunExecutor(port) {
                 @Override
                 BulkWriteResult executeWriteCommandProtocol() {
-                    return updateWithCommandProtocol(updateRequests, writeConcern, null, encoder, port);  // TODO
+                    return updateWithCommandProtocol(updateRequests, writeConcern, bypassDocumentValidation, encoder, port);
                 }
 
                 @Override
@@ -809,7 +819,7 @@ class DBCollectionImpl extends DBCollection {
             return new RunExecutor(port) {
                 @Override
                 BulkWriteResult executeWriteCommandProtocol() {
-                    return updateWithCommandProtocol(replaceRequests, writeConcern, null, encoder, port);  // TODO
+                    return updateWithCommandProtocol(replaceRequests, writeConcern, bypassDocumentValidation, encoder, port);
                 }
 
                 @Override
@@ -855,7 +865,7 @@ class DBCollectionImpl extends DBCollection {
                     for (InsertRequest cur : insertRequests) {
                         documents.add(cur.getDocument());
                     }
-                    return insertWithCommandProtocol(documents, writeConcern, encoder, port, null);  // TODO
+                    return insertWithCommandProtocol(documents, writeConcern, encoder, port, bypassDocumentValidation);
                 }
 
                 @Override
