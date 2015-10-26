@@ -1629,7 +1629,7 @@ public class DBCollection {
                                   final boolean remove, final DBObject update,
                                   final boolean returnNew, final boolean upsert,
                                   final long maxTime, final TimeUnit maxTimeUnit) {
-        return findAndModifyImpl(query, fields, sort, remove, update, returnNew, upsert, null, maxTime, maxTimeUnit);
+        return findAndModifyImpl(query, fields, sort, remove, update, returnNew, upsert, null, maxTime, maxTimeUnit, getWriteConcern());
 
     }
 
@@ -1658,17 +1658,19 @@ public class DBCollection {
                                   final boolean returnNew, final boolean upsert,
                                   final boolean bypassDocumentValidation,
                                   final long maxTime, final TimeUnit maxTimeUnit) {
-        return findAndModifyImpl(query, fields, sort, remove, update, returnNew, upsert, bypassDocumentValidation, maxTime, maxTimeUnit);
+        return findAndModifyImpl(query, fields, sort, remove, update, returnNew, upsert, bypassDocumentValidation, maxTime, maxTimeUnit,
+                                 getWriteConcern());
     }
 
     private DBObject findAndModifyImpl(final DBObject query, final DBObject fields, final DBObject sort,
                                        final boolean remove, final DBObject update,
                                        final boolean returnNew, final boolean upsert,
                                        final Boolean bypassDocumentValidation,
-                                       final long maxTime, final TimeUnit maxTimeUnit) {
+                                       final long maxTime, final TimeUnit maxTimeUnit,
+                                       final WriteConcern writeConcern) {
         WriteOperation<DBObject> operation;
         if (remove) {
-            operation = new FindAndDeleteOperation<DBObject>(getNamespace(), getWriteConcern(), objectCodec)
+            operation = new FindAndDeleteOperation<DBObject>(getNamespace(), writeConcern, objectCodec)
                         .filter(wrapAllowNull(query))
                         .projection(wrapAllowNull(fields))
                         .sort(wrapAllowNull(sort))
@@ -1678,7 +1680,7 @@ public class DBCollection {
                 throw new IllegalArgumentException("Update document can't be null");
             }
             if (!update.keySet().isEmpty() && update.keySet().iterator().next().charAt(0) == '$') {
-                operation = new FindAndUpdateOperation<DBObject>(getNamespace(), getWriteConcern(), objectCodec, wrapAllowNull(update))
+                operation = new FindAndUpdateOperation<DBObject>(getNamespace(), writeConcern, objectCodec, wrapAllowNull(update))
                             .filter(wrap(query))
                             .projection(wrapAllowNull(fields))
                             .sort(wrapAllowNull(sort))
@@ -1687,7 +1689,7 @@ public class DBCollection {
                             .maxTime(maxTime, maxTimeUnit)
                             .bypassDocumentValidation(bypassDocumentValidation);
             } else {
-                operation = new FindAndReplaceOperation<DBObject>(getNamespace(), getWriteConcern(), objectCodec, wrap(update))
+                operation = new FindAndReplaceOperation<DBObject>(getNamespace(), writeConcern, objectCodec, wrap(update))
                             .filter(wrapAllowNull(query))
                             .projection(wrapAllowNull(fields))
                             .sort(wrapAllowNull(sort))

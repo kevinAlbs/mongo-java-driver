@@ -531,7 +531,7 @@ public class DBCollectionTest extends DatabaseTestCase {
         collection.setInternalClass("a.b", NestedTwoDBObject.class);
 
         DBObject doc = new TopLevelDBObject().append("a", new NestedOneDBObject().append("b", asList(new NestedTwoDBObject()))
-                                                                                 .append("c", new BasicDBObject()));
+                                                          .append("c", new BasicDBObject()));
         collection.save(doc);
         assertEquals(doc, collection.findOne());
     }
@@ -856,6 +856,41 @@ public class DBCollectionTest extends DatabaseTestCase {
             assertEquals(1, e.getWriteConcernResult().getCount());
             assertTrue(e.getWriteConcernResult().isUpdateOfExisting());
             assertEquals(null, e.getWriteConcernResult().getUpsertedId());
+        }
+    }
+
+    @Test
+    public void testWriteConcernExceptionOnFindAndModify() throws UnknownHostException {
+        assumeThat(serverVersionAtLeast(asList(2, 6, 0)), is(true));
+        assumeThat(isDiscoverableReplicaSet(), is(true));
+
+        ObjectId id = new ObjectId();
+        collection.setWriteConcern(new WriteConcern(5, 1));
+        try {
+            collection.findAndModify(new BasicDBObject("_id", id), null, null, false,
+                                     new BasicDBObject("$set", new BasicDBObject("x", 1)),
+                                     true, true);
+            fail("Expected findAndModify to error");
+        } catch (WriteConcernException e) {
+            assertNotNull(e.getServerAddress());
+            assertNotNull(e.getErrorMessage());
+            assertTrue(e.getCode() > 0);
+        } finally {
+            collection.setWriteConcern(WriteConcern.ACKNOWLEDGED);
+        }
+
+        collection.setWriteConcern(new WriteConcern(5, 1));
+        try {
+            collection.findAndModify(new BasicDBObject("_id", id), null, null, false,
+                                     new BasicDBObject("x", 1),
+                                     true, true);
+            fail("Expected findAndModify to error");
+        } catch (WriteConcernException e) {
+            assertNotNull(e.getServerAddress());
+            assertNotNull(e.getErrorMessage());
+            assertTrue(e.getCode() > 0);
+        } finally {
+            collection.setWriteConcern(WriteConcern.ACKNOWLEDGED);
         }
     }
 
