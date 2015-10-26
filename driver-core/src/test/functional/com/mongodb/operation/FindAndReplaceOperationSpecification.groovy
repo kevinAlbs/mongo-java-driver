@@ -22,6 +22,7 @@ import com.mongodb.MongoException
 import com.mongodb.MongoNamespace
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.WriteConcern
+import com.mongodb.WriteConcernException
 import com.mongodb.async.SingleResultCallback
 import com.mongodb.binding.AsyncConnectionSource
 import com.mongodb.binding.AsyncWriteBinding
@@ -41,6 +42,7 @@ import org.bson.BsonDocument
 import org.bson.BsonDocumentWrapper
 import org.bson.BsonInt32
 import org.bson.BsonInt64
+import org.bson.BsonObjectId
 import org.bson.BsonString
 import org.bson.Document
 import org.bson.codecs.BsonDocumentCodec
@@ -52,6 +54,7 @@ import java.util.concurrent.TimeUnit
 
 import static com.mongodb.ClusterFixture.executeAsync
 import static com.mongodb.ClusterFixture.getBinding
+import static com.mongodb.ClusterFixture.isDiscoverableReplicaSet
 import static com.mongodb.ClusterFixture.serverVersionAtLeast
 import static com.mongodb.client.model.Filters.gte
 import static java.util.Arrays.asList
@@ -334,6 +337,77 @@ class FindAndReplaceOperationSpecification extends OperationFunctionalSpecificat
         collectionHelper?.drop()
     }
 
+    @IgnoreIf({ !serverVersionAtLeast(asList(3, 2, 0)) || !isDiscoverableReplicaSet() })
+    def 'should throw on write concern error'() {
+        given:
+        CollectionHelper<Document> helper = new CollectionHelper<Document>(documentCodec, getNamespace())
+        Document pete = new Document('name', 'Pete').append('job', 'handyman')
+        helper.insertDocuments(new DocumentCodec(), pete)
+
+        BsonDocument jordan = new BsonDocumentWrapper<Document>([name: 'Jordan', job: 'sparky'] as Document, documentCodec)
+
+        when:
+        def operation = new FindAndReplaceOperation<Document>(getNamespace(), new WriteConcern(5, 1), documentCodec, jordan)
+                .filter(new BsonDocument('name', new BsonString('Pete')))
+        operation.execute(getBinding())
+
+        then:
+        def ex = thrown(WriteConcernException)
+        ex.errorCode == 100
+        ex.errorCode != null
+        !ex.errorMessage.isEmpty()
+        ex.writeConcernResult.count == 1
+        ex.writeConcernResult.updateOfExisting
+        ex.writeConcernResult.upsertedId == null
+
+        when:
+        operation = new FindAndReplaceOperation<Document>(getNamespace(), new WriteConcern(5, 1), documentCodec, jordan)
+                .filter(new BsonDocument('name', new BsonString('Bob')))
+                .upsert(true)
+        operation.execute(getBinding())
+
+        then:
+        ex = thrown(WriteConcernException)
+        ex.writeConcernResult.count == 1
+        !ex.writeConcernResult.updateOfExisting
+        ex.writeConcernResult.upsertedId instanceof BsonObjectId
+    }
+
+    @IgnoreIf({ !serverVersionAtLeast(asList(3, 2, 0)) || !isDiscoverableReplicaSet() })
+    def 'should throw on write concern error asynchronously'() {
+        given:
+        CollectionHelper<Document> helper = new CollectionHelper<Document>(documentCodec, getNamespace())
+        Document pete = new Document('name', 'Pete').append('job', 'handyman')
+        helper.insertDocuments(new DocumentCodec(), pete)
+
+        BsonDocument jordan = new BsonDocumentWrapper<Document>([name: 'Jordan', job: 'sparky'] as Document, documentCodec)
+
+        when:
+        def operation = new FindAndReplaceOperation<Document>(getNamespace(), new WriteConcern(5, 1), documentCodec, jordan)
+                .filter(new BsonDocument('name', new BsonString('Pete')))
+        executeAsync(operation)
+
+        then:
+        def ex = thrown(WriteConcernException)
+        ex.errorCode == 100
+        ex.errorCode != null
+        !ex.errorMessage.isEmpty()
+        ex.writeConcernResult.count == 1
+        ex.writeConcernResult.updateOfExisting
+        ex.writeConcernResult.upsertedId == null
+
+        when:
+        operation = new FindAndReplaceOperation<Document>(getNamespace(), new WriteConcern(5, 1), documentCodec, jordan)
+                .filter(new BsonDocument('name', new BsonString('Bob')))
+                .upsert(true)
+        executeAsync(operation)
+
+        then:
+        ex = thrown(WriteConcernException)
+        ex.writeConcernResult.count == 1
+        !ex.writeConcernResult.updateOfExisting
+        ex.writeConcernResult.upsertedId instanceof BsonObjectId
+    }
 
     def 'should create the expected command'() {
         given:
