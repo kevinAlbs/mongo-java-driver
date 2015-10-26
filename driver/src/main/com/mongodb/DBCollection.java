@@ -1662,10 +1662,10 @@ public class DBCollection {
     }
 
     private DBObject findAndModifyImpl(final DBObject query, final DBObject fields, final DBObject sort,
-                                  final boolean remove, final DBObject update,
-                                  final boolean returnNew, final boolean upsert,
-                                  final Boolean bypassDocumentValidation,
-                                  final long maxTime, final TimeUnit maxTimeUnit) {
+                                       final boolean remove, final DBObject update,
+                                       final boolean returnNew, final boolean upsert,
+                                       final Boolean bypassDocumentValidation,
+                                       final long maxTime, final TimeUnit maxTimeUnit) {
         WriteOperation<DBObject> operation;
         if (remove) {
             operation = new FindAndDeleteOperation<DBObject>(getNamespace(), getWriteConcern(), objectCodec)
