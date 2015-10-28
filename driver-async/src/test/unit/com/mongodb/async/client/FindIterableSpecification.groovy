@@ -37,6 +37,7 @@ import spock.lang.Specification
 import static com.mongodb.CustomMatchers.isTheSameAs
 import static com.mongodb.ReadPreference.secondary
 import static java.util.concurrent.TimeUnit.MILLISECONDS
+import static java.util.concurrent.TimeUnit.SECONDS
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders
 import static spock.util.matcher.HamcrestSupport.expect
 
@@ -59,6 +60,7 @@ class FindIterableSpecification extends Specification {
                 .modifiers(new Document('modifier', 1))
                 .projection(new Document('projection', 1))
                 .maxTime(1000, MILLISECONDS)
+                .maxAwaitTime(20, SECONDS)
                 .batchSize(100)
                 .limit(100)
                 .skip(10)
@@ -82,6 +84,7 @@ class FindIterableSpecification extends Specification {
                 .modifiers(new BsonDocument('modifier', new BsonInt32(1)))
                 .projection(new BsonDocument('projection', new BsonInt32(1)))
                 .maxTime(1000, MILLISECONDS)
+                .maxAwaitTime(20000, MILLISECONDS)
                 .batchSize(100)
                 .limit(100)
                 .skip(10)
@@ -96,6 +99,7 @@ class FindIterableSpecification extends Specification {
                 .modifiers(new Document('modifier', 2))
                 .projection(new Document('projection', 2))
                 .maxTime(999, MILLISECONDS)
+                .maxAwaitTime(18, SECONDS)
                 .batchSize(99)
                 .limit(99)
                 .skip(9)
@@ -114,6 +118,7 @@ class FindIterableSpecification extends Specification {
                 .modifiers(new BsonDocument('modifier', new BsonInt32(2)))
                 .projection(new BsonDocument('projection', new BsonInt32(2)))
                 .maxTime(999, MILLISECONDS)
+                .maxAwaitTime(18000, MILLISECONDS)
                 .batchSize(99)
                 .limit(99)
                 .skip(9)
