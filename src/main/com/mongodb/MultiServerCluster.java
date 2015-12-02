@@ -160,6 +160,9 @@ final class MultiServerCluster extends BaseCluster {
     }
 
     private boolean handleReplicaSetMemberChanged(final ServerDescription newDescription) {
+        LOGGER.fine(format("Handling replica set member changed event for server %s with description %s", newDescription.getAddress(),
+                           newDescription));
+
         if (!newDescription.isReplicaSetMember()) {
             LOGGER.severe(format("Expecting replica set member, but found a %s.  Removing %s from client view of cluster.",
                                  newDescription.getType(), newDescription.getAddress()));
@@ -188,6 +191,8 @@ final class MultiServerCluster extends BaseCluster {
         ensureServers(newDescription);
 
         if (newDescription.getCanonicalAddress() != null && !newDescription.getAddress().sameHost(newDescription.getCanonicalAddress())) {
+            LOGGER.info(format("Canonical address %s does not match server address.  Removing %s from client view of cluster",
+                               newDescription.getCanonicalAddress(), newDescription.getAddress()));
             removeServer(newDescription.getAddress());
             return true;
         }
@@ -195,10 +200,14 @@ final class MultiServerCluster extends BaseCluster {
         if (newDescription.isPrimary()) {
             if (newDescription.getElectionId() != null) {
                 if (maxElectionId != null && maxElectionId.compareTo(newDescription.getElectionId()) > 0) {
+                    LOGGER.info(format("Invalidating potential primary %s whose election id %s is less than the max election id seen so "
+                                        + "far %s", newDescription.getAddress(), newDescription.getElectionId(), maxElectionId));
                     addressToServerTupleMap.get(newDescription.getAddress()).server.invalidate();
                     return false;
                 }
 
+                LOGGER.fine(format("Setting max election id to %s from server %s", newDescription.getElectionId(),
+                                   newDescription.getAddress()));
                 maxElectionId = newDescription.getElectionId();
             }
 
