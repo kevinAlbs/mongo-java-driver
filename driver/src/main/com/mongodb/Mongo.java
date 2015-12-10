@@ -32,6 +32,8 @@ import com.mongodb.connection.Connection;
 import com.mongodb.connection.DefaultClusterFactory;
 import com.mongodb.connection.ServerDescription;
 import com.mongodb.connection.SocketStreamFactory;
+import com.mongodb.event.ClusterEventMulticaster;
+import com.mongodb.event.ClusterListener;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandListenerMulticaster;
 import com.mongodb.internal.connection.PowerOfTwoBufferPool;
@@ -689,7 +691,8 @@ public class Mongo {
                                                                           options.getSslSettings(),
                                                                           options.getSocketFactory()),
                                                   credentialsList,
-                                                  null, new JMXConnectionPoolListener(), null,
+                                                  createClusterListener(options.getClusterListeners()),
+                                                  new JMXConnectionPoolListener(), null,
                                                   createCommandListener(options.getCommandListeners()));
     }
 
@@ -701,6 +704,17 @@ public class Mongo {
                 return commandListeners.get(0);
             default:
                 return new CommandListenerMulticaster(commandListeners);
+        }
+    }
+
+    private static ClusterListener createClusterListener(final List<ClusterListener> clusterListeners) {
+        switch (clusterListeners.size()) {
+            case 0:
+                return null;
+            case 1:
+                return clusterListeners.get(0);
+            default:
+                return new ClusterEventMulticaster(clusterListeners);
         }
     }
 

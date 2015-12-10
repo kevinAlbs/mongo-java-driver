@@ -18,10 +18,12 @@ package com.mongodb;
 
 import com.mongodb.annotations.Immutable;
 import com.mongodb.annotations.NotThreadSafe;
+import com.mongodb.connection.Cluster;
 import com.mongodb.connection.ConnectionPoolSettings;
 import com.mongodb.connection.ServerSettings;
 import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.SslSettings;
+import com.mongodb.event.ClusterListener;
 import com.mongodb.event.CommandListener;
 import org.bson.codecs.configuration.CodecRegistry;
 
@@ -84,6 +86,7 @@ public class MongoClientOptions {
     private final SocketSettings heartbeatSocketSettings;
     private final SslSettings sslSettings;
     private final List<CommandListener> commandListeners;
+    private final List<ClusterListener> clusterListeners;
 
     private MongoClientOptions(final Builder builder) {
         description = builder.description;
@@ -115,6 +118,7 @@ public class MongoClientOptions {
         socketFactory = builder.socketFactory;
         cursorFinalizerEnabled = builder.cursorFinalizerEnabled;
         commandListeners = builder.commandListeners;
+        clusterListeners = builder.clusterListeners;
 
         connectionPoolSettings = ConnectionPoolSettings.builder()
                                                        .minSize(getMinConnectionsPerHost())
@@ -470,6 +474,15 @@ public class MongoClientOptions {
     }
 
     /**
+     * Gets the list of added {@code ClusterListener}. The default is an empty list.
+     *
+     * @return the unmodifiable list of cluster listeners
+     */
+    public List<ClusterListener> getClusterListeners() {
+        return Collections.unmodifiableList(clusterListeners);
+    }
+
+    /**
      * Override the decoder factory. Default is for the standard Mongo Java driver configuration.
      *
      * @return the decoder factory
@@ -636,6 +649,9 @@ public class MongoClientOptions {
         if (!commandListeners.equals(that.commandListeners)) {
             return false;
         }
+        if (!clusterListeners.equals(that.clusterListeners)) {
+            return false;
+        }
         if (requiredReplicaSetName != null ? !requiredReplicaSetName.equals(that.requiredReplicaSetName)
                                            : that.requiredReplicaSetName != null) {
             return false;
@@ -655,6 +671,7 @@ public class MongoClientOptions {
         result = 31 * result + (readConcern != null ? readConcern.hashCode() : 0);
         result = 31 * result + codecRegistry.hashCode();
         result = 31 * result + commandListeners.hashCode();
+        result = 31 * result + clusterListeners.hashCode();
         result = 31 * result + minConnectionsPerHost;
         result = 31 * result + maxConnectionsPerHost;
         result = 31 * result + threadsAllowedToBlockForConnectionMultiplier;
@@ -690,6 +707,7 @@ public class MongoClientOptions {
                + ", readConcern=" + readConcern
                + ", codecRegistry=" + codecRegistry
                + ", commandListeners=" + commandListeners
+               + ", clusterListeners=" + clusterListeners
                + ", minConnectionsPerHost=" + minConnectionsPerHost
                + ", maxConnectionsPerHost=" + maxConnectionsPerHost
                + ", threadsAllowedToBlockForConnectionMultiplier=" + threadsAllowedToBlockForConnectionMultiplier
@@ -733,6 +751,7 @@ public class MongoClientOptions {
         private ReadConcern readConcern = ReadConcern.DEFAULT;
         private CodecRegistry codecRegistry = MongoClient.getDefaultCodecRegistry();
         private List<CommandListener> commandListeners = new ArrayList<CommandListener>();
+        private List<ClusterListener> clusterListeners = new ArrayList<ClusterListener>();
 
         private int minConnectionsPerHost;
         private int maxConnectionsPerHost = 100;
@@ -806,6 +825,7 @@ public class MongoClientOptions {
             socketFactory = options.getSocketFactory();
             cursorFinalizerEnabled = options.isCursorFinalizerEnabled();
             commandListeners = options.commandListeners;
+            clusterListeners = options.clusterListeners;
         }
 
         /**
@@ -1051,6 +1071,18 @@ public class MongoClientOptions {
         public Builder addCommandListener(final CommandListener commandListener) {
             notNull("commandListener", commandListener);
             commandListeners.add(commandListener);
+            return this;
+        }
+
+        /**
+         * Adds the given cluster listener.
+         *
+         * @param clusterListener the cluster listener
+         * @return this
+         */
+        public Builder addClusterListener(final ClusterListener clusterListener) {
+            notNull("clusterListener", clusterListener);
+            clusterListeners.add(clusterListener);
             return this;
         }
 

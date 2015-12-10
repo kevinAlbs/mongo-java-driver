@@ -18,9 +18,13 @@ package com.mongodb.event;
 
 import com.mongodb.annotations.Beta;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.mongodb.assertions.Assertions.notNull;
 
 /**
  * A multicaster for cluster events.
@@ -28,6 +32,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Beta
 public class ClusterEventMulticaster implements ClusterListener {
     private final Set<ClusterListener> clusterListeners = Collections.newSetFromMap(new ConcurrentHashMap<ClusterListener, Boolean>());
+
+    /**
+     * Construct an instance with the given list of command listeners
+     *
+     * @param clusterListeners the non-null list of command listeners, none of which may be null
+     */
+    public ClusterEventMulticaster(final List<ClusterListener> clusterListeners) {
+        notNull("commandListeners", clusterListeners);
+        for (ClusterListener cur : clusterListeners) {
+            notNull("commandListener", cur);
+            add(cur);
+        }
+    }
 
     /**
      * Adds the given cluster listener to the list of listeners to invoke on cluster events.
