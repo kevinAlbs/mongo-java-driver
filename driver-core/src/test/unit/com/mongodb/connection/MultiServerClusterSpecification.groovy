@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.mongodb.connection
 
 import com.mongodb.MongoTimeoutException
 import com.mongodb.ServerAddress
+import com.mongodb.event.ClusterDescriptionChangedEvent
+import com.mongodb.event.ClusterEvent
 import com.mongodb.event.ClusterListener
 import com.mongodb.selector.WritableServerSelector
 import org.bson.types.ObjectId
@@ -26,6 +28,7 @@ import spock.lang.Specification
 import static com.mongodb.connection.ClusterConnectionMode.MULTIPLE
 import static com.mongodb.connection.ClusterType.REPLICA_SET
 import static com.mongodb.connection.ClusterType.SHARDED
+import static com.mongodb.connection.ClusterType.UNKNOWN
 import static com.mongodb.connection.ServerConnectionState.CONNECTED
 import static com.mongodb.connection.ServerConnectionState.CONNECTING
 import static com.mongodb.connection.ServerType.REPLICA_SET_GHOST
@@ -448,50 +451,52 @@ class MultiServerClusterSpecification extends Specification {
         cluster.getDescription().all == factory.getDescriptions(firstServer, secondServer, thirdServer)
     }
 
-    def 'should fire cluster opened and closed events'() {
+    def 'should fire cluster events'() {
         given:
         def clusterListener = Mock(ClusterListener)
+        def initialDescription = new ClusterDescription(MULTIPLE, UNKNOWN,
+                [ServerDescription.builder().state(CONNECTING).address(firstServer).build()])
+        def serverDescription = ServerDescription.builder().address(firstServer).state(CONNECTED)
+                .type(REPLICA_SET_PRIMARY).hosts([firstServer, secondServer, thirdServer] as Set).build()
 
         when:
-        def cluster = new MultiServerCluster(CLUSTER_ID, ClusterSettings.builder().hosts([firstServer, secondServer]).build(), factory,
+        def cluster = new MultiServerCluster(CLUSTER_ID, ClusterSettings.builder().mode(MULTIPLE).hosts([firstServer]).build(), factory,
                 clusterListener)
 
         then:
-        1 * clusterListener.clusterOpened(_)
-
-        when:
-        cluster.close()
-
-        then:
-        1 * clusterListener.clusterClosed(_)
-    }
-
-    def 'should fire cluster description changed event'() {
-        given:
-        def clusterListener = Mock(ClusterListener)
-        def cluster = new MultiServerCluster(CLUSTER_ID, ClusterSettings.builder().mode(MULTIPLE).hosts([firstServer]).build(), factory,
-                                             clusterListener)
+        1 * clusterListener.clusterOpening(new ClusterEvent(CLUSTER_ID))
+        1 * clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
+                initialDescription,
+                new ClusterDescription(MULTIPLE, UNKNOWN, [])))
 
         when:
         sendNotification(firstServer, REPLICA_SET_PRIMARY)
 
         then:
-        1 * clusterListener.clusterDescriptionChanged(_)
+        1 * clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
+                new ClusterDescription(MULTIPLE, REPLICA_SET,
+                        [serverDescription,
+                         ServerDescription.builder().state(CONNECTING).address(secondServer).build(),
+                         ServerDescription.builder().state(CONNECTING).address(thirdServer).build()]),
+                initialDescription))
 
-        cleanup:
+        when:
         cluster.close()
+
+        then:
+        1 * clusterListener.clusterClosed(new ClusterEvent(CLUSTER_ID))
     }
 
     def 'should connect to all servers'() {
         given:
         def cluster = new MultiServerCluster(CLUSTER_ID, ClusterSettings.builder().hosts([firstServer, secondServer]).build(), factory,
-                                             CLUSTER_LISTENER)
+                CLUSTER_LISTENER)
 
         when:
         cluster.connect()
 
         then:
-        [firstServer, secondServer].collect { factory.getServer(it).connectCount  }  == [1, 1]
+        [firstServer, secondServer].collect { factory.getServer(it).connectCount } == [1, 1]
     }
 
     def sendNotification(ServerAddress serverAddress, ServerType serverType) {

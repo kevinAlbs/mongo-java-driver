@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 MongoDB, Inc.
+ * Copyright (c) 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,9 @@ class DefaultClusterableServerFactory implements ClusterableServerFactory {
                                                                                 credentialList,
                                                                                 connectionListener),
                                             connectionPool);
-        return new DefaultServer(serverAddress, clusterSettings.getMode(), connectionPool, new DefaultConnectionFactory(),
-                                 serverMonitorFactory, commandListener);
+        return new DefaultServer(new ServerId(clusterId, serverAddress), clusterSettings.getMode(), connectionPool,
+                new DefaultConnectionFactory(), serverMonitorFactory, new NoOpServerListener(), new NoOpServerMonitorListener(),
+                commandListener);
     }
 
     @Override

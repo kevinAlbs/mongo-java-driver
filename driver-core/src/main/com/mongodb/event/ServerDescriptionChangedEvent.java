@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 MongoDB, Inc.
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,53 +12,48 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
-import com.mongodb.connection.ClusterDescription;
-import com.mongodb.connection.ClusterId;
+import com.mongodb.connection.ServerDescription;
+import com.mongodb.connection.ServerId;
 
 import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * An event signifying that the cluster description has changed.
+ * An event for changes to the description of a server.
+ *
+ * @since 3.4
  */
-@Beta
-public class ClusterDescriptionChangedEvent extends ClusterEvent {
-    private final ClusterDescription newDescription;
-    private final ClusterDescription oldDescription;
+public class ServerDescriptionChangedEvent extends ServerEvent {
 
-    /**
-     * Constructs a new instance of the event.
-     *
-     * @param clusterId      the cluster id
-     * @param newDescription the new cluster description
-     * @param oldDescription the old cluster description
-     */
-    public ClusterDescriptionChangedEvent(final ClusterId clusterId, final ClusterDescription newDescription,
-                                          final ClusterDescription oldDescription) {
-        super(clusterId);
+    private final ServerDescription newDescription;
+    private final ServerDescription oldDescription;
+
+    public ServerDescriptionChangedEvent(final ServerId serverId, final ServerDescription newDescription,
+                                         final ServerDescription oldDescription) {
+        super(serverId);
         this.newDescription = notNull("newDescription", newDescription);
         this.oldDescription = notNull("oldDescription", oldDescription);
     }
 
     /**
-     * Gets the new cluster description.
+     * Gets the new server description.
      *
-     * @return the cluster description
+     * @return the new server description
      */
-    public ClusterDescription getNewDescription() {
+    public ServerDescription getNewDescription() {
         return newDescription;
     }
 
     /**
-     * Gets the old cluster description.
+     * Gets the old server description.
      *
-     * @return the old cluster description
+     * @return the old server description
      */
-    public ClusterDescription getOldDescription() {
+    public ServerDescription getOldDescription() {
         return oldDescription;
     }
 
@@ -74,7 +69,7 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
             return false;
         }
 
-        ClusterDescriptionChangedEvent that = (ClusterDescriptionChangedEvent) o;
+        ServerDescriptionChangedEvent that = (ServerDescriptionChangedEvent) o;
 
         if (!newDescription.equals(that.newDescription)) {
             return false;

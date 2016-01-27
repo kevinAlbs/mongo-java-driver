@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright (c) 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.mongodb.connection;
+
+import com.mongodb.event.ServerMonitorListener;
 
 import static com.mongodb.assertions.Assertions.notNull;
 
@@ -33,7 +35,9 @@ class DefaultServerMonitorFactory implements ServerMonitorFactory {
     }
 
     @Override
-    public ServerMonitor create(final ChangeListener<ServerDescription> serverStateListener) {
-        return new DefaultServerMonitor(serverId, settings, serverStateListener, internalConnectionFactory, connectionPool);
+    public ServerMonitor create(final ServerMonitorListener serverMonitorListener,
+                                final ChangeListener<ServerDescription> serverStateListener) {
+        return new DefaultServerMonitor(serverId, settings, serverMonitorListener, serverStateListener, internalConnectionFactory,
+                connectionPool);
     }
 }

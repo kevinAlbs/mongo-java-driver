@@ -57,4 +57,37 @@ public class ConnectionMessageReceivedEvent extends ConnectionEvent {
     public int getSize() {
         return size;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionMessageReceivedEvent that = (ConnectionMessageReceivedEvent) o;
+
+        if (responseTo != that.responseTo) {
+            return false;
+        }
+        if (size != that.size) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + responseTo;
+        result = 31 * result + size;
+        return result;
+    }
 }

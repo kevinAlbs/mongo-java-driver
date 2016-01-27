@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ abstract class BaseCluster implements Cluster {
         this.settings = notNull("settings", settings);
         this.serverFactory = notNull("serverFactory", serverFactory);
         this.clusterListener = notNull("clusterListener", clusterListener);
-        clusterListener.clusterOpened(new ClusterEvent(clusterId));
+        clusterListener.clusterOpening(new ClusterEvent(clusterId));
     }
 
     @Override
@@ -192,6 +192,10 @@ abstract class BaseCluster implements Cluster {
         }
     }
 
+    protected ClusterId getClusterId() {
+        return clusterId;
+    }
+
     public ClusterSettings getSettings() {
         return settings;
     }
@@ -230,8 +234,8 @@ abstract class BaseCluster implements Cluster {
         phase.getAndSet(new CountDownLatch(1)).countDown();
     }
 
-    protected void fireChangeEvent() {
-        clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(clusterId, description));
+    protected void fireChangeEvent(final ClusterDescriptionChangedEvent event) {
+        clusterListener.clusterDescriptionChanged(event);
     }
 
     ClusterDescription getCurrentDescription() {

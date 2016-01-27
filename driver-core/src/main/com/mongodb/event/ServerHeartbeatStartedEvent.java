@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,40 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
-import com.mongodb.connection.ServerId;
+import com.mongodb.connection.ConnectionId;
 
-import static com.mongodb.assertions.Assertions.notNull;
+public class ServerHeartbeatStartedEvent extends ServerEvent {
+    private final ConnectionId connectionId;
 
-/**
- * A connection pool-related event.
- */
-@Beta
-public class ConnectionPoolEvent extends ClusterEvent {
-    private final ServerId serverId;
-
-    /**
-     * Constructs a new instance of the event.
-     *
-     * @param serverId the server id
-     */
-
-    public ConnectionPoolEvent(final ServerId serverId) {
-        super(serverId.getClusterId());
-        this.serverId = notNull("serverId", serverId);
+    public ServerHeartbeatStartedEvent(final ConnectionId connectionId) {
+        super(connectionId.getServerId());
+        this.connectionId = connectionId;
     }
 
-    /**
-     * Gets the server address associated with this connection pool
-     *
-     * @return the server address
-     */
-    public ServerId getServerId() {
-        return serverId;
+    public ConnectionId getConnectionId() {
+        return connectionId;
     }
 
     @Override
@@ -60,9 +43,9 @@ public class ConnectionPoolEvent extends ClusterEvent {
             return false;
         }
 
-        ConnectionPoolEvent that = (ConnectionPoolEvent) o;
+        ServerHeartbeatStartedEvent that = (ServerHeartbeatStartedEvent) o;
 
-        if (!serverId.equals(that.serverId)) {
+        if (!connectionId.equals(that.connectionId)) {
             return false;
         }
 
@@ -72,7 +55,14 @@ public class ConnectionPoolEvent extends ClusterEvent {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + serverId.hashCode();
+        result = 31 * result + connectionId.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ServerHeartbeatStartedEvent{"
+                + "connectionId=" + connectionId
+                + "} " + super.toString();
     }
 }

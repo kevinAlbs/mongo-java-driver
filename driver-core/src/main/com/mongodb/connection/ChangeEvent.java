@@ -27,15 +27,15 @@ import static com.mongodb.assertions.Assertions.notNull;
  */
 @Beta
 public class ChangeEvent<T> {
-    private final T oldValue;
+    private final T previousValue;
     private final T newValue;
 
     /**
-     * @param oldValue the value before the change
+     * @param previousValue the value before the change
      * @param newValue the value after the change
      */
-    public ChangeEvent(final T oldValue, final T newValue) {
-        this.oldValue = notNull("oldValue", oldValue);
+    public ChangeEvent(final T previousValue, final T newValue) {
+        this.previousValue = notNull("oldValue", previousValue);
         this.newValue = notNull("newValue", newValue);
     }
 
@@ -44,8 +44,8 @@ public class ChangeEvent<T> {
      *
      * @return the previous value
      */
-    public T getOldValue() {
-        return oldValue;
+    public T getPreviousValue() {
+        return previousValue;
     }
 
     /**
@@ -73,7 +73,7 @@ public class ChangeEvent<T> {
             return false;
         }
 
-        if (oldValue != null ? !oldValue.equals(that.oldValue) : that.oldValue != null) {
+        if (previousValue != null ? !previousValue.equals(that.previousValue) : that.previousValue != null) {
             return false;
         }
 
@@ -82,7 +82,7 @@ public class ChangeEvent<T> {
 
     @Override
     public int hashCode() {
-        int result = oldValue != null ? oldValue.hashCode() : 0;
+        int result = previousValue != null ? previousValue.hashCode() : 0;
         result = 31 * result + newValue.hashCode();
         return result;
     }
@@ -90,7 +90,7 @@ public class ChangeEvent<T> {
     @Override
     public String toString() {
         return "ChangeEvent{"
-               + "oldValue=" + oldValue
+                + "previousValue=" + previousValue
                + ", newValue=" + newValue
                + '}';
     }

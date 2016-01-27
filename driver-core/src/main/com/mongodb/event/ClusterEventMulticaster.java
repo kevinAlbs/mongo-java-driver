@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright (c) 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,9 @@ public class ClusterEventMulticaster implements ClusterListener {
     }
 
     @Override
-    public void clusterOpened(final ClusterEvent event) {
+    public void clusterOpening(final ClusterEvent event) {
         for (final ClusterListener cur : clusterListeners) {
-            cur.clusterOpened(event);
+            cur.clusterOpening(event);
         }
     }
 

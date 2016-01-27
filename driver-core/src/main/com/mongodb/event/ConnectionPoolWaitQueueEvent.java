@@ -45,5 +45,33 @@ public class ConnectionPoolWaitQueueEvent extends ConnectionPoolEvent {
     public long getThreadId() {
         return threadId;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionPoolWaitQueueEvent that = (ConnectionPoolWaitQueueEvent) o;
+
+        if (threadId != that.threadId) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
+        return result;
+    }
 }
 

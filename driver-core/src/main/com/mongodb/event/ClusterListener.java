@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright (c) 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public interface ClusterListener extends EventListener {
      *
      * @param event the event
      */
-    void clusterOpened(ClusterEvent event);
+    void clusterOpening(ClusterEvent event);
 
     /**
      * Invoked when a cluster is closed.

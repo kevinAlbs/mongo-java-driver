@@ -24,12 +24,17 @@ package com.mongodb.connection
 
 import com.mongodb.MongoIncompatibleDriverException
 import com.mongodb.ServerAddress
+import com.mongodb.event.ClusterDescriptionChangedEvent
+import com.mongodb.event.ClusterEvent
 import com.mongodb.event.ClusterListener
 import com.mongodb.selector.WritableServerSelector
 import spock.lang.Specification
 
 import static com.mongodb.connection.ClusterConnectionMode.SINGLE
+import static com.mongodb.connection.ClusterType.REPLICA_SET
+import static com.mongodb.connection.ClusterType.UNKNOWN
 import static com.mongodb.connection.ServerConnectionState.CONNECTED
+import static com.mongodb.connection.ServerConnectionState.CONNECTING
 import static com.mongodb.connection.ServerType.STANDALONE
 import static java.util.concurrent.TimeUnit.SECONDS
 
@@ -172,6 +177,45 @@ class SingleServerClusterSpecification extends Specification {
 
         then:
         factory.getServer(firstServer).connectCount == 1
+    }
+
+    def 'should fire cluster events'() {
+        given:
+        def serverDescription = ServerDescription.builder()
+                .address(firstServer)
+                .ok(true)
+                .state(CONNECTED)
+                .type(ServerType.REPLICA_SET_SECONDARY)
+                .hosts(new HashSet<String>(['localhost:27017', 'localhost:27018', 'localhost:27019']))
+                .build()
+        def initialDescription = new ClusterDescription(SINGLE, UNKNOWN,
+                [ServerDescription.builder().state(CONNECTING).address(firstServer).build()])
+        def listener = Mock(ClusterListener)
+        when:
+        def cluster = new SingleServerCluster(CLUSTER_ID,
+                ClusterSettings.builder().mode(SINGLE).hosts([firstServer]).build(),
+                factory, listener)
+
+        then:
+        1 * listener.clusterOpening(new ClusterEvent(CLUSTER_ID))
+
+        1 * listener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
+                initialDescription,
+                new ClusterDescription(SINGLE, UNKNOWN, [])))
+
+        when:
+        factory.getServer(firstServer).sendNotification(serverDescription)
+
+        then:
+        1 * listener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
+                new ClusterDescription(SINGLE, REPLICA_SET, [serverDescription]),
+                initialDescription))
+
+        when:
+        cluster.close()
+
+        then:
+        1 * listener.clusterClosed(new ClusterEvent(CLUSTER_ID))
     }
 
     def sendNotification(ServerAddress serverAddress, ServerType serverType) {

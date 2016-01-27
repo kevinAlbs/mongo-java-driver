@@ -220,10 +220,13 @@ public class ClusterDescription {
 
         ClusterDescription that = (ClusterDescription) o;
 
-        if (!all.equals(that.all)) {
+        if (connectionMode != that.connectionMode) {
             return false;
         }
-        if (connectionMode != that.connectionMode) {
+        if (type != that.type) {
+            return false;
+        }
+        if (!all.equals(that.all)) {
             return false;
         }
 
@@ -232,8 +235,9 @@ public class ClusterDescription {
 
     @Override
     public int hashCode() {
-        int result = all.hashCode();
-        result = 31 * result + connectionMode.hashCode();
+        int result = connectionMode.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + all.hashCode();
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 MongoDB, Inc.
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.mongodb.connection;
 
-import com.mongodb.event.ServerMonitorListener;
+package com.mongodb.event;
 
-interface ServerMonitorFactory {
 
-    ServerMonitor create(final ServerMonitorListener serverMonitorListener, ChangeListener<ServerDescription> serverStateListener);
+/**
+ * A listener for server monitor-related events
+ *
+ * @since 3.3
+ */
+public interface ServerMonitorListener {
 
+    void serverHearbeatStarted(ServerHeartbeatStartedEvent event);
+
+    void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event);
+
+    void serverHeartbeatFailed(ServerHeartbeatFailedEvent event);
 }
