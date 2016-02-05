@@ -600,7 +600,7 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
                                                                                               connectionSource.getServerDescription(),
                                                                                               connection);
                         try {
-                            if (serverIsAtLeastVersionThreeDotZero(connection.getDescription())) {
+                            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
                                 try {
                                     return new CommandReadOperation<BsonDocument>(getNamespace().getDatabaseName(),
                                                                                   new BsonDocument("explain", asCommandDocument()),
