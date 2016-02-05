@@ -636,8 +636,9 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
         def explainResult = findOperation.execute(getBinding()).next().get(0)
 
         then:
-        withoutOk(explainResult) == withoutOk(new FindOperation<BsonDocument>(getNamespace(), new BsonDocumentCodec())
-                .asExplainableOperation(QUERY_PLANNER).execute(getBinding()))
+        sanitizeExplainResult(explainResult) ==
+                sanitizeExplainResult(new FindOperation<BsonDocument>(getNamespace(), new BsonDocumentCodec())
+                        .asExplainableOperation(QUERY_PLANNER).execute(getBinding()))
     }
 
     @Category(Async)
@@ -656,8 +657,9 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
         })
 
         then:
-        withoutOk(explainResult) == withoutOk(new FindOperation<BsonDocument>(getNamespace(), new BsonDocumentCodec())
-                .asExplainableOperation(QUERY_PLANNER).execute(getBinding()))
+        sanitizeExplainResult(explainResult) ==
+                sanitizeExplainResult(new FindOperation<BsonDocument>(getNamespace(), new BsonDocumentCodec())
+                        .asExplainableOperation(QUERY_PLANNER).execute(getBinding()))
     }
 
     //  sanity check that the server accepts tailable and await data flags
@@ -943,8 +945,9 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
         connectionDescription: Stub(ConnectionDescription)
     ]
 
-    static BsonDocument withoutOk(BsonDocument document) {
+    static BsonDocument sanitizeExplainResult(BsonDocument document) {
         document.remove('ok')
+        document.remove('millis')
         document
     }
 
