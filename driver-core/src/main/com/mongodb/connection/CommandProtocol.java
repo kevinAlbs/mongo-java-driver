@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@ import com.mongodb.async.SingleResultCallback;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.CommandListener;
+import org.bson.BsonBinaryReader;
 import org.bson.BsonDocument;
-import org.bson.BsonDocumentReader;
 import org.bson.FieldNameValidator;
-import org.bson.codecs.BsonDocumentCodec;
+import org.bson.RawBsonDocument;
 import org.bson.codecs.Decoder;
 import org.bson.codecs.DecoderContext;
+import org.bson.codecs.RawBsonDocumentCodec;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -108,19 +109,22 @@ class CommandProtocol<T> implements Protocol<T> {
         try {
             sendMessage(commandMessage, connection);
             ResponseBuffers responseBuffers = connection.receiveMessage(commandMessage.getId());
-            ReplyMessage<BsonDocument> replyMessage;
+            ReplyMessage<RawBsonDocument> replyMessage;
             try {
-                 replyMessage = new ReplyMessage<BsonDocument>(responseBuffers, new BsonDocumentCodec(), commandMessage.getId());
+                replyMessage = new ReplyMessage<RawBsonDocument>(responseBuffers, new RawBsonDocumentCodec(),
+                        commandMessage.getId());
             } finally {
                 responseBuffers.close();
             }
 
-            BsonDocument response = replyMessage.getDocuments().get(0);
+            RawBsonDocument response = replyMessage.getDocuments().get(0);
             if (!ProtocolHelper.isCommandOk(response)) {
                 throw getCommandFailureException(response, connection.getDescription().getServerAddress());
             }
 
-            T retval = commandResultDecoder.decode(new BsonDocumentReader(response), DecoderContext.builder().build());
+            T retval = commandResultDecoder.decode(new BsonBinaryReader(response.getByteBuffer().asNIO()),
+                    DecoderContext.builder().build());
+
             sendSucceededEvent(connection.getDescription(), startTimeNanos, commandMessage, response);
             LOGGER.debug("Command execution completed");
             return retval;
@@ -222,7 +226,7 @@ class CommandProtocol<T> implements Protocol<T> {
         }
     }
 
-    class CommandResultCallback extends CommandResultBaseCallback<BsonDocument> {
+    class CommandResultCallback extends CommandResultBaseCallback<RawBsonDocument> {
         private final SingleResultCallback<T> callback;
         private final CommandMessage message;
         private final ConnectionDescription connectionDescription;
@@ -230,7 +234,7 @@ class CommandProtocol<T> implements Protocol<T> {
 
         CommandResultCallback(final SingleResultCallback<T> callback, final CommandMessage message,
                               final ConnectionDescription connectionDescription, final long startTimeNanos) {
-            super(new BsonDocumentCodec(), message.getId(), connectionDescription.getServerAddress());
+            super(new RawBsonDocumentCodec(), message.getId(), connectionDescription.getServerAddress());
             this.callback = callback;
             this.message = message;
             this.connectionDescription = connectionDescription;
@@ -238,7 +242,7 @@ class CommandProtocol<T> implements Protocol<T> {
         }
 
         @Override
-        protected void callCallback(final BsonDocument response, final Throwable throwableFromCallback) {
+        protected void callCallback(final RawBsonDocument response, final Throwable throwableFromCallback) {
             try {
                 if (throwableFromCallback != null) {
                     throw throwableFromCallback;
@@ -250,7 +254,8 @@ class CommandProtocol<T> implements Protocol<T> {
                         throw getCommandFailureException(response, getServerAddress());
                     } else {
                         sendSucceededEvent(connectionDescription, startTimeNanos, message, response);
-                        callback.onResult(commandResultDecoder.decode(new BsonDocumentReader(response), DecoderContext.builder().build()),
+                        callback.onResult(commandResultDecoder.decode(new BsonBinaryReader(response.getByteBuffer().asNIO()),
+                                DecoderContext.builder().build()),
                                 null);
                     }
                 }
