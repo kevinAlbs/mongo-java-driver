@@ -185,9 +185,6 @@ public final class MongoCredential {
      * To override the {@link javax.security.auth.Subject} with which the authentication executes, add a mechanism property with the name
      * {@code "JAVA_SUBJECT"} with the value of a {@code Subject} instance.
      * <p>
-     * To override the {@link java.security.AccessControlContext} with which the authentication executes, add a mechanism property with
-     * the name {@code "JAVA_ACCESS_CONTROL_CONTEXT"} with the value of an {@code AccessControlContext} instance.
-     * <p>
      * To override the properties of the {@link javax.security.sasl.SaslClient} with which the authentication executes, add a mechanism
      * property with the name {@code "JAVA_SASL_CLIENT_PROPERTIES"} with the value of a {@code Map<String, Object} instance containing the
      * necessary properties.  This can be useful if the application is customizing the default
