@@ -32,8 +32,6 @@ import spock.lang.Specification
 
 import javax.security.auth.Subject
 import javax.security.auth.login.LoginContext
-import java.security.AccessControlContext
-import java.security.AccessController
 
 import static com.mongodb.AuthenticationMechanism.GSSAPI
 import static com.mongodb.ClusterFixture.getConnectionString
@@ -100,21 +98,19 @@ class GSSAPIAuthenticationSpecification extends Specification {
         async << [true, false]
     }
 
-    def 'should authorize when successfully authenticated with Subject and AccessControlContext properties'() {
+    def 'should authorize when successfully authenticated with Subject property'() {
         when:
-        Subject subject = null
-        if (loginContext != null) {
-            loginContext.login();
-            subject = loginContext.getSubject()
-        }
+        def loginContext = new LoginContext('com.sun.security.jgss.krb5.initiate')
+        loginContext.login();
+        def subject = loginContext.getSubject()
 
         then:
-        loginContext == null || subject != null
-        subject == null      || subject.getPrincipals().size() == 1
-        subject == null      || getMongoCredential().getUserName() == subject.getPrincipals().iterator().next().getName()
+        subject != null
+        subject.getPrincipals().size() == 1
+        getMongoCredential().getUserName() == subject.getPrincipals().iterator().next().getName()
 
         when:
-        def connection = createConnection(async, getMongoCredential(subject, accessControlContext))
+        def connection = createConnection(async, getMongoCredential(subject))
         openConnection(connection, async)
         executeCommand(getConnectionString().getDatabase(), new BsonDocument('count', new BsonString('test')), connection)
 
@@ -125,24 +121,21 @@ class GSSAPIAuthenticationSpecification extends Specification {
         connection?.close()
 
         where:
-        [async, loginContext, accessControlContext] << [[true, false],
-                                                        [new LoginContext('com.sun.security.jgss.krb5.initiate'), null],
-                                                        [AccessController.getContext(), null]].combinations()
+        async << [true, false]
     }
 
-    def 'shold throw MongoSecurityException when authentication fails with Subject property'() {
+    def 'should throw MongoSecurityException when authentication fails with Subject property'() {
         when:
         LoginContext context = new LoginContext('com.sun.security.jgss.krb5.initiate');
         context.login();
 
-        AccessControlContext accessControlContext = AccessController.getContext();
         Subject subject = context.getSubject();
 
         then:
         subject != null
 
         when:
-        def connection = createConnection(async, getMongoCredential(createGSSAPICredential('wrongUserName'), subject, accessControlContext))
+        def connection = createConnection(async, getMongoCredential(createGSSAPICredential('wrongUserName'), subject))
         openConnection(connection, async)
 
         then:
@@ -179,20 +172,12 @@ class GSSAPIAuthenticationSpecification extends Specification {
         getMongoCredential().withMechanismProperty('JAVA_SASL_CLIENT_PROPERTIES', saslClientProperties);
     }
 
-    private static MongoCredential getMongoCredential(final Subject subject, final AccessControlContext accessControlContext) {
-        getMongoCredential(getMongoCredential(), subject, accessControlContext);
+    private static MongoCredential getMongoCredential(final Subject subject) {
+        getMongoCredential(getMongoCredential(), subject);
     }
 
-    private static MongoCredential getMongoCredential(final MongoCredential mongoCredential, final Subject subject,
-                                                      final AccessControlContext accessControlContext) {
-        def retVal = mongoCredential
-        if (subject != null) {
-            retVal = retVal.withMechanismProperty('JAVA_SUBJECT', subject)
-        }
-        if (accessControlContext != null) {
-            retVal = retVal.withMechanismProperty('JAVA_ACCESS_CONTROL_CONTEXT', accessControlContext)
-        }
-        retVal
+    private static MongoCredential getMongoCredential(final MongoCredential mongoCredential, final Subject subject) {
+        mongoCredential.withMechanismProperty('JAVA_SUBJECT', subject)
     }
 
     private static MongoCredential getMongoCredential() {

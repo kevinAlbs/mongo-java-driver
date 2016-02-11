@@ -28,7 +28,6 @@ import org.bson.BsonString;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 
 import static com.mongodb.connection.CommandHelper.executeCommand;
@@ -37,7 +36,6 @@ import static com.mongodb.connection.CommandHelper.executeCommandAsync;
 abstract class SaslAuthenticator extends Authenticator {
 
     public static final String JAVA_SUBJECT_KEY = "JAVA_SUBJECT";
-    public static final String JAVA_ACCESS_CONTROL_CONTEXT_KEY = "JAVA_ACCESS_CONTROL_CONTEXT";
 
     SaslAuthenticator(final MongoCredential credential) {
         super(credential);
@@ -112,10 +110,6 @@ abstract class SaslAuthenticator extends Authenticator {
 
     protected abstract SaslClient createSaslClient(final ServerAddress serverAddress);
 
-    private AccessControlContext getAccessControlContext() {
-        return getCredential().<AccessControlContext>getMechanismProperty(JAVA_ACCESS_CONTROL_CONTEXT_KEY, null);
-    }
-
     private Subject getSubject() {
         return getCredential().<Subject>getMechanismProperty(JAVA_SUBJECT_KEY, null);
     }
@@ -165,14 +159,10 @@ abstract class SaslAuthenticator extends Authenticator {
     }
 
     void doAsSubject(final java.security.PrivilegedAction<Void> action) {
-        if (getAccessControlContext() == null) {
-            if (getSubject() == null) {
-                action.run();
-            } else {
-                Subject.doAs(getSubject(), action);
-            }
+        if (getSubject() == null) {
+            action.run();
         } else {
-            Subject.doAsPrivileged(getSubject(), action, getAccessControlContext());
+            Subject.doAs(getSubject(), action);
         }
     }
 
