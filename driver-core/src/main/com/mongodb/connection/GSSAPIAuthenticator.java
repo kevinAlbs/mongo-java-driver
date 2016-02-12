@@ -35,15 +35,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.mongodb.AuthenticationMechanism.GSSAPI;
+import static com.mongodb.MongoCredential.CANONICALIZE_HOST_NAME_KEY;
+import static com.mongodb.MongoCredential.JAVA_SASL_CLIENT_PROPERTIES_KEY;
+import static com.mongodb.MongoCredential.SERVICE_NAME_KEY;
 
 class GSSAPIAuthenticator extends SaslAuthenticator {
     private static final String GSSAPI_MECHANISM_NAME = "GSSAPI";
     private static final String GSSAPI_OID = "1.2.840.113554.1.2.2";
-    public static final String SERVICE_NAME_KEY = "SERVICE_NAME";
     public static final String SERVICE_NAME_DEFAULT_VALUE = "mongodb";
-    public static final String CANONICALIZE_HOST_NAME_KEY = "CANONICALIZE_HOST_NAME";
     public static final Boolean CANONICALIZE_HOST_NAME_DEFAULT_VALUE = false;
-    public static final String JAVA_SASL_CLIENT_PROPERTIES_KEY = "JAVA_SASL_CLIENT_PROPERTIES";
 
     GSSAPIAuthenticator(final MongoCredential credential) {
         super(credential);

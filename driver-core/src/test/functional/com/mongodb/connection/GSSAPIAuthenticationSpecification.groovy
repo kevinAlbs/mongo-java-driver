@@ -169,7 +169,7 @@ class GSSAPIAuthenticationSpecification extends Specification {
     }
 
     private static MongoCredential getMongoCredential(final Map<String, Object> saslClientProperties) {
-        getMongoCredential().withMechanismProperty('JAVA_SASL_CLIENT_PROPERTIES', saslClientProperties);
+        getMongoCredential().withMechanismProperty(MongoCredential.JAVA_SASL_CLIENT_PROPERTIES_KEY, saslClientProperties);
     }
 
     private static MongoCredential getMongoCredential(final Subject subject) {
@@ -177,7 +177,7 @@ class GSSAPIAuthenticationSpecification extends Specification {
     }
 
     private static MongoCredential getMongoCredential(final MongoCredential mongoCredential, final Subject subject) {
-        mongoCredential.withMechanismProperty('JAVA_SUBJECT', subject)
+        mongoCredential.withMechanismProperty(MongoCredential.JAVA_SUBJECT_KEY, subject)
     }
 
     private static MongoCredential getMongoCredential() {

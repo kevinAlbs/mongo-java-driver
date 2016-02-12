@@ -87,6 +87,42 @@ public final class MongoCredential {
     public static final String SCRAM_SHA_1_MECHANISM = AuthenticationMechanism.SCRAM_SHA_1.getMechanismName();
 
     /**
+     * Mechanism property key for overriding the service name for GSSAPI authentication.
+     *
+     * @see #createGSSAPICredential(String)
+     * @see #withMechanismProperty(String, Object)
+     * @since 3.3
+     */
+    public static final String SERVICE_NAME_KEY = "SERVICE_NAME";
+
+    /**
+     * Mechanism property key for specifying whether to canonicalize the host name for GSSAPI authentication.
+     *
+     * @see #createGSSAPICredential(String)
+     * @see #withMechanismProperty(String, Object)
+     * @since 3.3
+     */
+    public static final String CANONICALIZE_HOST_NAME_KEY = "CANONICALIZE_HOST_NAME";
+
+    /*
+     * Mechanism property key for overriding the SasClient properties for GSSAPI authentication.
+     *
+     * @see #createGSSAPICredential(String)
+     * @see #withMechanismProperty(String, Object)
+     * @since 3.3
+     */
+    public static final String JAVA_SASL_CLIENT_PROPERTIES_KEY = "JAVA_SASL_CLIENT_PROPERTIES";
+
+    /*
+     * Mechanism property key for overriding the {@link javax.security.Subject} under which GSSAPI authentication executes.
+     *
+     * @see #createGSSAPICredential(String)
+     * @see #withMechanismProperty(String, Object)
+     * @since 3.3
+     */
+    public static final String JAVA_SUBJECT_KEY = "JAVA_SUBJECT";
+
+    /**
      * Creates a MongoCredential instance with an unspecified mechanism.  The client will negotiate the best mechanism based on the
      * version of the server that the client is authenticating to.  If the server version is 3.0 or higher,
      * the driver will authenticate using the SCRAM-SHA-1 mechanism.  Otherwise, the driver will authenticate using the MONGODB_CR
@@ -195,6 +231,10 @@ public final class MongoCredential {
      * @mongodb.server.release 2.4
      * @mongodb.driver.manual core/authentication/#kerberos-authentication GSSAPI
      * @see #withMechanismProperty(String, Object)
+     * @see #SERVICE_NAME_KEY
+     * @see #CANONICALIZE_HOST_NAME_KEY
+     * @see #JAVA_SUBJECT_KEY
+     * @see #JAVA_SASL_CLIENT_PROPERTIES_KEY
      */
     public static MongoCredential createGSSAPICredential(final String userName) {
         return new MongoCredential(GSSAPI, userName, "$external", null);

@@ -30,12 +30,11 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import java.security.PrivilegedAction;
 
+import static com.mongodb.MongoCredential.JAVA_SUBJECT_KEY;
 import static com.mongodb.connection.CommandHelper.executeCommand;
 import static com.mongodb.connection.CommandHelper.executeCommandAsync;
 
 abstract class SaslAuthenticator extends Authenticator {
-
-    public static final String JAVA_SUBJECT_KEY = "JAVA_SUBJECT";
 
     SaslAuthenticator(final MongoCredential credential) {
         super(credential);
