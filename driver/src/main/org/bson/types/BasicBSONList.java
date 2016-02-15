@@ -148,10 +148,8 @@ public class BasicBSONList extends ArrayList<Object> implements BSONObject {
     @SuppressWarnings("unchecked")
     public Map toMap() {
         Map m = new HashMap();
-        Iterator i = this.keySet().iterator();
-        while (i.hasNext()) {
-            Object s = i.next();
-            m.put(s, this.get(String.valueOf(s)));
+        for (int i = 0; i < size(); i++) {
+            m.put(Integer.toString(i), get(i));
         }
         return m;
     }

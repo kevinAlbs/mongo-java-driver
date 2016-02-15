@@ -82,4 +82,16 @@ class BasicBSONListSpecification extends Specification {
         then:
         thrown NoSuchElementException
     }
+
+    def 'should convert to Map'() {
+        given:
+        BSONObject obj = new BasicBSONList()
+        obj.put('0', 'a')
+        obj.put('1', 'b')
+        obj.put('2', 'c')
+        obj.put('4', 'd')
+
+        expect:
+        obj.toMap() == ['0': 'a', '1': 'b', '2': 'c', '3': null, '4': 'd']
+    }
 }
