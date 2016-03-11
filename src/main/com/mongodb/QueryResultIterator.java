@@ -24,11 +24,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.logging.Logger;
 
 import static com.mongodb.DBApiLayer.DeadCursor;
 import static java.util.Arrays.asList;
 
 class QueryResultIterator implements Cursor {
+
+    private static final Logger LOGGER = Loggers.getLogger("query");
 
     private final DBDecoder _decoder;
     private final ServerAddress _host;
@@ -181,6 +184,23 @@ class QueryResultIterator implements Cursor {
     }
 
     private void initFromQueryResponse(final Response response, final Mongo mongo) {
+        if ((response._flags & Bytes.RESULTFLAG_ERRSET) > 0) {
+            LOGGER.warning(String.format("Query failed with reply: " +
+                                                 "length in bytes %d, " +
+                                                 "requestId %d, " +
+                                                 "responseTo %d, " +
+                                                 "flags %d, " +
+                                                 "cursor %d, " +
+                                                 "num documents %d, " +
+                                                 "error document '%s'",
+                    response._len,
+                    response._id,
+                    response._responseTo,
+                    response._flags,
+                    response._cursor,
+                    response._num,
+                    response._objects.isEmpty() ? "" : response._objects.get(0)));
+        }
         init(response._flags, response.cursor(), response.size(), response.iterator(), mongo);
     }
 
