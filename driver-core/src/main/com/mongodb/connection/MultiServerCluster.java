@@ -20,6 +20,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.ClusterDescriptionChangedEvent;
+import com.mongodb.event.ServerDescriptionChangedEvent;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
@@ -118,14 +119,14 @@ final class MultiServerCluster extends BaseCluster {
     }
 
 
-    private final class DefaultServerStateListener implements ChangeListener<ServerDescription> {
+    private final class DefaultServerStateListener extends NoOpServerListener {
         @Override
-        public void stateChanged(final ChangeEvent<ServerDescription> event) {
+        public void serverDescriptionChanged(final ServerDescriptionChangedEvent event) {
             onChange(event);
         }
     }
 
-    private void onChange(final ChangeEvent<ServerDescription> event) {
+    private void onChange(final ServerDescriptionChangedEvent event) {
         ClusterDescription oldClusterDescription = null;
         ClusterDescription newClusterDescription = null;
         boolean shouldUpdateDescription = true;
@@ -134,7 +135,7 @@ final class MultiServerCluster extends BaseCluster {
                 return;
             }
 
-            ServerDescription newDescription = event.getNewValue();
+            ServerDescription newDescription = event.getNewDescription();
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(format("Handling description changed event for server %s with description %s",
@@ -150,7 +151,7 @@ final class MultiServerCluster extends BaseCluster {
                 return;
             }
 
-            if (event.getNewValue().isOk()) {
+            if (event.getNewDescription().isOk()) {
                 if (clusterType == UNKNOWN && newDescription.getType() != REPLICA_SET_GHOST) {
                     clusterType = newDescription.getClusterType();
                     if (LOGGER.isInfoEnabled()) {

@@ -29,20 +29,20 @@ import static com.mongodb.assertions.Assertions.notNull;
 public final class ClusterDescriptionChangedEvent {
     private final ClusterId clusterId;
     private final ClusterDescription newDescription;
-    private final ClusterDescription oldDescription;
+    private final ClusterDescription previousDescription;
 
     /**
      * Constructs a new instance of the event.
      *
-     * @param clusterId      the cluster id
-     * @param newDescription the new cluster description
-     * @param oldDescription the old cluster description
+     * @param clusterId           the non-null cluster id
+     * @param newDescription      the non-null new cluster description
+     * @param previousDescription the non-null previous cluster description
      */
     public ClusterDescriptionChangedEvent(final ClusterId clusterId, final ClusterDescription newDescription,
-                                          final ClusterDescription oldDescription) {
+                                          final ClusterDescription previousDescription) {
         this.clusterId = notNull("clusterId", clusterId);
         this.newDescription = notNull("newDescription", newDescription);
-        this.oldDescription = notNull("oldDescription", oldDescription);
+        this.previousDescription = notNull("previousDescription", previousDescription);
     }
 
     /**
@@ -64,12 +64,12 @@ public final class ClusterDescriptionChangedEvent {
     }
 
     /**
-     * Gets the old cluster description.
+     * Gets the previous cluster description.
      *
-     * @return the old cluster description
+     * @return the previous cluster description
      */
-    public ClusterDescription getOldDescription() {
-        return oldDescription;
+    public ClusterDescription getPreviousDescription() {
+        return previousDescription;
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class ClusterDescriptionChangedEvent {
         return "ClusterDescriptionChangedEvent{"
                        + "clusterId=" + clusterId
                        + ", newDescription=" + newDescription
-                       + ", oldDescription=" + oldDescription
+                       + ", previousDescription=" + previousDescription
                        + '}';
     }
 }

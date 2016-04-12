@@ -30,6 +30,7 @@ import com.mongodb.event.ClusterDescriptionChangedEvent;
 import com.mongodb.event.ClusterEventMulticaster;
 import com.mongodb.event.ClusterListener;
 import com.mongodb.event.ClusterOpeningEvent;
+import com.mongodb.event.ServerListener;
 import com.mongodb.internal.connection.ConcurrentLinkedDeque;
 import com.mongodb.selector.CompositeServerSelector;
 import com.mongodb.selector.ServerSelector;
@@ -353,9 +354,8 @@ abstract class BaseCluster implements Cluster {
     }
 
     protected ClusterableServer createServer(final ServerAddress serverAddress,
-                                             final ChangeListener<ServerDescription> serverStateListener) {
-        ClusterableServer server = serverFactory.create(serverAddress);
-        server.addChangeListener(serverStateListener);
+                                             final ServerListener serverListener) {
+        ClusterableServer server = serverFactory.create(serverAddress, serverListener);
         return server;
     }
 

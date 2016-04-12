@@ -21,7 +21,9 @@ import com.mongodb.ServerAddress;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.ConnectionListener;
 import com.mongodb.event.ConnectionPoolListener;
+import com.mongodb.event.ServerListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class DefaultClusterableServerFactory implements ClusterableServerFactory {
@@ -58,7 +60,7 @@ class DefaultClusterableServerFactory implements ClusterableServerFactory {
     // CHECKSTYLE:ON
 
     @Override
-    public ClusterableServer create(final ServerAddress serverAddress) {
+    public ClusterableServer create(final ServerAddress serverAddress, final ServerListener serverListener) {
         ConnectionPool connectionPool = new DefaultConnectionPool(new ServerId(clusterId, serverAddress),
                                                                   new InternalStreamConnectionFactory(streamFactory,
                                                                                                       credentialList,
@@ -70,8 +72,13 @@ class DefaultClusterableServerFactory implements ClusterableServerFactory {
                                                                                 credentialList,
                                                                                 connectionListener),
                                             connectionPool);
+        List<ServerListener> serverListeners = new ArrayList<ServerListener>();
+        if (serverListener != null) {
+            serverListeners.add(serverListener);
+        }
+        serverListeners.addAll(settings.getServerListeners());
         return new DefaultServer(new ServerId(clusterId, serverAddress), clusterSettings.getMode(), connectionPool,
-                new DefaultConnectionFactory(), serverMonitorFactory, settings.getServerListeners(), commandListener);
+                new DefaultConnectionFactory(), serverMonitorFactory, serverListeners, commandListener);
     }
 
     @Override

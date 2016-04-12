@@ -470,7 +470,7 @@ class MultiServerClusterSpecification extends Specification {
         1 * clusterListener.clusterOpening { it.clusterId == CLUSTER_ID }
         1 * clusterListener.clusterDescriptionChanged {
             it.clusterId == CLUSTER_ID &&
-                    it.oldDescription == new ClusterDescription(MULTIPLE, UNKNOWN, []) &&
+                    it.previousDescription == new ClusterDescription(MULTIPLE, UNKNOWN, []) &&
                     it.newDescription == initialDescription
         }
 
@@ -480,7 +480,7 @@ class MultiServerClusterSpecification extends Specification {
         then:
         1 * clusterListener.clusterDescriptionChanged {
             it.clusterId == CLUSTER_ID &&
-                    it.oldDescription == initialDescription &&
+                    it.previousDescription == initialDescription &&
                     it.newDescription == new ClusterDescription(MULTIPLE, REPLICA_SET,
                     [serverDescription,
                      ServerDescription.builder().state(CONNECTING).address(secondServer).build(),

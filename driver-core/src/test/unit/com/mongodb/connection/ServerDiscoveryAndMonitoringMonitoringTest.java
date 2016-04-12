@@ -90,7 +90,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
                 BsonDocument topologyDescriptionChangedEventDocument = eventDocument.getDocument("topology_description_changed_event");
                 assertEqualClusterDescriptions(createClusterDescriptionFromClusterDescriptionDocument(
                         topologyDescriptionChangedEventDocument.getDocument("previousDescription")),
-                        event.getOldDescription());
+                        event.getPreviousDescription());
                 assertEqualClusterDescriptions(createClusterDescriptionFromClusterDescriptionDocument(
                         topologyDescriptionChangedEventDocument.getDocument("newDescription")),
                         event.getNewDescription());
@@ -122,7 +122,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
                 assertEquals("serverId", new ServerId(getCluster().getClusterId(), serverAddress), event.getServerId());
                 assertEqualServerDescriptions(createServerDescriptionFromServerDescriptionDocument(serverDescriptionChangedEventDocument
                                 .getDocument("previousDescription")),
-                        event.getOldDescription());
+                        event.getPreviousDescription());
                 assertEqualServerDescriptions(createServerDescriptionFromServerDescriptionDocument(serverDescriptionChangedEventDocument
                                 .getDocument("newDescription")),
                         event.getNewDescription());

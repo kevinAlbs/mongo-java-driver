@@ -193,7 +193,7 @@ class SingleServerClusterSpecification extends Specification {
         1 * listener.clusterOpening { it.clusterId == CLUSTER_ID }
         1 * listener.clusterDescriptionChanged {
             it.clusterId == CLUSTER_ID &&
-                    it.oldDescription == new ClusterDescription(SINGLE, UNKNOWN, []) &&
+                    it.previousDescription == new ClusterDescription(SINGLE, UNKNOWN, []) &&
                     it.newDescription == initialDescription
         }
 
@@ -203,7 +203,7 @@ class SingleServerClusterSpecification extends Specification {
         then:
         1 * listener.clusterDescriptionChanged {
             it.clusterId == CLUSTER_ID &&
-                    it.oldDescription == initialDescription &&
+                    it.previousDescription == initialDescription &&
                     it.newDescription == new ClusterDescription(SINGLE, REPLICA_SET, [serverDescription])
         }
 

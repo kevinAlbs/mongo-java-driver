@@ -29,6 +29,7 @@ import com.mongodb.async.FutureResultCallback
 import com.mongodb.async.SingleResultCallback
 import com.mongodb.bulk.InsertRequest
 import com.mongodb.event.CommandListener
+import com.mongodb.event.ServerListener
 import com.mongodb.internal.validator.NoOpFieldNameValidator
 import org.bson.BsonDocument
 import org.bson.BsonInt32
@@ -106,26 +107,20 @@ class DefaultServerSpecification extends Specification {
         mode << [SINGLE, MULTIPLE]
     }
 
-    def 'invalidate should invoke change listeners'() {
+    def 'invalidate should invoke server listeners'() {
         given:
+        def serverListener = Mock(ServerListener)
+
         def connectionFactory = Mock(ConnectionFactory)
         def server = new DefaultServer(serverId, SINGLE, new TestConnectionPool(), connectionFactory,
                 new TestServerMonitorFactory(serverId),
-                [new NoOpServerListener()], null)
-        def stateChanged = false;
-
-        server.addChangeListener(new ChangeListener<ServerDescription>() {
-            @Override
-            void stateChanged(final ChangeEvent<ServerDescription> event) {
-                stateChanged = true;
-            }
-        })
+                [serverListener], null)
 
         when:
         server.invalidate();
 
         then:
-        stateChanged
+        1 * serverListener.serverDescriptionChanged(_)
 
         cleanup:
         server?.close()

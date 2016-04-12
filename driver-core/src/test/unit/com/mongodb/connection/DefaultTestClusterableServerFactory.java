@@ -18,10 +18,12 @@
 package com.mongodb.connection;
 
 import com.mongodb.ServerAddress;
+import com.mongodb.event.ServerListener;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 public class DefaultTestClusterableServerFactory implements ClusterableServerFactory {
     private final ServerSettings settings = ServerSettings.builder().build();
@@ -39,12 +41,15 @@ public class DefaultTestClusterableServerFactory implements ClusterableServerFac
     }
 
     @Override
-    public ClusterableServer create(final ServerAddress serverAddress) {
+    public ClusterableServer create(final ServerAddress serverAddress, final ServerListener serverListener) {
         TestServerMonitorFactory serverMonitorFactory = new TestServerMonitorFactory(new ServerId(clusterId, serverAddress));
         serverAddressToServerMonitorFactoryMap.put(serverAddress, serverMonitorFactory);
+
+
+
         return new DefaultServer(new ServerId(clusterId, serverAddress), clusterConnectionMode, new TestConnectionPool(),
                 new TestConnectionFactory(), serverMonitorFactory,
-                                        Collections.singletonList(serverListenerFactory.create(serverAddress)), null);
+                                        asList(serverListener, serverListenerFactory.create(serverAddress)), null);
     }
 
     @Override

@@ -31,20 +31,20 @@ public final class ServerDescriptionChangedEvent {
 
     private final ServerId serverId;
     private final ServerDescription newDescription;
-    private final ServerDescription oldDescription;
+    private final ServerDescription previousDescription;
 
     /**
      * Construct an instance.
      *
-     * @param serverId the non-null serverId
-     * @param newDescription the non-null new description
-     * @param oldDescription the non-null old description
+     * @param serverId            the non-null serverId
+     * @param newDescription      the non-null new description
+     * @param previousDescription the non-null previous description
      */
     public ServerDescriptionChangedEvent(final ServerId serverId, final ServerDescription newDescription,
-                                         final ServerDescription oldDescription) {
+                                         final ServerDescription previousDescription) {
         this.serverId = notNull("serverId", serverId);
         this.newDescription = notNull("newDescription", newDescription);
-        this.oldDescription = notNull("oldDescription", oldDescription);
+        this.previousDescription = notNull("previousDescription", previousDescription);
     }
 
 
@@ -56,6 +56,7 @@ public final class ServerDescriptionChangedEvent {
     public ServerId getServerId() {
         return serverId;
     }
+
     /**
      * Gets the new server description.
      *
@@ -66,12 +67,12 @@ public final class ServerDescriptionChangedEvent {
     }
 
     /**
-     * Gets the old server description.
+     * Gets the previous server description.
      *
-     * @return the old server description
+     * @return the previous server description
      */
-    public ServerDescription getOldDescription() {
-        return oldDescription;
+    public ServerDescription getPreviousDescription() {
+        return previousDescription;
     }
 
     @Override
@@ -79,7 +80,7 @@ public final class ServerDescriptionChangedEvent {
         return "ServerDescriptionChangedEvent{"
                        + "serverId=" + serverId
                        + ", newDescription=" + newDescription
-                       + ", oldDescription=" + oldDescription
+                       + ", previousDescription=" + previousDescription
                        + '}';
     }
 }

@@ -30,10 +30,7 @@ import com.mongodb.event.ServerEventMulticaster;
 import com.mongodb.event.ServerListener;
 import com.mongodb.event.ServerOpeningEvent;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.assertions.Assertions.notNull;
@@ -46,8 +43,6 @@ class DefaultServer implements ClusterableServer {
     private final ClusterConnectionMode clusterConnectionMode;
     private final ConnectionFactory connectionFactory;
     private final ServerMonitor serverMonitor;
-    private final Set<ChangeListener<ServerDescription>> changeListeners =
-    Collections.newSetFromMap(new ConcurrentHashMap<ChangeListener<ServerDescription>, Boolean>());
     private final ChangeListener<ServerDescription> serverStateListener;
     private final ServerListener serverListener;
     private final CommandListener commandListener;
@@ -116,13 +111,6 @@ class DefaultServer implements ClusterableServer {
         isTrue("open", !isClosed());
 
         return description;
-    }
-
-    @Override
-    public void addChangeListener(final ChangeListener<ServerDescription> changeListener) {
-        isTrue("open", !isClosed());
-
-        changeListeners.add(changeListener);
     }
 
     @Override
@@ -203,9 +191,6 @@ class DefaultServer implements ClusterableServer {
             ServerDescription oldDescription = description;
             description = event.getNewValue();
             serverListener.serverDescriptionChanged(new ServerDescriptionChangedEvent(serverId, description, oldDescription));
-            for (ChangeListener<ServerDescription> listener : changeListeners) {
-                listener.stateChanged(event);
-            }
         }
     }
 }

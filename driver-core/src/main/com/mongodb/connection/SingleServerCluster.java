@@ -20,6 +20,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.ClusterDescriptionChangedEvent;
+import com.mongodb.event.ServerDescriptionChangedEvent;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,17 +48,17 @@ final class SingleServerCluster extends BaseCluster {
         // synchronized in the constructor because the change listener is re-entrant to this instance.
         // In other words, we are leaking a reference to "this" from the constructor.
         synchronized (this) {
-            this.server = createServer(settings.getHosts().get(0), new ChangeListener<ServerDescription>() {
+            this.server = createServer(settings.getHosts().get(0), new NoOpServerListener() {
                 @Override
-                public void stateChanged(final ChangeEvent<ServerDescription> event) {
-                    ServerDescription descriptionToPublish = event.getNewValue();
-                    if (event.getNewValue().isOk()) {
+                public void serverDescriptionChanged(final ServerDescriptionChangedEvent event) {
+                    ServerDescription descriptionToPublish = event.getNewDescription();
+                    if (event.getNewDescription().isOk()) {
                         if (getSettings().getRequiredClusterType() != ClusterType.UNKNOWN
-                            && getSettings().getRequiredClusterType() != event.getNewValue().getClusterType()) {
+                            && getSettings().getRequiredClusterType() != event.getNewDescription().getClusterType()) {
                             descriptionToPublish = null;
                         } else if (getSettings().getRequiredClusterType() == ClusterType.REPLICA_SET
                                    && getSettings().getRequiredReplicaSetName() != null) {
-                            if (!getSettings().getRequiredReplicaSetName().equals(event.getNewValue().getSetName())) {
+                            if (!getSettings().getRequiredReplicaSetName().equals(event.getNewDescription().getSetName())) {
                                 descriptionToPublish = null;
                             }
                         }
