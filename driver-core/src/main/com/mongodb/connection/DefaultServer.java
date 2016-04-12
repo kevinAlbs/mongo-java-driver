@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,15 @@ import com.mongodb.MongoNotPrimaryException;
 import com.mongodb.MongoSecurityException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.MongoSocketReadTimeoutException;
-import com.mongodb.ServerAddress;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.event.CommandListener;
+import com.mongodb.event.ServerDescriptionChangedEvent;
+import com.mongodb.event.ServerEvent;
+import com.mongodb.event.ServerEventMulticaster;
+import com.mongodb.event.ServerListener;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,7 +40,7 @@ import static com.mongodb.connection.ServerConnectionState.CONNECTING;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 
 class DefaultServer implements ClusterableServer {
-    private final ServerAddress serverAddress;
+    private final ServerId serverId;
     private final ConnectionPool connectionPool;
     private final ClusterConnectionMode clusterConnectionMode;
     private final ConnectionFactory connectionFactory;
@@ -44,23 +48,34 @@ class DefaultServer implements ClusterableServer {
     private final Set<ChangeListener<ServerDescription>> changeListeners =
     Collections.newSetFromMap(new ConcurrentHashMap<ChangeListener<ServerDescription>, Boolean>());
     private final ChangeListener<ServerDescription> serverStateListener;
+    private final ServerListener serverListener;
     private final CommandListener commandListener;
     private volatile ServerDescription description;
     private volatile boolean isClosed;
 
-    public DefaultServer(final ServerAddress serverAddress,
+    public DefaultServer(final ServerId serverId,
                          final ClusterConnectionMode clusterConnectionMode,
                          final ConnectionPool connectionPool,
                          final ConnectionFactory connectionFactory,
-                         final ServerMonitorFactory serverMonitorFactory, final CommandListener commandListener) {
+                         final ServerMonitorFactory serverMonitorFactory,
+                         final List<ServerListener> serverListeners,
+                         final CommandListener commandListener) {
+        notNull("serverListeners", serverListeners);
+        serverListener = serverListeners.isEmpty() ? new NoOpServerListener() : new ServerEventMulticaster(serverListeners);
+
         this.commandListener = commandListener;
+        notNull("serverAddress", serverId);
         notNull("serverMonitorFactory", serverMonitorFactory);
         this.clusterConnectionMode = notNull("clusterConnectionMode", clusterConnectionMode);
         this.connectionFactory = notNull("connectionFactory", connectionFactory);
-        this.serverAddress = notNull("serverAddress", serverAddress);
         this.connectionPool = notNull("connectionPool", connectionPool);
         this.serverStateListener = new DefaultServerStateListener();
-        description = ServerDescription.builder().state(CONNECTING).address(serverAddress).build();
+
+        this.serverId = serverId;
+
+        serverListener.serverOpening(new ServerEvent(this.serverId));
+
+        description = ServerDescription.builder().state(CONNECTING).address(serverId.getAddress()).build();
         serverMonitor = serverMonitorFactory.create(serverStateListener);
         serverMonitor.start();
     }
@@ -115,7 +130,8 @@ class DefaultServer implements ClusterableServer {
 
         serverStateListener.stateChanged(new ChangeEvent<ServerDescription>(description, ServerDescription.builder()
                                                                                                           .state(CONNECTING)
-                                                                                                          .address(serverAddress).build()));
+                                                                                                          .address(serverId.getAddress())
+                .build()));
         connectionPool.invalidate();
         serverMonitor.invalidate();
     }
@@ -126,6 +142,7 @@ class DefaultServer implements ClusterableServer {
             connectionPool.close();
             serverMonitor.close();
             isClosed = true;
+            serverListener.serverClosed(new ServerEvent(serverId));
         }
     }
 
@@ -182,7 +199,9 @@ class DefaultServer implements ClusterableServer {
     private final class DefaultServerStateListener implements ChangeListener<ServerDescription> {
         @Override
         public void stateChanged(final ChangeEvent<ServerDescription> event) {
+            ServerDescription oldDescription = description;
             description = event.getNewValue();
+            serverListener.serverDescriptionChanged(new ServerDescriptionChangedEvent(serverId, description, oldDescription));
             for (ChangeListener<ServerDescription> listener : changeListeners) {
                 listener.stateChanged(event);
             }

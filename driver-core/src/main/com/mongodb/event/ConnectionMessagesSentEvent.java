@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ConnectionId;
 
 /**
  * An event signifying that a message has been sent on a connection.
+ *
+ * @since 3.3
  */
-@Beta
 public class ConnectionMessagesSentEvent extends ConnectionEvent {
     private final int requestId;
     private final int size;
@@ -57,5 +57,37 @@ public class ConnectionMessagesSentEvent extends ConnectionEvent {
      */
     public int getSize() {
         return size;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionMessagesSentEvent that = (ConnectionMessagesSentEvent) o;
+
+        if (requestId != that.requestId) {
+            return false;
+        }
+        if (size != that.size) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + requestId;
+        result = 31 * result + size;
+        return result;
     }
 }

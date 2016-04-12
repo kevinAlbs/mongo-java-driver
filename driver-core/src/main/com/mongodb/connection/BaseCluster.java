@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.ClusterDescriptionChangedEvent;
 import com.mongodb.event.ClusterEvent;
+import com.mongodb.event.ClusterEventMulticaster;
 import com.mongodb.event.ClusterListener;
 import com.mongodb.internal.connection.ConcurrentLinkedDeque;
 import com.mongodb.selector.CompositeServerSelector;
@@ -65,13 +66,13 @@ abstract class BaseCluster implements Cluster {
     private volatile boolean isClosed;
     private volatile ClusterDescription description;
 
-    public BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                       final ClusterListener clusterListener) {
+    public BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
         this.clusterId = notNull("clusterId", clusterId);
         this.settings = notNull("settings", settings);
         this.serverFactory = notNull("serverFactory", serverFactory);
-        this.clusterListener = notNull("clusterListener", clusterListener);
-        clusterListener.clusterOpened(new ClusterEvent(clusterId));
+        this.clusterListener = settings.getClusterListeners().isEmpty()
+                                       ? new NoOpClusterListener() : new ClusterEventMulticaster(settings.getClusterListeners());
+        clusterListener.clusterOpening(new ClusterEvent(clusterId));
     }
 
     @Override
@@ -192,6 +193,10 @@ abstract class BaseCluster implements Cluster {
         }
     }
 
+    protected ClusterId getClusterId() {
+        return clusterId;
+    }
+
     public ClusterSettings getSettings() {
         return settings;
     }
@@ -230,8 +235,8 @@ abstract class BaseCluster implements Cluster {
         phase.getAndSet(new CountDownLatch(1)).countDown();
     }
 
-    protected void fireChangeEvent() {
-        clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(clusterId, description));
+    protected void fireChangeEvent(final ClusterDescriptionChangedEvent event) {
+        clusterListener.clusterDescriptionChanged(event);
     }
 
     ClusterDescription getCurrentDescription() {

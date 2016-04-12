@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,28 @@ import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ClusterId;
 
+import static com.mongodb.assertions.Assertions.notNull;
+
 /**
  * An event signifying that the cluster description has changed.
  */
 @Beta
 public class ClusterDescriptionChangedEvent extends ClusterEvent {
-    private final ClusterDescription clusterDescription;
+    private final ClusterDescription newDescription;
+    private final ClusterDescription oldDescription;
 
     /**
      * Constructs a new instance of the event.
      *
-     * @param clusterId          the cluster id
-     * @param clusterDescription the cluster description
+     * @param clusterId      the cluster id
+     * @param newDescription the new cluster description
+     * @param oldDescription the old cluster description
      */
-    public ClusterDescriptionChangedEvent(final ClusterId clusterId, final ClusterDescription clusterDescription) {
+    public ClusterDescriptionChangedEvent(final ClusterId clusterId, final ClusterDescription newDescription,
+                                          final ClusterDescription oldDescription) {
         super(clusterId);
-        this.clusterDescription = clusterDescription;
+        this.newDescription = notNull("newDescription", newDescription);
+        this.oldDescription = notNull("oldDescription", oldDescription);
     }
 
     /**
@@ -43,8 +49,17 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
      *
      * @return the cluster description
      */
-    public ClusterDescription getClusterDescription() {
-        return clusterDescription;
+    public ClusterDescription getNewDescription() {
+        return newDescription;
+    }
+
+    /**
+     * Gets the old cluster description.
+     *
+     * @return the old cluster description
+     */
+    public ClusterDescription getOldDescription() {
+        return oldDescription;
     }
 
     @Override
@@ -55,13 +70,16 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         ClusterDescriptionChangedEvent that = (ClusterDescriptionChangedEvent) o;
 
-        if (!getClusterId().equals(that.getClusterId())) {
+        if (!newDescription.equals(that.newDescription)) {
             return false;
         }
-        if (!clusterDescription.equals(that.clusterDescription)) {
+        if (!oldDescription.equals(that.oldDescription)) {
             return false;
         }
 
@@ -70,6 +88,9 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
 
     @Override
     public int hashCode() {
-        return clusterDescription.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + newDescription.hashCode();
+        result = 31 * result + oldDescription.hashCode();
+        return result;
     }
 }

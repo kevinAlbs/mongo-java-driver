@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ServerId;
 
 /**
  * An event related to the connection pool's wait queue..
+ *
+ * @since 3.3
  */
-@Beta
 public class ConnectionPoolWaitQueueEvent extends ConnectionPoolEvent {
     private final long threadId;
 
@@ -44,6 +44,34 @@ public class ConnectionPoolWaitQueueEvent extends ConnectionPoolEvent {
      */
     public long getThreadId() {
         return threadId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionPoolWaitQueueEvent that = (ConnectionPoolWaitQueueEvent) o;
+
+        if (threadId != that.threadId) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
+        return result;
     }
 }
 

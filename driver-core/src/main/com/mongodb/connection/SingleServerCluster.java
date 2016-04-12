@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.mongodb.connection;
 import com.mongodb.ServerAddress;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
-import com.mongodb.event.ClusterListener;
+import com.mongodb.event.ClusterDescriptionChangedEvent;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,9 +35,8 @@ final class SingleServerCluster extends BaseCluster {
 
     private final ClusterableServer server;
 
-    public SingleServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                               final ClusterListener clusterListener) {
-        super(clusterId, settings, serverFactory, clusterListener);
+    public SingleServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
+        super(clusterId, settings, serverFactory);
         isTrue("one server in a direct cluster", settings.getHosts().size() == 1);
         isTrue("connection mode is single", settings.getMode() == ClusterConnectionMode.SINGLE);
 
@@ -81,12 +80,19 @@ final class SingleServerCluster extends BaseCluster {
         if (clusterType == ClusterType.UNKNOWN && serverDescription != null) {
             clusterType = serverDescription.getClusterType();
         }
+        ClusterDescription oldDescription = getCurrentDescription();
         ClusterDescription description = new ClusterDescription(ClusterConnectionMode.SINGLE, clusterType,
                                                                 serverDescription == null ? Collections.<ServerDescription>emptyList()
                                                                                           : Arrays.asList(serverDescription));
 
         updateDescription(description);
-        fireChangeEvent();
+        fireChangeEvent(new ClusterDescriptionChangedEvent(getClusterId(), description,
+                oldDescription == null ? getInitialDescription() : oldDescription));
+    }
+
+    private ClusterDescription getInitialDescription() {
+        return new ClusterDescription(getSettings().getMode(), getSettings().getRequiredClusterType(),
+                Collections.<ServerDescription>emptyList());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ClusterId;
+
+import static com.mongodb.assertions.Assertions.notNull;
 
 /**
  * A cluster-related event.
+ *
+ * @since 3.3
  */
-@Beta
 public class ClusterEvent {
     private final ClusterId clusterId;
 
@@ -32,7 +34,7 @@ public class ClusterEvent {
      * @param clusterId the cluster id
      */
     public ClusterEvent(final ClusterId clusterId) {
-        this.clusterId = clusterId;
+        this.clusterId = notNull("clusterId", clusterId);
     }
 
     /**
@@ -42,6 +44,29 @@ public class ClusterEvent {
      */
     public ClusterId getClusterId() {
         return clusterId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClusterEvent that = (ClusterEvent) o;
+
+        if (!clusterId.equals(that.clusterId)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return clusterId.hashCode();
     }
 }
 

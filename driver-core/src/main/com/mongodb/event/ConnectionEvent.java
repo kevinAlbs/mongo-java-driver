@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ConnectionId;
+
+import static org.bson.assertions.Assertions.notNull;
 
 /**
  * A connection-related event.
+ *
+ * @since 3.3
  */
-@Beta
 public class ConnectionEvent extends ClusterEvent {
     private final ConnectionId connectionId;
 
@@ -33,7 +35,7 @@ public class ConnectionEvent extends ClusterEvent {
      */
     public ConnectionEvent(final ConnectionId connectionId) {
         super(connectionId.getServerId().getClusterId());
-        this.connectionId = connectionId;
+        this.connectionId = notNull("connectionId", connectionId);
     }
 
     /**
@@ -43,5 +45,33 @@ public class ConnectionEvent extends ClusterEvent {
      */
     public ConnectionId getConnectionId() {
         return connectionId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionEvent that = (ConnectionEvent) o;
+
+        if (!connectionId.equals(that.connectionId)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + connectionId.hashCode();
+        return result;
     }
 }

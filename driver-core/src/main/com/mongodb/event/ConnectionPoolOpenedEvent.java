@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ConnectionPoolSettings;
 import com.mongodb.connection.ServerId;
 
+import static com.mongodb.assertions.Assertions.notNull;
+
 /**
  * An event signifying the opening of a connection pool.
+ *
+ * @since 3.3
  */
-@Beta
 public class ConnectionPoolOpenedEvent extends ConnectionPoolEvent {
     private final ConnectionPoolSettings settings;
 
@@ -35,7 +37,7 @@ public class ConnectionPoolOpenedEvent extends ConnectionPoolEvent {
      */
     public ConnectionPoolOpenedEvent(final ServerId serverId, final ConnectionPoolSettings settings) {
         super(serverId);
-        this.settings = settings;
+        this.settings = notNull("settings", settings);
     }
 
     /**
@@ -45,5 +47,33 @@ public class ConnectionPoolOpenedEvent extends ConnectionPoolEvent {
      */
     public ConnectionPoolSettings getSettings() {
         return settings;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ConnectionPoolOpenedEvent that = (ConnectionPoolOpenedEvent) o;
+
+        if (!settings.equals(that.settings)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + settings.hashCode();
+        return result;
     }
 }
