@@ -24,11 +24,11 @@ package com.mongodb.event;
  */
 public abstract class ClusterListenerAdapter implements ClusterListener {
     @Override
-    public void clusterOpening(final ClusterEvent event) {
+    public void clusterOpening(final ClusterOpeningEvent event) {
     }
 
     @Override
-    public void clusterClosed(final ClusterEvent event) {
+    public void clusterClosed(final ClusterClosedEvent event) {
     }
 
     @Override

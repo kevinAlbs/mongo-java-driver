@@ -36,7 +36,7 @@ import static java.lang.String.format;
  *
  */
 @Immutable
-public class CommandEventMulticaster implements CommandListener {
+public final class CommandEventMulticaster implements CommandListener {
     private static final Logger LOGGER = Loggers.getLogger("protocol.event");
 
     private final List<CommandListener> commandListeners;

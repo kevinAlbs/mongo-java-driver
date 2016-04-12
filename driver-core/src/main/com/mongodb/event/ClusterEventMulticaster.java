@@ -31,7 +31,7 @@ import static java.lang.String.format;
  *
  * @since 3.3
  */
-public class ClusterEventMulticaster implements ClusterListener {
+public final class ClusterEventMulticaster implements ClusterListener {
     private static final Logger LOGGER = Loggers.getLogger("cluster.event");
 
     private final List<ClusterListener> clusterListeners;
@@ -59,7 +59,7 @@ public class ClusterEventMulticaster implements ClusterListener {
     }
 
     @Override
-    public void clusterOpening(final ClusterEvent event) {
+    public void clusterOpening(final ClusterOpeningEvent event) {
         for (final ClusterListener cur : clusterListeners) {
             try {
                 cur.clusterOpening(event);
@@ -72,7 +72,7 @@ public class ClusterEventMulticaster implements ClusterListener {
     }
 
     @Override
-    public void clusterClosed(final ClusterEvent event) {
+    public void clusterClosed(final ClusterClosedEvent event) {
         for (final ClusterListener cur : clusterListeners) {
             try {
                 cur.clusterClosed(event);

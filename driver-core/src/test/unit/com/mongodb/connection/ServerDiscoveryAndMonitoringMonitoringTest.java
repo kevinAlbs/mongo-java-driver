@@ -19,10 +19,11 @@ package com.mongodb.connection;
 
 import com.mongodb.ServerAddress;
 import com.mongodb.event.ClusterDescriptionChangedEvent;
-import com.mongodb.event.ClusterEvent;
+import com.mongodb.event.ClusterOpeningEvent;
+import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
-import com.mongodb.event.ServerEvent;
 import com.mongodb.event.ServerListener;
+import com.mongodb.event.ServerOpeningEvent;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
@@ -79,7 +80,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
         for (BsonValue eventValue : events) {
             BsonDocument eventDocument = eventValue.asDocument();
             if (eventDocument.containsKey("topology_opening_event")) {
-                ClusterEvent event = clusterListener.getClusterOpeningEvent();
+                ClusterOpeningEvent event = clusterListener.getClusterOpeningEvent();
                 assertNotNull("event", event);
                 assertEquals("clusterId", getCluster().getClusterId(), event.getClusterId());
             } else if (eventDocument.containsKey("topology_description_changed_event")) {
@@ -99,7 +100,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
                 ServerAddress serverAddress = new ServerAddress(serverOpeningEventDocument.getString("address").getValue());
                 TestServerListener serverListener = serverListenerFactory.getListener(serverAddress);
                 assertNotNull("serverListener", serverListener);
-                ServerEvent event = serverListener.getServerOpeningEvent();
+                ServerOpeningEvent event = serverListener.getServerOpeningEvent();
                 assertNotNull("event", event);
                 assertEquals("serverId", new ServerId(getCluster().getClusterId(), serverAddress), event.getServerId());
             } else if (eventDocument.containsKey("server_closed_event")) {
@@ -107,7 +108,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
                 ServerAddress serverAddress = new ServerAddress(serverClosedEventDocument.getString("address").getValue());
                 TestServerListener serverListener = serverListenerFactory.getListener(serverAddress);
                 assertNotNull("serverListener", serverListener);
-                ServerEvent event = serverListener.getServerClosedEvent();
+                ServerClosedEvent event = serverListener.getServerClosedEvent();
                 assertNotNull("event", event);
                 assertEquals("serverId", new ServerId(getCluster().getClusterId(), serverAddress), event.getServerId());
             } else if (eventDocument.containsKey("server_description_changed_event")) {

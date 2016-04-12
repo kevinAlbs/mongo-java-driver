@@ -17,9 +17,10 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.event.ClusterClosedEvent;
 import com.mongodb.event.ClusterDescriptionChangedEvent;
-import com.mongodb.event.ClusterEvent;
 import com.mongodb.event.ClusterListener;
+import com.mongodb.event.ClusterOpeningEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,18 +29,18 @@ import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.assertions.Assertions.notNull;
 
 class TestClusterListener implements ClusterListener {
-    private ClusterEvent clusterOpeningEvent;
-    private ClusterEvent clusterClosingEvent;
+    private ClusterOpeningEvent clusterOpeningEvent;
+    private ClusterClosedEvent clusterClosingEvent;
     private final List<ClusterDescriptionChangedEvent> clusterDescriptionChangedEvents = new ArrayList<ClusterDescriptionChangedEvent>();
 
     @Override
-    public void clusterOpening(final ClusterEvent event) {
+    public void clusterOpening(final ClusterOpeningEvent event) {
         isTrue("clusterOpeningEvent is null", clusterOpeningEvent == null);
         clusterOpeningEvent = event;
     }
 
     @Override
-    public void clusterClosed(final ClusterEvent event) {
+    public void clusterClosed(final ClusterClosedEvent event) {
         isTrue("clusterClosingEvent is null", clusterClosingEvent == null);
         clusterClosingEvent = event;
     }
@@ -50,11 +51,11 @@ class TestClusterListener implements ClusterListener {
         clusterDescriptionChangedEvents.add(event);
     }
 
-    public ClusterEvent getClusterOpeningEvent() {
+    public ClusterOpeningEvent getClusterOpeningEvent() {
         return clusterOpeningEvent;
     }
 
-    public ClusterEvent getClusterClosingEvent() {
+    public ClusterClosedEvent getClusterClosingEvent() {
         return clusterClosingEvent;
     }
 

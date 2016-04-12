@@ -17,9 +17,10 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
-import com.mongodb.event.ServerEvent;
 import com.mongodb.event.ServerListener;
+import com.mongodb.event.ServerOpeningEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,18 +29,18 @@ import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.assertions.Assertions.notNull;
 
 class TestServerListener implements ServerListener {
-    private ServerEvent serverOpeningEvent;
-    private ServerEvent serverClosedEvent;
+    private ServerOpeningEvent serverOpeningEvent;
+    private ServerClosedEvent serverClosedEvent;
     private final List<ServerDescriptionChangedEvent> serverDescriptionChangedEvents = new ArrayList<ServerDescriptionChangedEvent>();
 
     @Override
-    public void serverOpening(final ServerEvent event) {
+    public void serverOpening(final ServerOpeningEvent event) {
         isTrue("serverOpeningEvent is null", serverOpeningEvent == null);
         serverOpeningEvent = event;
     }
 
     @Override
-    public void serverClosed(final ServerEvent event) {
+    public void serverClosed(final ServerClosedEvent event) {
         isTrue("serverClostedEvent is null", serverClosedEvent == null);
         serverClosedEvent = event;
     }
@@ -50,11 +51,11 @@ class TestServerListener implements ServerListener {
         serverDescriptionChangedEvents.add(event);
     }
 
-    public ServerEvent getServerOpeningEvent() {
+    public ServerOpeningEvent getServerOpeningEvent() {
         return serverOpeningEvent;
     }
 
-    public ServerEvent getServerClosedEvent() {
+    public ServerClosedEvent getServerClosedEvent() {
         return serverClosedEvent;
     }
 

@@ -29,7 +29,7 @@ import static com.mongodb.assertions.Assertions.notNull;
  *
  * @since 3.3
  */
-public class ServerHeartbeatFailedEvent extends ServerEvent {
+public final class ServerHeartbeatFailedEvent {
     private final ConnectionId connectionId;
     private final long elapsedTimeNanos;
     private final Throwable throwable;
@@ -42,7 +42,6 @@ public class ServerHeartbeatFailedEvent extends ServerEvent {
      * @param throwable the non-null exception that caused the failure
      */
     public ServerHeartbeatFailedEvent(final ConnectionId connectionId, final long elapsedTimeNanos, final Throwable throwable) {
-        super(connectionId.getServerId());
         this.connectionId = notNull("connectionId", connectionId);
         isTrue("elapsed time is positive", elapsedTimeNanos > 0);
         this.elapsedTimeNanos = elapsedTimeNanos;
@@ -76,42 +75,6 @@ public class ServerHeartbeatFailedEvent extends ServerEvent {
      */
     public Throwable getThrowable() {
         return throwable;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        ServerHeartbeatFailedEvent that = (ServerHeartbeatFailedEvent) o;
-
-        if (elapsedTimeNanos != that.elapsedTimeNanos) {
-            return false;
-        }
-        if (!connectionId.equals(that.connectionId)) {
-            return false;
-        }
-        if (!throwable.equals(that.throwable)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + connectionId.hashCode();
-        result = 31 * result + (int) (elapsedTimeNanos ^ (elapsedTimeNanos >>> 32));
-        result = 31 * result + throwable.hashCode();
-        return result;
     }
 
     @Override

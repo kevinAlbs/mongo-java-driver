@@ -17,26 +17,28 @@
 
 package com.mongodb.event;
 
+import java.util.EventListener;
+
 /**
  * A listener for server-related events
  *
  * @since 3.3
  */
-public interface ServerListener {
+public interface ServerListener extends EventListener {
 
     /**
      *  Listener for server opening events.
      *
      * @param event the server opening event
      */
-    void serverOpening(ServerEvent event);
+    void serverOpening(ServerOpeningEvent event);
 
     /**
      * Listener for server closed events.
      *
      * @param event the server closed event
      */
-    void serverClosed(ServerEvent event);
+    void serverClosed(ServerClosedEvent event);
 
     /**
      * Listener for server description changed events.

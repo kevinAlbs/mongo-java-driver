@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,45 +12,46 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.mongodb.event;
 
-import com.mongodb.connection.ConnectionId;
+import com.mongodb.connection.ClusterId;
 
 import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * An event for the start of a server heartbeat.
+ * A cluster closed event.
  *
  * @since 3.3
  */
-public final class ServerHeartbeatStartedEvent {
-    private final ConnectionId connectionId;
+public final class ClusterClosedEvent {
+
+    private final ClusterId clusterId;
 
     /**
-     * Construct an instance.
+     * Constructs a new instance of the event.
      *
-     * @param connectionId the non-null connnectionId
+     * @param clusterId the cluster id
      */
-    public ServerHeartbeatStartedEvent(final ConnectionId connectionId) {
-        this.connectionId = notNull("connectionId", connectionId);
+    public ClusterClosedEvent(final ClusterId clusterId) {
+        this.clusterId = notNull("clusterId", clusterId);
     }
 
     /**
-     * Gets the connectionId.
+     * Gets the cluster id associated with this event.
      *
-     * @return the connectionId
+     * @return the cluster id
      */
-    public ConnectionId getConnectionId() {
-        return connectionId;
+    public ClusterId getClusterId() {
+        return clusterId;
     }
 
     @Override
     public String toString() {
-        return "ServerHeartbeatStartedEvent{"
-                + "connectionId=" + connectionId
-                + "} " + super.toString();
+        return "ClusterClosedEvent{"
+                       + "clusterId=" + clusterId
+                       + '}';
     }
 }
+

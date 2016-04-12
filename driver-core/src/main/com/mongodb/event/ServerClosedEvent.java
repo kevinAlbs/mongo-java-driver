@@ -22,11 +22,11 @@ import com.mongodb.connection.ServerId;
 import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * A server-related event.
+ * A server opening event.
  *
  * @since 3.3
  */
-public class ServerEvent {
+public final class ServerClosedEvent {
     private final ServerId serverId;
 
     /**
@@ -34,7 +34,7 @@ public class ServerEvent {
      *
      * @param serverId the non-null serverId
      */
-    public ServerEvent(final ServerId serverId) {
+    public ServerClosedEvent(final ServerId serverId) {
         this.serverId = notNull("serverId", serverId);
     }
 
@@ -48,25 +48,9 @@ public class ServerEvent {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ServerEvent that = (ServerEvent) o;
-
-        if (!serverId.equals(that.serverId)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return serverId.hashCode();
+    public String toString() {
+        return "ServerClosedEvent{"
+                       + "serverId=" + serverId
+                       + '}';
     }
 }

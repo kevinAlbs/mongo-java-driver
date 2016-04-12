@@ -21,11 +21,12 @@ import com.mongodb.connection.ClusterId;
 import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * A cluster-related event.
+ * A cluster opening event.
  *
  * @since 3.3
  */
-public class ClusterEvent {
+public final class ClusterOpeningEvent {
+
     private final ClusterId clusterId;
 
     /**
@@ -33,12 +34,13 @@ public class ClusterEvent {
      *
      * @param clusterId the cluster id
      */
-    public ClusterEvent(final ClusterId clusterId) {
+    public ClusterOpeningEvent(final ClusterId clusterId) {
         this.clusterId = notNull("clusterId", clusterId);
     }
 
-    /**
-     * Gets the cluster id associated with this event.
+
+    /***
+     * Gets the cluster id.
      *
      * @return the cluster id
      */
@@ -47,26 +49,10 @@ public class ClusterEvent {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ClusterEvent that = (ClusterEvent) o;
-
-        if (!clusterId.equals(that.clusterId)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return clusterId.hashCode();
+    public String toString() {
+        return "ClusterOpeningEvent{"
+                       + "clusterId=" + clusterId
+                       + '}';
     }
 }
 

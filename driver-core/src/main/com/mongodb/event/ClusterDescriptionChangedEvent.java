@@ -16,7 +16,6 @@
 
 package com.mongodb.event;
 
-import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ClusterId;
 
@@ -24,9 +23,11 @@ import static com.mongodb.assertions.Assertions.notNull;
 
 /**
  * An event signifying that the cluster description has changed.
+ *
+ * @since 3.3
  */
-@Beta
-public class ClusterDescriptionChangedEvent extends ClusterEvent {
+public final class ClusterDescriptionChangedEvent {
+    private final ClusterId clusterId;
     private final ClusterDescription newDescription;
     private final ClusterDescription oldDescription;
 
@@ -39,9 +40,18 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
      */
     public ClusterDescriptionChangedEvent(final ClusterId clusterId, final ClusterDescription newDescription,
                                           final ClusterDescription oldDescription) {
-        super(clusterId);
+        this.clusterId = notNull("clusterId", clusterId);
         this.newDescription = notNull("newDescription", newDescription);
         this.oldDescription = notNull("oldDescription", oldDescription);
+    }
+
+    /**
+     * Gets the cluster id associated with this event.
+     *
+     * @return the cluster id
+     */
+    public ClusterId getClusterId() {
+        return clusterId;
     }
 
     /**
@@ -63,34 +73,11 @@ public class ClusterDescriptionChangedEvent extends ClusterEvent {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        ClusterDescriptionChangedEvent that = (ClusterDescriptionChangedEvent) o;
-
-        if (!newDescription.equals(that.newDescription)) {
-            return false;
-        }
-        if (!oldDescription.equals(that.oldDescription)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + newDescription.hashCode();
-        result = 31 * result + oldDescription.hashCode();
-        return result;
+    public String toString() {
+        return "ClusterDescriptionChangedEvent{"
+                       + "clusterId=" + clusterId
+                       + ", newDescription=" + newDescription
+                       + ", oldDescription=" + oldDescription
+                       + '}';
     }
 }

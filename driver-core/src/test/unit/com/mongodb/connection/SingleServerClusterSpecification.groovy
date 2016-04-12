@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-
-
-
-
-
-
 package com.mongodb.connection
 
 import com.mongodb.MongoIncompatibleDriverException
 import com.mongodb.ServerAddress
-import com.mongodb.event.ClusterDescriptionChangedEvent
-import com.mongodb.event.ClusterEvent
 import com.mongodb.event.ClusterListener
 import com.mongodb.selector.WritableServerSelector
 import spock.lang.Specification
@@ -120,7 +112,7 @@ class SingleServerClusterSpecification extends Specification {
         sendNotification(firstServer, ServerType.REPLICA_SET_PRIMARY, 'test1')
 
         then:
-        cluster.getDescription().type == ClusterType.REPLICA_SET
+        cluster.getDescription().type == REPLICA_SET
         cluster.getDescription().all == getDescriptions()
 
         cleanup:
@@ -137,7 +129,7 @@ class SingleServerClusterSpecification extends Specification {
         sendNotification(firstServer, ServerType.REPLICA_SET_PRIMARY, 'test2')
 
         then:
-        cluster.getDescription().type == ClusterType.REPLICA_SET
+        cluster.getDescription().type == REPLICA_SET
         cluster.getDescription().all == [] as Set
 
         cleanup:
@@ -147,10 +139,10 @@ class SingleServerClusterSpecification extends Specification {
     def 'getServer should throw when cluster is incompatible'() {
         given:
         def cluster = new SingleServerCluster(CLUSTER_ID,
-                                              ClusterSettings.builder().mode(SINGLE).hosts(Arrays.asList(firstServer))
-                                                             .serverSelectionTimeout(1, SECONDS)
-                                                             .build(),
-                                              factory)
+                ClusterSettings.builder().mode(SINGLE).hosts(Arrays.asList(firstServer))
+                        .serverSelectionTimeout(1, SECONDS)
+                        .build(),
+                factory)
         sendNotification(firstServer, getBuilder(firstServer).minWireVersion(1000).maxWireVersion(1000).build())
 
         when:
@@ -166,10 +158,10 @@ class SingleServerClusterSpecification extends Specification {
     def 'should connect to server'() {
         given:
         def cluster = new SingleServerCluster(CLUSTER_ID,
-                                              ClusterSettings.builder()
-                                                             .mode(SINGLE)
-                                                             .hosts([firstServer]).build(),
-                                              factory)
+                ClusterSettings.builder()
+                        .mode(SINGLE)
+                        .hosts([firstServer]).build(),
+                factory)
 
         when:
         cluster.connect()
@@ -198,25 +190,28 @@ class SingleServerClusterSpecification extends Specification {
                 factory)
 
         then:
-        1 * listener.clusterOpening(new ClusterEvent(CLUSTER_ID))
-
-        1 * listener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
-                initialDescription,
-                new ClusterDescription(SINGLE, UNKNOWN, [])))
+        1 * listener.clusterOpening { it.clusterId == CLUSTER_ID }
+        1 * listener.clusterDescriptionChanged {
+            it.clusterId == CLUSTER_ID &&
+                    it.oldDescription == new ClusterDescription(SINGLE, UNKNOWN, []) &&
+                    it.newDescription == initialDescription
+        }
 
         when:
         factory.getServer(firstServer).sendNotification(serverDescription)
 
         then:
-        1 * listener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
-                new ClusterDescription(SINGLE, REPLICA_SET, [serverDescription]),
-                initialDescription))
+        1 * listener.clusterDescriptionChanged {
+            it.clusterId == CLUSTER_ID &&
+                    it.oldDescription == initialDescription &&
+                    it.newDescription == new ClusterDescription(SINGLE, REPLICA_SET, [serverDescription])
+        }
 
         when:
         cluster.close()
 
         then:
-        1 * listener.clusterClosed(new ClusterEvent(CLUSTER_ID))
+        1 * listener.clusterClosed { it.clusterId == CLUSTER_ID }
     }
 
     def sendNotification(ServerAddress serverAddress, ServerType serverType) {

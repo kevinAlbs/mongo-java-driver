@@ -32,7 +32,7 @@ import static java.lang.String.format;
  *
  * @since 3.3
  */
-public class ServerEventMulticaster implements ServerListener {
+public final class ServerEventMulticaster implements ServerListener {
 
     private static final Logger LOGGER = Loggers.getLogger("cluster.event");
 
@@ -61,7 +61,7 @@ public class ServerEventMulticaster implements ServerListener {
     }
 
     @Override
-    public void serverOpening(final ServerEvent event) {
+    public void serverOpening(final ServerOpeningEvent event) {
         for (ServerListener cur : serverListeners) {
             try {
                 cur.serverOpening(event);
@@ -74,7 +74,7 @@ public class ServerEventMulticaster implements ServerListener {
     }
 
     @Override
-    public void serverClosed(final ServerEvent event) {
+    public void serverClosed(final ServerClosedEvent event) {
         for (ServerListener cur : serverListeners) {
             try {
                 cur.serverClosed(event);

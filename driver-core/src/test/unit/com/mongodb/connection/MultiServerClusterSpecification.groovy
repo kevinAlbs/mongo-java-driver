@@ -18,8 +18,6 @@ package com.mongodb.connection
 
 import com.mongodb.MongoTimeoutException
 import com.mongodb.ServerAddress
-import com.mongodb.event.ClusterDescriptionChangedEvent
-import com.mongodb.event.ClusterEvent
 import com.mongodb.event.ClusterListener
 import com.mongodb.selector.WritableServerSelector
 import org.bson.types.ObjectId
@@ -74,6 +72,7 @@ class MultiServerClusterSpecification extends Specification {
         cluster.getDescription().connectionMode == MULTIPLE
 
     }
+
     def 'should not get server when closed'() {
         given:
         def cluster = new MultiServerCluster(CLUSTER_ID, ClusterSettings.builder().hosts(Arrays.asList(firstServer)).build(), factory
@@ -468,27 +467,31 @@ class MultiServerClusterSpecification extends Specification {
                 factory)
 
         then:
-        1 * clusterListener.clusterOpening(new ClusterEvent(CLUSTER_ID))
-        1 * clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
-                initialDescription,
-                new ClusterDescription(MULTIPLE, UNKNOWN, [])))
+        1 * clusterListener.clusterOpening { it.clusterId == CLUSTER_ID }
+        1 * clusterListener.clusterDescriptionChanged {
+            it.clusterId == CLUSTER_ID &&
+                    it.oldDescription == new ClusterDescription(MULTIPLE, UNKNOWN, []) &&
+                    it.newDescription == initialDescription
+        }
 
         when:
         sendNotification(firstServer, REPLICA_SET_PRIMARY)
 
         then:
-        1 * clusterListener.clusterDescriptionChanged(new ClusterDescriptionChangedEvent(CLUSTER_ID,
-                new ClusterDescription(MULTIPLE, REPLICA_SET,
-                        [serverDescription,
-                         ServerDescription.builder().state(CONNECTING).address(secondServer).build(),
-                         ServerDescription.builder().state(CONNECTING).address(thirdServer).build()]),
-                initialDescription))
+        1 * clusterListener.clusterDescriptionChanged {
+            it.clusterId == CLUSTER_ID &&
+                    it.oldDescription == initialDescription &&
+                    it.newDescription == new ClusterDescription(MULTIPLE, REPLICA_SET,
+                    [serverDescription,
+                     ServerDescription.builder().state(CONNECTING).address(secondServer).build(),
+                     ServerDescription.builder().state(CONNECTING).address(thirdServer).build()])
+        }
 
         when:
         cluster.close()
 
         then:
-        1 * clusterListener.clusterClosed(new ClusterEvent(CLUSTER_ID))
+        1 * clusterListener.clusterClosed { it.clusterId == CLUSTER_ID }
     }
 
     def 'should connect to all servers'() {

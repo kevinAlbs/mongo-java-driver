@@ -24,10 +24,11 @@ import com.mongodb.MongoSocketException;
 import com.mongodb.MongoSocketReadTimeoutException;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.event.CommandListener;
+import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
-import com.mongodb.event.ServerEvent;
 import com.mongodb.event.ServerEventMulticaster;
 import com.mongodb.event.ServerListener;
+import com.mongodb.event.ServerOpeningEvent;
 
 import java.util.Collections;
 import java.util.List;
@@ -73,7 +74,7 @@ class DefaultServer implements ClusterableServer {
 
         this.serverId = serverId;
 
-        serverListener.serverOpening(new ServerEvent(this.serverId));
+        serverListener.serverOpening(new ServerOpeningEvent(this.serverId));
 
         description = ServerDescription.builder().state(CONNECTING).address(serverId.getAddress()).build();
         serverMonitor = serverMonitorFactory.create(serverStateListener);
@@ -142,7 +143,7 @@ class DefaultServer implements ClusterableServer {
             connectionPool.close();
             serverMonitor.close();
             isClosed = true;
-            serverListener.serverClosed(new ServerEvent(serverId));
+            serverListener.serverClosed(new ServerClosedEvent(serverId));
         }
     }
 

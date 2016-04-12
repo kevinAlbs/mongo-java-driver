@@ -17,17 +17,18 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
-import com.mongodb.event.ServerEvent;
 import com.mongodb.event.ServerListener;
+import com.mongodb.event.ServerOpeningEvent;
 
 class NoOpServerListener implements ServerListener {
     @Override
-    public void serverOpening(final ServerEvent event) {
+    public void serverOpening(final ServerOpeningEvent event) {
     }
 
     @Override
-    public void serverClosed(final ServerEvent event) {
+    public void serverClosed(final ServerClosedEvent event) {
     }
 
     @Override

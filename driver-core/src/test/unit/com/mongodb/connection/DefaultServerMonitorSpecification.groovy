@@ -215,9 +215,9 @@ class DefaultServerMonitorSpecification extends Specification {
 
         then:
         failedEvent == null
-        startedEvent == new ServerHeartbeatStartedEvent(connectionDescription.connectionId)
-        succeededEvent == new ServerHeartbeatSucceededEvent(connectionDescription.connectionId, BsonDocument.parse(isMasterResponse),
-                succeededEvent.getElapsedTime(TimeUnit.NANOSECONDS))
+        startedEvent.connectionId == connectionDescription.connectionId
+        succeededEvent.connectionId == connectionDescription.connectionId
+        succeededEvent.reply == BsonDocument.parse(isMasterResponse)
         succeededEvent.getElapsedTime(TimeUnit.NANOSECONDS) > 0
     }
 
@@ -287,9 +287,9 @@ class DefaultServerMonitorSpecification extends Specification {
 
         then:
         succeededEvent == null
-        startedEvent == new ServerHeartbeatStartedEvent(connectionDescription.connectionId)
-        failedEvent == new ServerHeartbeatFailedEvent(connectionDescription.connectionId,
-                failedEvent.getElapsedTime(TimeUnit.NANOSECONDS), exception)
+        startedEvent.connectionId == connectionDescription.connectionId
+        failedEvent.connectionId == connectionDescription.connectionId
+        failedEvent.throwable == exception
         failedEvent.getElapsedTime(TimeUnit.NANOSECONDS) > 0
     }
 }

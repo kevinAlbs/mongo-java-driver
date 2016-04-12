@@ -29,14 +29,14 @@ public interface ClusterListener extends EventListener {
      *
      * @param event the event
      */
-    void clusterOpening(ClusterEvent event);
+    void clusterOpening(ClusterOpeningEvent event);
 
     /**
      * Invoked when a cluster is closed.
      *
      * @param event the event
      */
-    void clusterClosed(ClusterEvent event);
+    void clusterClosed(ClusterClosedEvent event);
 
     /**
      * Invoked when a cluster description changes.

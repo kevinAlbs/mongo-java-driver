@@ -29,7 +29,7 @@ import static com.mongodb.assertions.Assertions.notNull;
  *
  * @since 3.3
  */
-public class ServerHeartbeatSucceededEvent extends ServerEvent{
+public final class ServerHeartbeatSucceededEvent {
     private final ConnectionId connectionId;
     private final BsonDocument reply;
     private final long elapsedTimeNanos;
@@ -42,8 +42,6 @@ public class ServerHeartbeatSucceededEvent extends ServerEvent{
      * @param elapsedTimeNanos the positive elapsted time in nanoseconds
      */
     public ServerHeartbeatSucceededEvent(final ConnectionId connectionId, final BsonDocument reply, final long elapsedTimeNanos) {
-        super(connectionId.getServerId());
-
         this.connectionId = notNull("connectionId", connectionId);
         this.reply = notNull("reply", reply);
         isTrue("elapsed time is positive", elapsedTimeNanos > 0);
@@ -80,47 +78,11 @@ public class ServerHeartbeatSucceededEvent extends ServerEvent{
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        ServerHeartbeatSucceededEvent that = (ServerHeartbeatSucceededEvent) o;
-
-        if (elapsedTimeNanos != that.elapsedTimeNanos) {
-            return false;
-        }
-        if (!connectionId.equals(that.connectionId)) {
-            return false;
-        }
-        if (!reply.equals(that.reply)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + connectionId.hashCode();
-        result = 31 * result + reply.hashCode();
-        result = 31 * result + (int) (elapsedTimeNanos ^ (elapsedTimeNanos >>> 32));
-        return result;
-    }
-
-    @Override
     public String toString() {
         return "ServerHeartbeatSucceededEvent{"
                 + "connectionId=" + connectionId
                 + ", reply=" + reply
                 + ", elapsedTimeNanos=" + elapsedTimeNanos
-                + "} " + super.toString();
+                + "} ";
     }
 }

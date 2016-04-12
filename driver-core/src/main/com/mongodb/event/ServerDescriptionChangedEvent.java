@@ -27,8 +27,9 @@ import static com.mongodb.assertions.Assertions.notNull;
  *
  * @since 3.3
  */
-public class ServerDescriptionChangedEvent extends ServerEvent {
+public final class ServerDescriptionChangedEvent {
 
+    private final ServerId serverId;
     private final ServerDescription newDescription;
     private final ServerDescription oldDescription;
 
@@ -41,11 +42,20 @@ public class ServerDescriptionChangedEvent extends ServerEvent {
      */
     public ServerDescriptionChangedEvent(final ServerId serverId, final ServerDescription newDescription,
                                          final ServerDescription oldDescription) {
-        super(serverId);
+        this.serverId = notNull("serverId", serverId);
         this.newDescription = notNull("newDescription", newDescription);
         this.oldDescription = notNull("oldDescription", oldDescription);
     }
 
+
+    /**
+     * Gets the serverId.
+     *
+     * @return the serverId
+     */
+    public ServerId getServerId() {
+        return serverId;
+    }
     /**
      * Gets the new server description.
      *
@@ -65,34 +75,11 @@ public class ServerDescriptionChangedEvent extends ServerEvent {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        ServerDescriptionChangedEvent that = (ServerDescriptionChangedEvent) o;
-
-        if (!newDescription.equals(that.newDescription)) {
-            return false;
-        }
-        if (!oldDescription.equals(that.oldDescription)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + newDescription.hashCode();
-        result = 31 * result + oldDescription.hashCode();
-        return result;
+    public String toString() {
+        return "ServerDescriptionChangedEvent{"
+                       + "serverId=" + serverId
+                       + ", newDescription=" + newDescription
+                       + ", oldDescription=" + oldDescription
+                       + '}';
     }
 }

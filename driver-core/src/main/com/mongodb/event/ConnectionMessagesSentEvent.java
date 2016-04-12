@@ -16,14 +16,17 @@
 
 package com.mongodb.event;
 
+import com.mongodb.annotations.Beta;
 import com.mongodb.connection.ConnectionId;
+
+import static org.bson.assertions.Assertions.notNull;
 
 /**
  * An event signifying that a message has been sent on a connection.
- *
- * @since 3.3
  */
-public class ConnectionMessagesSentEvent extends ConnectionEvent {
+@Beta
+public final class ConnectionMessagesSentEvent {
+    private final ConnectionId connectionId;
     private final int requestId;
     private final int size;
 
@@ -36,9 +39,18 @@ public class ConnectionMessagesSentEvent extends ConnectionEvent {
      */
     public ConnectionMessagesSentEvent(final ConnectionId connectionId,
                                        final int requestId, final int size) {
-        super(connectionId);
+        this.connectionId = notNull("connectionId", connectionId);
         this.requestId = requestId;
         this.size = size;
+    }
+
+    /**
+     * Gets the identifier for this connection.
+     *
+     * @return the connection id
+     */
+    public ConnectionId getConnectionId() {
+        return connectionId;
     }
 
     /**
@@ -60,34 +72,11 @@ public class ConnectionMessagesSentEvent extends ConnectionEvent {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        ConnectionMessagesSentEvent that = (ConnectionMessagesSentEvent) o;
-
-        if (requestId != that.requestId) {
-            return false;
-        }
-        if (size != that.size) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + requestId;
-        result = 31 * result + size;
-        return result;
+    public String toString() {
+        return "ConnectionMessagesSentEvent{"
+                       + "requestId=" + requestId
+                       + ", size=" + size
+                       + ", connectionId=" + connectionId
+                       + '}';
     }
 }

@@ -32,7 +32,7 @@ import static java.lang.String.format;
  *
  * @since 3.3
  */
-public class ServerMonitorEventMulticaster implements ServerMonitorListener {
+public final class ServerMonitorEventMulticaster implements ServerMonitorListener {
     private static final Logger LOGGER = Loggers.getLogger("cluster.event");
 
     private final List<ServerMonitorListener> serverMonitorListeners;

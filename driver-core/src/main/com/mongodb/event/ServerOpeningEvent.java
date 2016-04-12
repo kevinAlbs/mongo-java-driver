@@ -15,37 +15,42 @@
  *
  */
 
-
 package com.mongodb.event;
 
+import com.mongodb.connection.ServerId;
 
-import java.util.EventListener;
+import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * A listener for server monitor-related events
+ * A server opening event.
  *
  * @since 3.3
  */
-public interface ServerMonitorListener extends EventListener {
+public final class ServerOpeningEvent {
+    private final ServerId serverId;
 
     /**
-     * Listener for server heartbeat started events.
+     * Construct an instance.
      *
-     * @param event the server heartbeat started event
+     * @param serverId the non-null serverId
      */
-    void serverHearbeatStarted(ServerHeartbeatStartedEvent event);
+    public ServerOpeningEvent(final ServerId serverId) {
+        this.serverId = notNull("serverId", serverId);
+    }
 
     /**
-     * Listener for server heartbeat succeeded events.
+     * Gets the serverId.
      *
-     * @param event the server heartbeat succeeded event
+     * @return the serverId
      */
-    void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event);
+    public ServerId getServerId() {
+        return serverId;
+    }
 
-    /**
-     * Listener for server heartbeat failed events.
-     *
-     * @param event the server heartbeat failed event
-     */
-    void serverHeartbeatFailed(ServerHeartbeatFailedEvent event);
+    @Override
+    public String toString() {
+        return "ServerOpeningEvent{"
+                       + "serverId=" + serverId
+                       + '}';
+    }
 }
