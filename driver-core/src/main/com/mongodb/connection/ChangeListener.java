@@ -16,14 +16,11 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.annotations.Beta;
-
 /**
  * Listener for ChangeEvents - classes that implement this will be informed if classes of type {@code T} are changed.
  *
  * @param <T> the type of the value that changed.
  */
-@Beta
 interface ChangeListener<T> {
     /**
      * A {@code ChangeEvent} has been fired to notify listeners that {@code T} has changed.

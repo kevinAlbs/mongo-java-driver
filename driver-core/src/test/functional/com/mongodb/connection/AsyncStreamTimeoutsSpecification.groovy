@@ -26,7 +26,6 @@ import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.BsonString
 import org.junit.experimental.categories.Category
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 
 import java.util.concurrent.TimeUnit
@@ -36,7 +35,7 @@ import static com.mongodb.ClusterFixture.getPrimary
 import static com.mongodb.ClusterFixture.getSslSettings
 import static com.mongodb.connection.CommandHelper.executeCommand
 
-@Ignore
+@IgnoreIf({ System.getProperty('ignoreSlowUnitTests') == 'true' })
 @Category(SlowUnit)
 class AsyncStreamTimeoutsSpecification extends OperationFunctionalSpecification {
 
