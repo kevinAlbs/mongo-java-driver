@@ -29,7 +29,9 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.mongodb.assertions.Assertions.isTrue;
+import static com.mongodb.connection.ServerConnectionState.CONNECTING;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 /**
  * This class needs to be final because we are leaking a reference to "this" from the constructor
@@ -78,7 +80,6 @@ final class SingleServerCluster extends BaseCluster {
                 }
 
             });
-            publishDescription(server.getDescription());
         }
     }
 
@@ -104,7 +105,10 @@ final class SingleServerCluster extends BaseCluster {
 
     private ClusterDescription getInitialDescription() {
         return new ClusterDescription(getSettings().getMode(), getSettings().getRequiredClusterType(),
-                Collections.<ServerDescription>emptyList());
+                                             singletonList(ServerDescription.builder()
+                                                                   .state(CONNECTING)
+                                                                   .address(server.getDescription().getAddress())
+                                                                   .build()));
     }
 
     @Override
