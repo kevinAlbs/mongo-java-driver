@@ -33,11 +33,12 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -136,6 +137,21 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
 
     private void assertEqualClusterDescriptions(final ClusterDescription expected, final ClusterDescription actual) {
         assertEquals(expected.getType(), actual.getType());
+        assertEquals(expected.getAll().size(), actual.getAll().size());
+        for (ServerDescription curExpected: actual.getAll()) {
+            ServerDescription curActual = getByServerAddress(curExpected.getAddress(), actual.getAll());
+            assertNotNull(curActual);
+            assertEqualServerDescriptions(curExpected, curActual);
+        }
+    }
+
+    private ServerDescription getByServerAddress(final ServerAddress serverAddress, final Set<ServerDescription> serverDescriptions) {
+        for (ServerDescription cur: serverDescriptions) {
+            if (cur.getAddress().equals(serverAddress)) {
+                return cur;
+            }
+        }
+        return null;
     }
 
     private void assertEqualServerDescriptions(final ServerDescription expected, final ServerDescription actual) {
@@ -150,9 +166,13 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
     }
 
     private ClusterDescription createClusterDescriptionFromClusterDescriptionDocument(final BsonDocument clusterDescriptionDocument) {
+        List<ServerDescription> serverDescriptions = new ArrayList<ServerDescription>();
+        for (BsonValue cur : clusterDescriptionDocument.getArray("servers"))  {
+            serverDescriptions.add(createServerDescriptionFromServerDescriptionDocument(cur.asDocument()));
+        }
         return new ClusterDescription(getCluster().getSettings().getMode(),
                 getClusterType(clusterDescriptionDocument.getString("topologyType").getValue()),
-                Collections.<ServerDescription>emptyList());
+                serverDescriptions);
     }
 
     private ServerDescription createServerDescriptionFromServerDescriptionDocument(final BsonDocument serverDescriptionDocument) {
