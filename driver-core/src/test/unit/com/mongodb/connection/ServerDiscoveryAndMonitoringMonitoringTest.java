@@ -92,9 +92,14 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
                 assertEqualClusterDescriptions(createClusterDescriptionFromClusterDescriptionDocument(
                         topologyDescriptionChangedEventDocument.getDocument("previousDescription")),
                         event.getPreviousDescription());
-                assertEqualClusterDescriptions(createClusterDescriptionFromClusterDescriptionDocument(
-                        topologyDescriptionChangedEventDocument.getDocument("newDescription")),
+                BsonDocument newDescription = topologyDescriptionChangedEventDocument.getDocument("newDescription");
+                assertEqualClusterDescriptions(createClusterDescriptionFromClusterDescriptionDocument(newDescription),
                         event.getNewDescription());
+                if (newDescription.getString("topologyType").getValue().equals("Single")) {
+                    assertEquals(SingleServerCluster.class, getCluster().getClass());
+                } else {
+                    assertEquals(MultiServerCluster.class, getCluster().getClass());
+                }
 
             } else if (eventDocument.containsKey("server_opening_event")) {
                 BsonDocument serverOpeningEventDocument = eventDocument.getDocument("server_opening_event");
@@ -171,7 +176,7 @@ public class ServerDiscoveryAndMonitoringMonitoringTest extends AbstractServerDi
             serverDescriptions.add(createServerDescriptionFromServerDescriptionDocument(cur.asDocument()));
         }
         return new ClusterDescription(getCluster().getSettings().getMode(),
-                getClusterType(clusterDescriptionDocument.getString("topologyType").getValue()),
+                getClusterType(clusterDescriptionDocument.getString("topologyType").getValue(), serverDescriptions),
                 serverDescriptions);
     }
 
