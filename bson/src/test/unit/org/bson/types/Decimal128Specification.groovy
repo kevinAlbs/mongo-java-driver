@@ -60,6 +60,40 @@ class Decimal128Specification extends Specification {
         parse('00012345678901234567') == fromIEEE754BIDEncoding(0x3040000000000000L, 0x002bdc545d6b4b87L)
     }
 
+    def 'should round exactly'() {
+        expect:
+        parse('1.234567890123456789012345678901234') == parse('1.234567890123456789012345678901234')
+        parse('1.2345678901234567890123456789012340') == parse('1.234567890123456789012345678901234')
+        parse('1.23456789012345678901234567890123400') == parse('1.234567890123456789012345678901234')
+        parse('1.234567890123456789012345678901234000') == parse('1.234567890123456789012345678901234')
+    }
+
+    def 'should not round inexactly'() {
+        when:
+        parse('1.2345678901234567890123456789012341') == parse('1.234567890123456789012345678901234')
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
+    def 'should clamp positive exponents'() {
+        expect:
+        parse('1E6112')  == parse('10E6111')
+        parse('1E6113')  == parse('100E6111')
+        parse('1E6143')  == parse('100000000000000000000000000000000E+6111')
+        parse('1E6144')  == parse('1000000000000000000000000000000000E+6111')
+        parse('11E6143')  == parse('1100000000000000000000000000000000E+6111')
+        parse('0E8000') == parse('0E6111')
+    }
+
+    def 'should clamp negative exponents'() {
+        expect:
+        parse('0E-8000') == parse('0E-6176')
+        parse('10E-6177') == parse('1E-6176')
+        parse('100E-6178') == parse('1E-6176')
+        parse('110E-6177') == parse('11E-6176')
+    }
+
     def 'should construct from long'() {
         expect:
         new Decimal128(1L) == new Decimal128(new BigDecimal('1'))
@@ -273,9 +307,8 @@ class Decimal128Specification extends Specification {
 
         where:
         val << [
-                '1234567890123456789012345678901234E+6112',
-                '1E-6177',
-                '12345678901234567890123456789012345'
+                '1234567890123456789012345678901234E+6145',
+                '1E-6210'
         ]
     }
 

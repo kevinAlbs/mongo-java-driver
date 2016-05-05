@@ -19,6 +19,8 @@ package org.bson.types;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,6 +44,10 @@ public final class Decimal128 implements Serializable {
 
     private static final int EXPONENT_OFFSET = 6176;
     private static final int MAX_BIT_LENGTH = 113;
+
+    private static final BigInteger BIG_INT_TEN = new BigInteger("10");
+    private static final BigInteger BIG_INT_ONE = new BigInteger("1");
+    private static final BigInteger BIG_INT_ZERO = new BigInteger("0");
 
     private static final Set<String> NaN_STRINGS = new HashSet<String>(asList("nan"));
     private static final Set<String> POSITIVE_INFINITY_STRINGS = new HashSet<String>(asList("inf", "+inf", "infinity", "+infinity"));
@@ -137,19 +143,19 @@ public final class Decimal128 implements Serializable {
     }
 
     // isNegative is necessary to detect -0, which can't be represented with a BigDecimal
-    private Decimal128(final BigDecimal value, final boolean isNegative) {
+    private Decimal128(final BigDecimal initialValue, final boolean isNegative) {
         long localHigh = 0;
         long localLow = 0;
+
+        BigDecimal value = clampAndRound(initialValue);
 
         long exponent = -value.scale();
 
         if ((exponent < MIN_EXPONENT) || (exponent > MAX_EXPONENT)) {
-            throw new IllegalArgumentException("Exponent is out of range for Decimal128 encoding: " + exponent);
-        }
+            throw new AssertionError("Exponent is out of range for Decimal128 encoding: " + exponent); }
 
         if (value.unscaledValue().bitLength() > MAX_BIT_LENGTH) {
-            throw new IllegalArgumentException("Unscaled roundedValue is out of range for Decimal128 encoding:"
-                                                       + value.unscaledValue());
+            throw new AssertionError("Unscaled roundedValue is out of range for Decimal128 encoding:" + value.unscaledValue());
         }
 
         BigInteger significand = value.unscaledValue().abs();
@@ -177,6 +183,43 @@ public final class Decimal128 implements Serializable {
 
         high = localHigh;
         low = localLow;
+    }
+
+    private BigDecimal clampAndRound(final BigDecimal initialValue) {
+        BigDecimal value;
+        if (-initialValue.scale() > MAX_EXPONENT) {
+            int diff = -initialValue.scale() - MAX_EXPONENT;
+            if (diff + initialValue.precision() > 34 && !initialValue.unscaledValue().equals(BIG_INT_ZERO)) {
+                throw new IllegalArgumentException("Exponent is out of range for Decimal128 encoding of " + initialValue);
+            } else {
+                BigInteger multiplier = BIG_INT_TEN.pow(diff);
+                value = new BigDecimal(initialValue.unscaledValue().multiply(multiplier), initialValue.scale() + diff);
+            }
+        } else if (-initialValue.scale() < MIN_EXPONENT) {
+            int diff = initialValue.scale() + MIN_EXPONENT;
+            int undiscardedPrecision = ensureExactRounding(initialValue, diff);
+            BigInteger divisor = undiscardedPrecision == 0 ? BIG_INT_ONE : BIG_INT_TEN.pow(diff);
+            value = new BigDecimal(initialValue.unscaledValue().divide(divisor), initialValue.scale() - diff,
+                                          new MathContext(undiscardedPrecision, RoundingMode.HALF_EVEN));
+        } else {
+            value = initialValue.round(DECIMAL128);
+            int extraPrecision = initialValue.precision() - value.precision();
+            if (extraPrecision > 0) {
+                ensureExactRounding(initialValue, extraPrecision);
+            }
+        }
+        return value;
+    }
+
+    private int ensureExactRounding(final BigDecimal initialValue, final int extraPrecision) {
+        char[] significand = initialValue.unscaledValue().abs().toString().toCharArray();
+        int i = significand.length - 1;
+        for (; i >= 0 && significand.length - i <= extraPrecision; i--) {
+            if (significand[i] != '0') {
+                throw new IllegalArgumentException("Exponent is out of range for Decimal128 encoding of " + initialValue);
+            }
+        }
+        return i + 1;
     }
 
     /**
