@@ -68,14 +68,6 @@ class Decimal128Specification extends Specification {
         parse('1.234567890123456789012345678901234000') == parse('1.234567890123456789012345678901234')
     }
 
-    def 'should not round inexactly'() {
-        when:
-        parse('1.2345678901234567890123456789012341') == parse('1.234567890123456789012345678901234')
-
-        then:
-        thrown(IllegalArgumentException)
-    }
-
     def 'should clamp positive exponents'() {
         expect:
         parse('1E6112')  == parse('10E6111')
@@ -85,6 +77,14 @@ class Decimal128Specification extends Specification {
         parse('11E6143')  == parse('1100000000000000000000000000000000E+6111')
         parse('0E8000') == parse('0E6111')
         parse('0E2147483647') == parse('0E6111')
+
+        parse('-1E6112')  == parse('-10E6111')
+        parse('-1E6113')  == parse('-100E6111')
+        parse('-1E6143')  == parse('-100000000000000000000000000000000E+6111')
+        parse('-1E6144')  == parse('-1000000000000000000000000000000000E+6111')
+        parse('-11E6143')  == parse('-1100000000000000000000000000000000E+6111')
+        parse('-0E8000') == parse('-0E6111')
+        parse('-0E2147483647') == parse('-0E6111')
     }
 
     def 'should clamp negative exponents'() {
@@ -94,6 +94,12 @@ class Decimal128Specification extends Specification {
         parse('10E-6177') == parse('1E-6176')
         parse('100E-6178') == parse('1E-6176')
         parse('110E-6177') == parse('11E-6176')
+
+        parse('-0E-8000') == parse('-0E-6176')
+        parse('-0E-2147483647') == parse('-0E-6176')
+        parse('-10E-6177') == parse('-1E-6176')
+        parse('-100E-6178') == parse('-1E-6176')
+        parse('-110E-6177') == parse('-11E-6176')
     }
 
     def 'should construct from long'() {
@@ -300,7 +306,7 @@ class Decimal128Specification extends Specification {
         decimal << [parse('-0'), parse('-0E+1'), parse('-0E-1')]
     }
 
-    def 'should throw IllegalArgumentException if String is too large'() {
+    def 'should not round inexactly'() {
         when:
         parse(val)
 
@@ -309,8 +315,54 @@ class Decimal128Specification extends Specification {
 
         where:
         val << [
-                '1234567890123456789012345678901234E+6145',
-                '1E-6210'
+                '12345678901234567890123456789012345E+6111',
+                '123456789012345678901234567890123456E+6111',
+                '1234567890123456789012345678901234567E+6111',
+                '12345678901234567890123456789012345E-6176',
+                '123456789012345678901234567890123456E-6176',
+                '1234567890123456789012345678901234567E-6176',
+                '-12345678901234567890123456789012345E+6111',
+                '-123456789012345678901234567890123456E+6111',
+                '-1234567890123456789012345678901234567E+6111',
+                '-12345678901234567890123456789012345E-6176',
+                '-123456789012345678901234567890123456E-6176',
+                '-1234567890123456789012345678901234567E-6176',
+        ]
+    }
+
+    def 'should not clamp large exponents if no extra precision is available'() {
+        when:
+        parse(val)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        val << [
+                '1234567890123456789012345678901234E+6112',
+                '1234567890123456789012345678901234E+6113',
+                '1234567890123456789012345678901234E+6114',
+                '-1234567890123456789012345678901234E+6112',
+                '-1234567890123456789012345678901234E+6113',
+                '-1234567890123456789012345678901234E+6114',
+        ]
+    }
+
+    def 'should not clamp small exponents if no extra precision can be discarded'() {
+        when:
+        parse(val)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        val << [
+                '1234567890123456789012345678901234E-6177',
+                '1234567890123456789012345678901234E-6178',
+                '1234567890123456789012345678901234E-6179',
+                '-1234567890123456789012345678901234E-6177',
+                '-1234567890123456789012345678901234E-6178',
+                '-1234567890123456789012345678901234E-6179',
         ]
     }
 
