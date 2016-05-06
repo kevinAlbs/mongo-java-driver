@@ -84,11 +84,13 @@ class Decimal128Specification extends Specification {
         parse('1E6144')  == parse('1000000000000000000000000000000000E+6111')
         parse('11E6143')  == parse('1100000000000000000000000000000000E+6111')
         parse('0E8000') == parse('0E6111')
+        parse('0E2147483647') == parse('0E6111')
     }
 
     def 'should clamp negative exponents'() {
         expect:
         parse('0E-8000') == parse('0E-6176')
+        parse('0E-2147483647') == parse('0E-6176')
         parse('10E-6177') == parse('1E-6176')
         parse('100E-6178') == parse('1E-6176')
         parse('110E-6177') == parse('11E-6176')
