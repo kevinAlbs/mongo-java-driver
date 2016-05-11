@@ -203,6 +203,6 @@ buildvariants:
   display_name: "Ubuntu-1404"
   expansions:
   run_on:
-    - ubuntu1404-test
+    - ubuntu1404-build
   tasks:
   - name: compileAndAnalyze
