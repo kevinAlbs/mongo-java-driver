@@ -21,7 +21,6 @@ import com.mongodb.ClusterFixture
 import com.mongodb.MongoCommandException
 import com.mongodb.MongoCredential
 import com.mongodb.MongoSecurityException
-import com.mongodb.ServerAddress
 import com.mongodb.async.FutureResultCallback
 import com.mongodb.connection.netty.NettyStreamFactory
 import org.bson.BsonDocument
@@ -101,7 +100,7 @@ class ScramAuthenticationSpecification extends Specification {
 
     private static InternalStreamConnection createConnection(final boolean async, final MongoCredential credential) {
         new InternalStreamConnection(
-                new ServerId(new ClusterId(), new ServerAddress(getPrimary())),
+                new ServerId(new ClusterId(), getPrimary()),
                 async ? new NettyStreamFactory(SocketSettings.builder().build(), getSslSettings())
                         : new SocketStreamFactory(SocketSettings.builder().build(), getSslSettings()),
                 new InternalStreamConnectionInitializer(credential == null ? [] : [new ScramSha1Authenticator(credential)]),
