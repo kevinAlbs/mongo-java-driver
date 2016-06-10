@@ -32,6 +32,7 @@ import spock.lang.Specification
 import static com.mongodb.AuthenticationMechanism.SCRAM_SHA_1
 import static com.mongodb.ClusterFixture.getConnectionString
 import static com.mongodb.ClusterFixture.getCredentialList
+import static com.mongodb.ClusterFixture.getPrimary
 import static com.mongodb.ClusterFixture.getSslSettings
 import static com.mongodb.MongoCredential.createScramSha1Credential
 import static com.mongodb.connection.CommandHelper.executeCommand
@@ -100,7 +101,7 @@ class ScramAuthenticationSpecification extends Specification {
 
     private static InternalStreamConnection createConnection(final boolean async, final MongoCredential credential) {
         new InternalStreamConnection(
-                new ServerId(new ClusterId(), new ServerAddress(getConnectionString().getHosts().get(0))),
+                new ServerId(new ClusterId(), new ServerAddress(getPrimary())),
                 async ? new NettyStreamFactory(SocketSettings.builder().build(), getSslSettings())
                         : new SocketStreamFactory(SocketSettings.builder().build(), getSslSettings()),
                 new InternalStreamConnectionInitializer(credential == null ? [] : [new ScramSha1Authenticator(credential)]),
