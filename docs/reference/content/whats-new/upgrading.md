@@ -1,9 +1,9 @@
 +++
 date = "2015-03-19T12:53:39-04:00"
-title = "Upgrading to 3.2"
+title = "Upgrading to 3.3"
 [menu.main]
   parent = "Whats New"
-  identifier = "Upgrading to 3.2"
+  identifier = "Upgrading to 3.3"
   weight = 40
   pre = "<i class='fa fa-wrench'></i>"
 +++
