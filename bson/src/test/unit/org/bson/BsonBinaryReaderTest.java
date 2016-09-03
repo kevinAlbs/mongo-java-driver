@@ -17,11 +17,14 @@
 package org.bson;
 
 import org.bson.io.ByteBufferBsonInput;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import javax.xml.bind.DatatypeConverter;
 import java.nio.ByteBuffer;
 
+import static org.bson.AbstractBsonReader.State.TYPE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -69,6 +72,30 @@ public class BsonBinaryReaderTest {
         } catch (BsonSerializationException e) {
             assertEquals("While decoding a BSON document 1 bytes were required, but only 0 remain", e.getMessage());
         }
+    }
+
+    @Test
+    public void testDecimal128() {
+        String hexString = "18000000136400000000000A5BC138938D44C64D31FE5F00";
+        BsonBinaryReader reader = createReaderForHexValue(hexString);
+        reader.readStartDocument();
+        assertEquals(Decimal128.parse("1.000000000000000000000000000000000E+6144"), reader.readDecimal128("d"));
+        assertEquals(TYPE, reader.getState());
+    }
+
+    @Test
+    public void testSkipDecimal128() {
+        String hexString = "18000000136400000000000A5BC138938D44C64D31FE5F00";
+        BsonBinaryReader reader = createReaderForHexValue(hexString);
+        reader.readStartDocument();
+        reader.readName("d");
+        reader.skipValue();
+        assertEquals(TYPE, reader.getState());
+        reader.readEndDocument();
+    }
+
+    private BsonBinaryReader createReaderForHexValue(final String hexString) {
+        return new BsonBinaryReader(ByteBuffer.wrap(DatatypeConverter.parseHexBinary(hexString)));
     }
 
     private BsonBinaryReader createReaderForBytes(final byte[] bytes) {

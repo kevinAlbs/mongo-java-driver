@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static org.bson.AbstractBsonReader.State.DONE;
+import static org.bson.AbstractBsonReader.State.TYPE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -411,6 +412,15 @@ public class JsonReaderTest {
         } catch (JsonParseException e) {
             // all good
         }
+    }
+
+    @Test
+    public void testSkipDecimal128() {
+        String json = "NumberDecimal(\"314E-2\")";
+        bsonReader = new JsonReader(json);
+        bsonReader.readBsonType();
+        bsonReader.skipValue();
+        assertEquals(TYPE, bsonReader.getState());
     }
 
     @Test
