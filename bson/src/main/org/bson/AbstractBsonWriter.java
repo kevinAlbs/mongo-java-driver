@@ -795,6 +795,8 @@ public abstract class AbstractBsonWriter implements BsonWriter, Closeable {
             case INT64:
                 writeInt64(reader.readInt64());
                 break;
+            case DECIMAL128:
+                writeDecimal128(reader.readDecimal128());
             case MIN_KEY:
                 reader.readMinKey();
                 writeMinKey();
