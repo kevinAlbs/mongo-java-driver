@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.mongodb.assertions.Assertions.notNull;
-import static com.mongodb.connection.ClientMetadataHelper.createClientMetadataDocument;
 import static com.mongodb.connection.CommandHelper.executeCommand;
 import static com.mongodb.connection.CommandHelper.executeCommandAsync;
 import static com.mongodb.connection.CommandHelper.executeCommandWithoutCheckingForFailure;
@@ -34,9 +33,9 @@ class InternalStreamConnectionInitializer implements InternalConnectionInitializ
     private final List<Authenticator> authenticators;
     private final BsonDocument clientMetadataDocument;
 
-    InternalStreamConnectionInitializer(final List<Authenticator> authenticators, final String applicationName) {
+    InternalStreamConnectionInitializer(final List<Authenticator> authenticators, final BsonDocument clientMetadataDocument) {
         this.authenticators = notNull("authenticators", authenticators);
-        clientMetadataDocument = createClientMetadataDocument(applicationName);
+        this.clientMetadataDocument = clientMetadataDocument;
     }
 
     @Override

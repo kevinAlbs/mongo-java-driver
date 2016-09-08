@@ -140,8 +140,11 @@ class InternalStreamConnectionInitializerSpecification extends Specification {
 
     def 'should add client metadata document to isMaster command'() {
         given:
-        def initializer = new InternalStreamConnectionInitializer([], appName)
-        BsonDocument expectedClientDocument = createExpectedClientMetadataDocument(appName)
+        def initializer = new InternalStreamConnectionInitializer([], clientMetadataDocument)
+        def expectedIsMasterCommandDocument = new BsonDocument('ismaster', new BsonInt32(1))
+        if (clientMetadataDocument != null) {
+            expectedIsMasterCommandDocument.append('client', clientMetadataDocument)
+        }
 
         when:
         enqueueSuccessfulReplies(false, null)
@@ -155,12 +158,11 @@ class InternalStreamConnectionInitializerSpecification extends Specification {
         }
 
         then:
-        decodeCommand(internalConnection.getSent()[0]) ==
-                new BsonDocument('ismaster', new BsonInt32(1)).append('client', expectedClientDocument);
+        decodeCommand(internalConnection.getSent()[0]) == expectedIsMasterCommandDocument
 
         where:
-        [appName, async] << [['appName', null],
-                             [true, false]].combinations()
+        [clientMetadataDocument, async] << [[createExpectedClientMetadataDocument('appName'), null],
+                                            [true, false]].combinations()
     }
 
     private ConnectionDescription getExpectedDescription(final Integer localValue, final Integer serverValue) {
