@@ -27,12 +27,14 @@ import static com.mongodb.assertions.Assertions.notNull;
 class InternalStreamConnectionFactory implements InternalConnectionFactory {
     private final StreamFactory streamFactory;
     private final ConnectionListener connectionListener;
+    private final String applicationName;
     private final List<Authenticator> authenticators;
 
     public InternalStreamConnectionFactory(final StreamFactory streamFactory, final List<MongoCredential> credentialList,
-                                           final ConnectionListener connectionListener) {
+                                           final ConnectionListener connectionListener, final String applicationName) {
         this.streamFactory = notNull("streamFactory", streamFactory);
         this.connectionListener = notNull("connectionListener", connectionListener);
+        this.applicationName = applicationName;
         notNull("credentialList", credentialList);
         this.authenticators = new ArrayList<Authenticator>(credentialList.size());
         for (MongoCredential credential : credentialList) {
@@ -43,7 +45,7 @@ class InternalStreamConnectionFactory implements InternalConnectionFactory {
     @Override
     public InternalConnection create(final ServerId serverId) {
         return new InternalStreamConnection(serverId, streamFactory,
-                                            new InternalStreamConnectionInitializer(authenticators), connectionListener);
+                                            new InternalStreamConnectionInitializer(authenticators, applicationName), connectionListener);
     }
 
     private Authenticator createAuthenticator(final MongoCredential credential) {

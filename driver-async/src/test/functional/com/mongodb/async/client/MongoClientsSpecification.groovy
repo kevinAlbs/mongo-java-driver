@@ -174,4 +174,21 @@ class MongoClientsSpecification extends FunctionalSpecification {
         'mongodb://localhost'             | WriteConcern.ACKNOWLEDGED
         'mongodb://localhost/?w=majority' | WriteConcern.MAJORITY
     }
+
+    @Unroll
+    def 'should apply application name from connection string to settings'() {
+        when:
+        def client = MongoClients.create(uri)
+
+        then:
+        client.settings.getApplicationName() == applicationName
+
+        cleanup:
+        client?.close()
+
+        where:
+        uri                                 | applicationName
+        'mongodb://localhost'               | null
+        'mongodb://localhost/?appname=app1' | 'app1'
+    }
 }
