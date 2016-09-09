@@ -132,8 +132,7 @@ configure(subprojects.findAll { it.name != 'util' }) {
         def directory = new File(project.ext.generatedResources)
         directory.mkdirs()
         def propertiesFile = new File(directory, "version.properties")
-        def versionString = getGitVersion()
-        propertiesFile.text = "version=${versionString}"
+        propertiesFile.text = "version=${getGitVersion()}"
     }
 }
 
