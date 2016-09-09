@@ -57,15 +57,45 @@ final class ClientMetadataHelper {
         CLIENT_METADATA_DOCUMENT.append(DRIVER_FIELD, driverMetadataDocument);
 
         try {
-            CLIENT_METADATA_DOCUMENT.append(OS_FIELD, new BsonDocument(OS_TYPE_FIELD, new BsonString("unknown"))
-                                                              .append(OS_NAME_FIELD, new BsonString(getProperty("os.name")))
-                                                              .append(OS_ARCHITECTURE_FIELD, new BsonString(getProperty("os.arch")))
-                                                              .append(OS_VERSION_FIELD, new BsonString(getProperty("os.version"))))
+            String operatingSystemName = getProperty("os.name", "unknown");
+            CLIENT_METADATA_DOCUMENT.append(OS_FIELD, new BsonDocument()
+                                                              .append(OS_TYPE_FIELD,
+                                                                      new BsonString(getOperatingSystemType(operatingSystemName)))
+                                                              .append(OS_NAME_FIELD,
+                                                                      new BsonString(operatingSystemName))
+                                                              .append(OS_ARCHITECTURE_FIELD,
+                                                                      new BsonString(getProperty("os.arch", "unknown")))
+                                                              .append(OS_VERSION_FIELD,
+                                                                      new BsonString(getProperty("os.version", "unknown"))))
                     .append(PLATFORM_FIELD,
-                            new BsonString("Java/" + getProperty("java.vendor") + "/" + getProperty("java.runtime.version")));
+                            new BsonString("Java/" + getProperty("java.vendor", "unknown-vendor")
+                                                   + "/" + getProperty("java.runtime.version", "unknown-version")));
         } catch (SecurityException e) {
             // do nothing
         }
+    }
+
+    private static String getOperatingSystemType(final String operatingSystemName) {
+        if (nameMatches(operatingSystemName, "linux")) {
+            return "Linux";
+        } else if (nameMatches(operatingSystemName, "mac")) {
+            return "Darwin";
+        } else if (nameMatches(operatingSystemName, "windows")) {
+            return  "Windows";
+        } else if (nameMatches(operatingSystemName, "hp-ux", "aix", "irix", "solaris", "sunos")) {
+            return "Unix";
+        } else {
+            return  "unknown";
+        }
+    }
+
+    private static boolean nameMatches(final String name, final String... prefixes) {
+        for (String prefix : prefixes) {
+            if (name.toLowerCase().startsWith(prefix.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String getDriverVersion() {

@@ -100,6 +100,24 @@ class ClientMetadataHelperSpecification extends Specification {
         ]
     }
 
+    def 'should get operating system type from name'() {
+        expect:
+        ClientMetadataHelper.getOperatingSystemType(name) == type
+
+        where:
+        name            | type
+        'unknown'       | 'unknown'
+        'Linux OS'      | 'Linux'
+        'Mac OS X'      | 'Darwin'
+        'Windows 10'    | 'Windows'
+        'HP-UX OS'      | 'Unix'
+        'AIX OS'        | 'Unix'
+        'Irix OS'       | 'Unix'
+        'Solaris OS'    | 'Unix'
+        'SunOS'         | 'Unix'
+        'Some Other OS' | 'unknown'
+    }
+
     def encode(final BsonDocument document) {
         BasicOutputBuffer buffer = new BasicOutputBuffer();
         new BsonDocumentCodec().encode(new BsonBinaryWriter(buffer), document, EncoderContext.builder().build());
@@ -109,7 +127,8 @@ class ClientMetadataHelperSpecification extends Specification {
     static BsonDocument createExpectedClientMetadataDocument(String appName) {
         def expectedDriverDocument = new BsonDocument('name', new BsonString('mongo-java-driver'))
                 .append('version', new BsonString(getDriverVersion()))
-        def expectedOperatingSystemDocument = new BsonDocument('type', new BsonString('unknown'))
+        def expectedOperatingSystemDocument = new BsonDocument('type',
+                new BsonString(ClientMetadataHelper.getOperatingSystemType(System.getProperty('os.name'))))
                 .append('name', new BsonString(System.getProperty('os.name')))
                 .append('architecture', new BsonString(System.getProperty('os.arch')))
                 .append('version', new BsonString(System.getProperty('os.version')))
