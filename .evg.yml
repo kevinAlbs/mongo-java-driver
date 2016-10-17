@@ -157,6 +157,11 @@ axes:
         variables:
           mongodb_full_version: "2.6.12"
           ubuntu_os_download: "ubuntu1404"
+      - id: "2.4"
+        display_name: "2.4"
+        variables:
+          mongodb_full_version: "2.4.14"
+          ubuntu_os_download: "ubuntu1204"
   - id: auth
     display_name: Authentication
     values:
