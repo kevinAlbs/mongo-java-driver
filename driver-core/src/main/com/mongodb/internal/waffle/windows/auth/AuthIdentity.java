@@ -18,6 +18,7 @@
 package com.mongodb.internal.waffle.windows.auth;
 
 import com.sun.jna.Structure;
+import com.sun.jna.WString;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,18 +26,18 @@ import java.util.List;
 import static com.sun.jna.platform.win32.WTypes.*;
 
 public class AuthIdentity extends Structure {
-    public String userName;
+    public WString userName;
     public long userNameLength;
-    public String domain;
+    public WString domain;
     public int domainLength;
-    public String password;
+    public WString password;
     public int passwordLength;
     public long flags = 0x02;  // UNICODE
 
     public AuthIdentity(final String userName, final String password) {
-        this.userName = userName;
+        this.userName = new WString(userName);
         this.userNameLength = userName.length();
-        this.password = password;
+        this.password = new WString(password);
         this.passwordLength = password.length();
     }
 
