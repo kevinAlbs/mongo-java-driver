@@ -33,6 +33,9 @@ dependencies {
     compile "io.netty:netty-transport:$nettyVersion", optional
     compile "io.netty:netty-handler:$nettyVersion", optional
 
+    compile "com.github.dblock.waffle:waffle-jna:1.8.1", optional
+    compile "net.java.dev.jna:jna-platform:4.2.1", optional
+
     testCompile project(':bson').sourceSets.test.output
 }
 

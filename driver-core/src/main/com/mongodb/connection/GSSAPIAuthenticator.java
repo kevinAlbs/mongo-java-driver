@@ -36,6 +36,8 @@ import java.util.Map;
 
 import static com.mongodb.AuthenticationMechanism.GSSAPI;
 import static com.mongodb.MongoCredential.CANONICALIZE_HOST_NAME_KEY;
+import static com.mongodb.MongoCredential.SERVICE_REALM_KEY;
+import static com.mongodb.MongoCredential.JAVA_GSSAPI_USE_NATIVE_SSPI_KEY;
 import static com.mongodb.MongoCredential.JAVA_SASL_CLIENT_PROPERTIES_KEY;
 import static com.mongodb.MongoCredential.SERVICE_NAME_KEY;
 
@@ -62,15 +64,24 @@ class GSSAPIAuthenticator extends SaslAuthenticator {
     protected SaslClient createSaslClient(final ServerAddress serverAddress) {
         MongoCredential credential = getCredential();
         try {
-            Map<String, Object> saslClientProperties = getCredential().getMechanismProperty(JAVA_SASL_CLIENT_PROPERTIES_KEY, null);
-            if (saslClientProperties == null) {
-                saslClientProperties = new HashMap<String, Object>();
-                saslClientProperties.put(Sasl.CREDENTIALS, getGSSCredential(credential.getUserName()));
+            SaslClient saslClient;
+            if (Boolean.valueOf(credential.getMechanismProperty(JAVA_GSSAPI_USE_NATIVE_SSPI_KEY, "false"))) {  // TODO: handle boolean type
+                saslClient = WindowsGSSAPI.createSaslClient(credential.getUserName(),
+                        credential.getMechanismProperty(SERVICE_NAME_KEY, SERVICE_NAME_DEFAULT_VALUE),
+                        getHostName(serverAddress),
+                        credential.getMechanismProperty(SERVICE_REALM_KEY, (String) null));
             }
+            else {
+                Map<String, Object> saslClientProperties = getCredential().getMechanismProperty(JAVA_SASL_CLIENT_PROPERTIES_KEY, null);
+                if (saslClientProperties == null) {
+                    saslClientProperties = new HashMap<String, Object>();
+                    saslClientProperties.put(Sasl.CREDENTIALS, getGSSCredential(credential.getUserName()));
+                }
 
-            SaslClient saslClient = Sasl.createSaslClient(new String[]{GSSAPI.getMechanismName()}, credential.getUserName(),
-                    credential.getMechanismProperty(SERVICE_NAME_KEY, SERVICE_NAME_DEFAULT_VALUE),
-                    getHostName(serverAddress), saslClientProperties, null);
+                saslClient = Sasl.createSaslClient(new String[]{GSSAPI.getMechanismName()}, credential.getUserName(),
+                        credential.getMechanismProperty(SERVICE_NAME_KEY, SERVICE_NAME_DEFAULT_VALUE),
+                        getHostName(serverAddress), saslClientProperties, null);
+            }
             if (saslClient == null) {
                 throw new MongoSecurityException(credential, String.format("No platform support for %s mechanism", GSSAPI));
             }

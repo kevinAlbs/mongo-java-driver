@@ -181,11 +181,11 @@ configure(subprojects.findAll { it.name != 'util' && it.name != 'mongo-java-driv
 
         if (project.buildingWith('gssapi.enabled')) {
             systemProperties(
-                    'sun.security.krb5.debug': project.getProperty('sun.security.krb5.debug'),
+                    'sun.security.krb5.debug': project.hasProperty('sun.security.krb5.debug') ? project.getProperty('sun.security.krb5.debug') : false,
                     'javax.security.auth.useSubjectCredsOnly': "false",
-                    'java.security.krb5.kdc': project.getProperty('krb5.kdc'),
-                    'java.security.krb5.realm': project.getProperty('krb5.realm'),
-                    'java.security.auth.login.config': project.getProperty('auth.login.config'),
+                    'java.security.krb5.kdc': project.hasProperty('krb5.kdc') ? project.getProperty('krb5.kdc') : null,
+                    'java.security.krb5.realm': project.hasProperty('krb5.realm') ?project.getProperty('krb5.realm') : null,
+                    'java.security.auth.login.config': project.hasProperty('auth.login.config') ? project.getProperty('auth.login.config') : null,
                     )
         }
 

@@ -113,6 +113,29 @@ public final class MongoCredential {
      */
     public static final String JAVA_SASL_CLIENT_PROPERTIES_KEY = "JAVA_SASL_CLIENT_PROPERTIES";
 
+    /**
+     * Mechanism property for specifying that the driver should use native SSPI implementation on Windows platforms.
+     * <p>
+     *   Set this to true to indicate the driver should use the native SSPI implementation on Windows platforms. The default is false.
+     * </p>
+     *
+     * @since 3.5
+     */
+    public static final String JAVA_GSSAPI_USE_NATIVE_SSPI_KEY = "JAVA_GSSAPI_USE_NATIVE_SSPI";
+
+    /**
+     * Mechanism property for specifying the service realm for GSSAPI authentication.  This might be necessary to support cross-realm
+     * authentication where the user exists in one realm and the service in another.
+     * <p>
+     *   For use only with {@link #JAVA_GSSAPI_USE_NATIVE_SSPI_KEY}
+     * </p>
+     *
+     * @see #JAVA_GSSAPI_USE_NATIVE_SSPI_KEY
+     * @since 3.5
+     */
+    public static final String SERVICE_REALM_KEY = "SERVICE_REALM";
+
+
     /*
      * Mechanism property key for overriding the {@link javax.security.Subject} under which GSSAPI authentication executes.
      *
