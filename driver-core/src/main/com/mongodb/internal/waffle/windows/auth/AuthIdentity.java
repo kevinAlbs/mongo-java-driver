@@ -27,21 +27,21 @@ import static com.sun.jna.platform.win32.WTypes.*;
 
 public class AuthIdentity extends Structure {
     // CHECKSTYLE: OFF
-    public String userName;
+    public LPWSTR userName;
     public long userNameLength;
-    public String domain;
+    public LPWSTR domain;
     public long domainLength;
-    public String password;
+    public LPWSTR password;
     public long passwordLength;
     public long flags = 0x02;  // UNICODE
     // CHECKSTYLE: ON
 
     public AuthIdentity(final String userName, final String password) {
 //        this.userName = new WString(userName);
-        this.userName = userName;
+        this.userName = new LPWSTR(userName);
         this.userNameLength = userName.length();
 //        this.password = new WString(password);
-        this.password = password;
+        this.password = new LPWSTR(password);
         this.passwordLength = password.length();
     }
 
