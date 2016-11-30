@@ -18,9 +18,9 @@
 package com.mongodb.connection;
 
 import com.sun.jna.platform.win32.Sspi.SecBufferDesc;
-import waffle.windows.auth.IWindowsCredentialsHandle;
-import waffle.windows.auth.impl.WindowsCredentialsHandleImpl;
-import waffle.windows.auth.impl.WindowsSecurityContextImpl;
+import com.mongodb.internal.waffle.windows.auth.IWindowsCredentialsHandle;
+import com.mongodb.internal.waffle.windows.auth.impl.WindowsCredentialsHandleImpl;
+import com.mongodb.internal.waffle.windows.auth.impl.WindowsSecurityContextImpl;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
@@ -56,7 +56,7 @@ final class WindowsGSSAPI {
 
             IWindowsCredentialsHandle clientCredentials = WindowsCredentialsHandleImpl.getCurrent(SECURITY_PACKAGE);
             clientContext = new WindowsSecurityContextImpl();
-            clientContext.setPrincipalName(userName);
+            clientContext.setPrincipalName(authorizationId);
             clientContext.setCredentialsHandle(clientCredentials);
             clientContext.setSecurityPackage(SECURITY_PACKAGE);
         }
