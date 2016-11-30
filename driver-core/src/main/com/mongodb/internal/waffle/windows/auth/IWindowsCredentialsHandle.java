@@ -21,8 +21,10 @@ import com.sun.jna.platform.win32.Sspi.CredHandle;
 public interface IWindowsCredentialsHandle {
     /**
      * Initialize.
+     *
+     * @param authIdentity the AuthIdentity, which may be null
      */
-    void initialize();
+    void initialize(final AuthIdentity authIdentity);
 
     /**
      * Dispose.

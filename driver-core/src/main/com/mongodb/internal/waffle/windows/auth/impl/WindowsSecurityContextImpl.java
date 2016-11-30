@@ -11,6 +11,7 @@
  */
 package com.mongodb.internal.waffle.windows.auth.impl;
 
+import com.mongodb.internal.waffle.windows.auth.AuthIdentity;
 import com.sun.jna.platform.win32.Secur32;
 import com.sun.jna.platform.win32.Sspi;
 import com.sun.jna.platform.win32.Sspi.CtxtHandle;
@@ -103,9 +104,9 @@ public class WindowsSecurityContextImpl implements IWindowsSecurityContext {
      *            The target of the context. The string contents are security-package specific.
      * @return Windows security context.
      */
-    public static IWindowsSecurityContext getCurrent(final String securityPackage, final String targetName) {
-        IWindowsCredentialsHandle credentialsHandle = WindowsCredentialsHandleImpl.getCurrent(securityPackage);
-        credentialsHandle.initialize();
+    public static IWindowsSecurityContext getCurrent(final String securityPackage, final String targetName,
+                                                     final AuthIdentity authIdentity) {
+        IWindowsCredentialsHandle credentialsHandle = WindowsCredentialsHandleImpl.getCurrent(securityPackage, authIdentity);
         try {
             final WindowsSecurityContextImpl ctx = new WindowsSecurityContextImpl();
             ctx.setPrincipalName(WindowsAccountImpl.getCurrentUsername());

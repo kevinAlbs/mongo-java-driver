@@ -11,6 +11,8 @@
  */
 package com.mongodb.internal.waffle.windows.auth.impl;
 
+import com.mongodb.internal.waffle.windows.auth.AuthIdentity;
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Secur32;
 import com.sun.jna.platform.win32.Sspi;
 import com.sun.jna.platform.win32.Sspi.CredHandle;
@@ -65,12 +67,14 @@ public class WindowsCredentialsHandleImpl implements IWindowsCredentialsHandle {
      * 
      * @param securityPackage
      *            Security package, eg. "Negotiate".
+     * @param authIdentity
+     *            AuthIdentity, which may be null
      * @return A windows credentials handle
      */
-    public static IWindowsCredentialsHandle getCurrent(final String securityPackage) {
+    public static IWindowsCredentialsHandle getCurrent(final String securityPackage, final AuthIdentity authIdentity) {
         final IWindowsCredentialsHandle handle = new WindowsCredentialsHandleImpl(null, Sspi.SECPKG_CRED_OUTBOUND,
                 securityPackage);
-        handle.initialize();
+        handle.initialize(authIdentity);
         return handle;
     }
 
@@ -78,11 +82,17 @@ public class WindowsCredentialsHandleImpl implements IWindowsCredentialsHandle {
      * Initialize a new credentials handle.
      */
     @Override
-    public void initialize() {
+    public void initialize(final AuthIdentity authIdentity) {
         this.handle = new CredHandle();
         this.clientLifetime = new TimeStamp();
+        Pointer authIdentityPointer = null;
+        if (authIdentity != null) {
+            authIdentity.write();
+            authIdentityPointer = authIdentity.getPointer();
+        }
+
         final int rc = Secur32.INSTANCE.AcquireCredentialsHandle(this.principalName, this.securityPackage,
-                this.credentialsType, null, null, null, null, this.handle, this.clientLifetime);
+                this.credentialsType, null, authIdentityPointer, null, null, this.handle, this.clientLifetime);
         if (WinError.SEC_E_OK != rc) {
             throw new Win32Exception(rc);
         }

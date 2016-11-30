@@ -17,6 +17,7 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.internal.waffle.windows.auth.AuthIdentity;
 import com.sun.jna.platform.win32.Sspi.SecBufferDesc;
 import com.mongodb.internal.waffle.windows.auth.IWindowsCredentialsHandle;
 import com.mongodb.internal.waffle.windows.auth.impl.WindowsCredentialsHandleImpl;
@@ -54,7 +55,12 @@ final class WindowsGSSAPI {
             authorizationId = userName;
             servicePrincipalName = serviceName + '/' + hostName + (serviceRealm == null ? "" : '@' + serviceRealm);
 
-            IWindowsCredentialsHandle clientCredentials = WindowsCredentialsHandleImpl.getCurrent(SECURITY_PACKAGE);
+            AuthIdentity authIdentity = null;
+            if (password != null) {
+                authIdentity = new AuthIdentity(userName, new String(password));
+            }
+
+            IWindowsCredentialsHandle clientCredentials = WindowsCredentialsHandleImpl.getCurrent(SECURITY_PACKAGE, authIdentity);
             clientContext = new WindowsSecurityContextImpl();
             clientContext.setPrincipalName(authorizationId);
             clientContext.setCredentialsHandle(clientCredentials);
