@@ -116,7 +116,7 @@ public final class MongoCredential {
     /**
      * Mechanism property for specifying that the driver should use native SSPI implementation on Windows platforms.
      * <p>
-     *   Set this to true to indicate the driver should use the native SSPI implementation on Windows platforms. The default is false.
+     *   Set this to "true" to indicate the driver should use the native SSPI implementation on Windows platforms. The default is "false".
      * </p>
      *
      * @since 3.5
@@ -280,6 +280,39 @@ public final class MongoCredential {
     }
 
     /**
+     * Creates a MongoCredential instance for the GSSAPI SASL mechanism.
+     * <p>
+     * To override the default service name of {@code "mongodb"}, add a mechanism property with the name {@code "SERVICE_NAME"}.
+     * <p>
+     * To force canonicalization of the host name prior to authentication, add a mechanism property with the name
+     * {@code "CANONICALIZE_HOST_NAME"} with the value{@code true}.
+     * <p>
+     * To override the {@link javax.security.auth.Subject} with which the authentication executes, add a mechanism property with the name
+     * {@code "JAVA_SUBJECT"} with the value of a {@code Subject} instance.
+     * <p>
+     * To override the properties of the {@link javax.security.sasl.SaslClient} with which the authentication executes, add a mechanism
+     * property with the name {@code "JAVA_SASL_CLIENT_PROPERTIES"} with the value of a {@code Map<String, Object} instance containing the
+     * necessary properties.  This can be useful if the application is customizing the default
+     * {@link javax.security.sasl.SaslClientFactory}.
+     * <p>
+     * The password is only used when the {@link @JAVA_GSSAPI_USE_NATIVE_SSPI_KEY} is enabled
+     *
+     * @param userName the non-null user name
+     * @param password the passsword
+     * @return the credential
+     * @mongodb.server.release 2.4
+     * @mongodb.driver.manual core/authentication/#kerberos-authentication GSSAPI
+     * @see #withMechanismProperty(String, Object)
+     * @see #SERVICE_NAME_KEY
+     * @see #CANONICALIZE_HOST_NAME_KEY
+     * @see #JAVA_GSSAPI_USE_NATIVE_SSPI_KEY
+     */
+    public static MongoCredential createGSSAPICredential(final String userName, final char[] password) {
+        return new MongoCredential(GSSAPI, userName, "$external", password);
+    }
+
+
+    /**
      * Creates a new MongoCredential as a copy of this instance, with the specified mechanism property added.
      *
      * @param key   the key to the property, which is treated as case-insensitive
@@ -313,7 +346,7 @@ public final class MongoCredential {
             throw new IllegalArgumentException("Password can not be null for " + mechanism + " mechanism");
         }
 
-        if ((mechanism == GSSAPI || mechanism == MONGODB_X509) && password != null) {
+        if ((mechanism == MONGODB_X509) && password != null) {
             throw new IllegalArgumentException("Password must be null for the " + mechanism + " mechanism");
         }
 

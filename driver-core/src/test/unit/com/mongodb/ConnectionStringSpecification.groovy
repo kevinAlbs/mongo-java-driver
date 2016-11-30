@@ -225,6 +225,8 @@ class ConnectionStringSpecification extends Specification {
         new ConnectionString('mongodb://jeff@localhost/?' +
                            'authMechanism=GSSAPI')            | asList(createGSSAPICredential('jeff'))
         new ConnectionString('mongodb://jeff:123@localhost/?' +
+                           'authMechanism=GSSAPI')            | asList(createGSSAPICredential('jeff', '123'.toCharArray()))
+        new ConnectionString('mongodb://jeff:123@localhost/?' +
                            'authMechanism=PLAIN')             | asList(createPlainCredential('jeff', 'admin', '123'.toCharArray()))
         new ConnectionString('mongodb://jeff@localhost/?' +
                            'authMechanism=MONGODB-X509')      | asList(createMongoX509Credential('jeff'))

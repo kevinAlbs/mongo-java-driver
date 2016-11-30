@@ -66,12 +66,15 @@ class GSSAPIAuthenticator extends SaslAuthenticator {
         try {
             SaslClient saslClient;
             if (Boolean.valueOf(credential.getMechanismProperty(JAVA_GSSAPI_USE_NATIVE_SSPI_KEY, "false"))) {  // TODO: handle boolean type
-                saslClient = WindowsGSSAPI.createSaslClient(credential.getUserName(),
+                saslClient = WindowsGSSAPI.createSaslClient(credential.getUserName(), credential.getPassword(),
                         credential.getMechanismProperty(SERVICE_NAME_KEY, SERVICE_NAME_DEFAULT_VALUE),
                         getHostName(serverAddress),
                         credential.getMechanismProperty(SERVICE_REALM_KEY, (String) null));
             }
             else {
+
+                // TODO: log warning if credential has a password
+
                 Map<String, Object> saslClientProperties = getCredential().getMechanismProperty(JAVA_SASL_CLIENT_PROPERTIES_KEY, null);
                 if (saslClientProperties == null) {
                     saslClientProperties = new HashMap<String, Object>();

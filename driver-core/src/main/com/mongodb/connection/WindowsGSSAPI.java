@@ -31,9 +31,9 @@ import static com.sun.jna.platform.win32.Sspi.SECBUFFER_TOKEN;
 
 final class WindowsGSSAPI {
 
-    public static SaslClient createSaslClient(final String userName, final String serviceName, final String hostName,
+    public static SaslClient createSaslClient(final String userName, final char[] password, final String serviceName, final String hostName,
                                               final String serviceRealm) {
-        return new SSPISaslClient(userName, serviceName, hostName, serviceRealm);
+        return new SSPISaslClient(userName, password, serviceName, hostName, serviceRealm);
     }
 
     private WindowsGSSAPI() {
@@ -46,7 +46,7 @@ final class WindowsGSSAPI {
         private final WindowsSecurityContextImpl clientContext;
         private final String servicePrincipalName;
 
-        public SSPISaslClient(final String userName, final String serviceName, final String hostName,
+        public SSPISaslClient(final String userName, final char[] password, final String serviceName, final String hostName,
                               final String serviceRealm) {
             notNull("userName", userName);
             notNull("serviceName", serviceName);

@@ -503,7 +503,7 @@ public class ConnectionString {
 
         MongoCredential credential;
         if (mechanism == GSSAPI) {
-            credential = MongoCredential.createGSSAPICredential(userName);
+            credential = MongoCredential.createGSSAPICredential(userName, password);
             if (gssapiServiceName != null) {
                 credential = credential.withMechanismProperty("SERVICE_NAME", gssapiServiceName);
             }
