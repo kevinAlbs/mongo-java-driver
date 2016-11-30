@@ -26,13 +26,15 @@ import java.util.List;
 import static com.sun.jna.platform.win32.WTypes.*;
 
 public class AuthIdentity extends Structure {
+    // CHECKSTYLE: OFF
     public WString userName;
     public long userNameLength;
     public WString domain;
-    public int domainLength;
+    public long domainLength;
     public WString password;
-    public int passwordLength;
+    public long passwordLength;
     public long flags = 0x02;  // UNICODE
+    // CHECKSTYLE: ON
 
     public AuthIdentity(final String userName, final String password) {
         this.userName = new WString(userName);
@@ -42,7 +44,7 @@ public class AuthIdentity extends Structure {
     }
 
     @Override
-    protected List getFieldOrder() {
+    protected List<String> getFieldOrder() {
         return Arrays.asList("userName", "userNameLength", "domain", "domainLength", "password", "passwordLength", "flags");
     }
 }
