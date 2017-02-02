@@ -509,7 +509,7 @@ class GridFSBucketSmokeTestSpecification extends FunctionalSpecification {
         def fileAsDocument = run(filesCollection.find(BsonDocument).&first)
 
         then:
-        fileAsDocument.getDocument('metadata').getBinary('uuid').getType() == 4 as byte
+        fileAsDocument.getDocument('metadata').getBinary('uuid').getFieldType() == 4 as byte
     }
 }
 

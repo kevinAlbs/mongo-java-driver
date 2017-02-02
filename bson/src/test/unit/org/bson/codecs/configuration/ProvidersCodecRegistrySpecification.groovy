@@ -81,7 +81,7 @@ class ProvidersCodecRegistrySpecification extends Specification {
 
     def 'should handle cycles'() {
         given:
-        def registry = new ProvidersCodecRegistry([new ClassModelCodecProvider()])
+        def registry = new ProvidersCodecRegistry([new DummyClassModelCodecProvider()])
 
         when:
         Codec<Top> topCodec = registry.get(Top)
@@ -126,7 +126,7 @@ class ProvidersCodecRegistrySpecification extends Specification {
 
     def 'get with codec registry should return the codec from the first source that has one'() {
         given:
-        def provider = new ProvidersCodecRegistry([new ClassModelCodecProvider([Simple])])
+        def provider = new ProvidersCodecRegistry([new DummyClassModelCodecProvider([Simple])])
         def registry = Mock(CodecRegistry)
 
         expect:
@@ -135,7 +135,7 @@ class ProvidersCodecRegistrySpecification extends Specification {
 
     def 'get with codec registry should return null if codec not found'() {
         given:
-        def provider = new ProvidersCodecRegistry([new ClassModelCodecProvider([Top])])
+        def provider = new ProvidersCodecRegistry([new DummyClassModelCodecProvider([Top])])
         def registry = Mock(CodecRegistry)
 
         expect:
@@ -144,7 +144,7 @@ class ProvidersCodecRegistrySpecification extends Specification {
 
     def 'get with codec registry should pass the outer registry to its providers'() {
         given:
-        def provider = new ProvidersCodecRegistry([new ClassModelCodecProvider([Simple])])
+        def provider = new ProvidersCodecRegistry([new DummyClassModelCodecProvider([Simple])])
         def registry = Mock(CodecRegistry)
 
         expect:
@@ -169,15 +169,15 @@ class SingleCodecProvider implements CodecProvider {
     }
 }
 
-class ClassModelCodecProvider implements CodecProvider {
+class DummyClassModelCodecProvider implements CodecProvider {
 
     private final List<Class<?>> supportedClasses
 
-    ClassModelCodecProvider() {
+    DummyClassModelCodecProvider() {
         this(asList(Top, Nested))
     }
 
-    ClassModelCodecProvider(List<Class<?>> supportedClasses) {
+    DummyClassModelCodecProvider(List<Class<?>> supportedClasses) {
         this.supportedClasses = supportedClasses
     }
 

@@ -1,0 +1,68 @@
+/*
+ * Copyright 2017 MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.bson.codecs.pojo;
+
+import org.bson.codecs.Codec;
+
+import java.util.List;
+
+/**
+ * Represents a field on a class and stores various metadata such as generic parameters
+ *
+ * @param <T> the type of the field that the FieldModel represents.
+ * @since 3.5
+ */
+public interface FieldModel<T> {
+
+    /**
+     * Returns true if the value should be serialized.
+     *
+     * @param value the value to check
+     * @return true if the value should be serialized.
+     */
+    boolean shouldSerialize(T value);
+
+    /**
+     * @return the unmapped field name as defined in the source file.
+     */
+    String getFieldName();
+
+    /**
+     * @return the name of the mapped field
+     */
+    String getDocumentFieldName();
+
+    /**
+     * @return the backing class for the model
+     */
+    Class<T> getFieldType();
+
+    /**
+     * @return the parameterized types on the model's underlying type
+     */
+    List<Class<?>> getTypeParameters();
+
+    /**
+     * @return the custom codec to use if set or null
+     */
+    Codec<T> getCodec();
+
+    /**
+     * @return true if a discriminator should be used when serializing, otherwise false
+     */
+    boolean useDiscriminator();
+}

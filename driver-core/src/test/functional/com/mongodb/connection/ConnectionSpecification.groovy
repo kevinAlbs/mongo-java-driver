@@ -55,7 +55,7 @@ class ConnectionSpecification extends OperationFunctionalSpecification {
         then:
         connection.description.serverAddress == source.getServerDescription().getAddress()
         connection.description.serverVersion == ClusterFixture.getServerVersion()
-        connection.description.serverType == source.getServerDescription().getType()
+        connection.description.serverType == source.getServerDescription().getFieldType()
         connection.description.maxDocumentSize == source.getServerDescription().getMaxDocumentSize()
         connection.description.maxMessageSize == expectedMaxMessageSize
         connection.description.maxBatchCount == expectedMaxBatchCount
