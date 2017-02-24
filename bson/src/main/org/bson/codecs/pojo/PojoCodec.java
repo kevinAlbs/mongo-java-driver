@@ -15,91 +15,57 @@
  */
 package org.bson.codecs.pojo;
 
-import org.bson.BsonInvalidOperationException;
 import org.bson.BsonReader;
-import org.bson.BsonType;
 import org.bson.BsonValue;
 import org.bson.BsonWriter;
 import org.bson.codecs.BsonTypeClassMap;
 import org.bson.codecs.Codec;
 import org.bson.codecs.CollectibleCodec;
-import org.bson.codecs.Decoder;
 import org.bson.codecs.DecoderContext;
-import org.bson.codecs.Encoder;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.diagnostics.Loggers;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static org.bson.codecs.configuration.CodecRegistries.fromCodecs;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+import static org.bson.codecs.pojo.PojoHelper.decodeClassModel;
+import static org.bson.codecs.pojo.PojoHelper.encodeClassModel;
 
-@SuppressWarnings("unchecked")
+
 final class PojoCodec<T> implements CollectibleCodec<T> {
-    private static final Logger LOGGER = Loggers.getLogger("PojoCodec");
 
     private final ClassModel<T> classModel;
     private final CodecRegistry registry;
-    private final Map<FieldModel<?>, Codec<?>> fieldCodecs;
+    private final DiscriminatorLookup discriminatorLookup;
     private final BsonTypeClassMap bsonTypeClassMap;
+    private final Map<FieldModel<?>, Codec<?>> fieldCodecs;
 
-    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final BsonTypeClassMap bsonTypeClassMap) {
-        this(classModel, registry, bsonTypeClassMap, new HashMap<FieldModel<?>, Codec<?>>());
+    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
+              final BsonTypeClassMap bsonTypeClassMap) {
+        this(classModel, registry, discriminatorLookup, bsonTypeClassMap, new HashMap<FieldModel<?>, Codec<?>>());
     }
 
-    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final BsonTypeClassMap bsonTypeClassMap,
-              final Map<FieldModel<?>, Codec<?>> fieldCodecs) {
+    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
+              final BsonTypeClassMap bsonTypeClassMap, final Map<FieldModel<?>, Codec<?>> fieldCodecs) {
         this.classModel = classModel;
         this.registry = fromRegistries(fromCodecs(this), registry);
+        this.discriminatorLookup = discriminatorLookup;
         this.bsonTypeClassMap = bsonTypeClassMap;
         this.fieldCodecs = fieldCodecs;
     }
 
     @Override
     public void encode(final BsonWriter writer, final T value, final EncoderContext encoderContext) {
-        writer.writeStartDocument();
-        ClassAccessor<T> classAccessor = classModel.getClassAccessor();
-
-        FieldModel<?> idFieldModel = classModel.getIdFieldModel();
-        if (idFieldModel != null) {
-            encodeField(value, classAccessor, idFieldModel, writer, encoderContext);
-        }
-
-        if (classModel.useDiscriminator()) {
-            writer.writeString(classModel.getDiscriminatorKey(), classModel.getDiscriminator());
-        }
-
-        for (FieldModel<?> fieldModel : classModel.getFieldModels()) {
-            if (fieldModel == classModel.getIdFieldModel()) {
-                continue;
-            }
-            encodeField(value, classAccessor, fieldModel, writer, encoderContext);
-        }
-
-        writer.writeEndDocument();
+        encodeClassModel(writer, value, encoderContext, registry, discriminatorLookup, bsonTypeClassMap, fieldCodecs, classModel);
     }
 
-    /**
-     * Decode an entity applying the passed options.
-     *
-     * @param reader         the BSON reader
-     * @param decoderContext the decoder context
-     * @return an instance of the type parameter {@code T}.
-     */
     @Override
     public T decode(final BsonReader reader, final DecoderContext decoderContext) {
-        ClassAccessor<T> classAccessor = classModel.getClassAccessor();
-        decodeFields(classAccessor, reader, decoderContext);
-        return classAccessor.create();
+        return decodeClassModel(reader, decoderContext, registry, discriminatorLookup, bsonTypeClassMap, fieldCodecs, classModel, this);
     }
 
     @Override
@@ -131,120 +97,8 @@ final class PojoCodec<T> implements CollectibleCodec<T> {
         return format("PojoCodec<%s>", classModel);
     }
 
-    private <S> Encoder<S> getFieldEncoder(final FieldModel<S> fieldModel, final Object fieldValue) {
-        Codec<S> codec = getCodec(fieldModel);
-        if (codec == null) {
-            codec = (Codec<S>) registry.get(fieldValue.getClass());
-        }
-        return codec;
+
+    ClassModel<T> getClassModel() {
+        return classModel;
     }
-
-    private <S> Decoder<S> getFieldDecoder(final FieldModel<S> fieldModel, final BsonType bsonType) {
-        Codec<S> codec = getCodec(fieldModel);
-        if (codec == null) {
-            Class<?> fieldClazz = bsonTypeClassMap.get(bsonType);
-            codec = (Codec<S>) registry.get(fieldClazz);
-        }
-        return codec;
-    }
-
-    private <S> Codec<S> getCodec(final FieldModel<S> fieldModel) {
-        Codec<S> codec = (Codec<S>) fieldCodecs.get(fieldModel);
-        if (codec == null) {
-            codec = fieldModel.getCodec() != null ? fieldModel.getCodec() : createFieldCodec(fieldModel, fieldModel.getTypeParameters());
-            if (codec != null) {
-                fieldCodecs.put(fieldModel, codec);
-            }
-        }
-        return codec;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private <S> Codec<S> createFieldCodec(final FieldModel<S> model, final List<Class<?>> types) {
-        Codec<S> fieldCodec = null;
-        Class<?> first = types.get(0);
-        List<Class<?>> remainder = types.size() > 1 ? types.subList(1, types.size()) : Collections.<Class<?>>emptyList();
-
-        if (first == Object.class) {
-            fieldCodec = null;
-        } else if (Collection.class.isAssignableFrom(first)) {
-            fieldCodec = new CollectionCodec(registry, bsonTypeClassMap, model.useDiscriminator(), classModel.getDiscriminatorKey(), first,
-                    createFieldCodec(model, remainder));
-        } else if (Map.class.isAssignableFrom(first)) {
-            fieldCodec = new MapCodec(registry, bsonTypeClassMap, model.useDiscriminator(), classModel.getDiscriminatorKey(), first,
-                    createFieldCodec(model, remainder));
-        } else {
-            try {
-                fieldCodec = (Codec<S>) registry.get(first);
-                if (fieldCodec instanceof PojoCodec) {
-                    fieldCodec = ((PojoCodec<S>) fieldCodec).checkFieldUseDiscriminator(model);
-                }
-            } catch (final CodecConfigurationException e) {
-                throw new CodecConfigurationException(format("Missing codec for '%s', no codec available for '%s'.",
-                        model.getDocumentFieldName(), first.getSimpleName()), e);
-            }
-        }
-        return fieldCodec;
-    }
-
-    private PojoCodec<T> checkFieldUseDiscriminator(final FieldModel<?> fieldModel) {
-        if (fieldModel.useDiscriminator() == classModel.useDiscriminator()) {
-            return this;
-        } else if (fieldModel.useDiscriminator() && (classModel.getDiscriminatorKey() == null || classModel.getDiscriminator() == null)) {
-            return this;
-        } else {
-            ClassModelImpl<T> newClassModel = new ClassModelImpl<T>(classModel.getType(), classModel.getClassAccessorFactory(),
-                    fieldModel.useDiscriminator(), classModel.getDiscriminatorKey(), classModel.getDiscriminator(),
-                    classModel.getIdFieldModel(), classModel.getFieldModels());
-            return new PojoCodec<T>(newClassModel, registry, bsonTypeClassMap, fieldCodecs);
-        }
-    }
-
-    private <S> void encodeField(final T instance, final ClassAccessor<T> classAccessor, final FieldModel<S> fieldModel,
-                                 final BsonWriter writer, final EncoderContext encoderContext) {
-        S fieldValue = classAccessor.get(instance, fieldModel);
-        if (fieldModel.shouldSerialize(fieldValue)) {
-            writer.writeName(fieldModel.getDocumentFieldName());
-            if (fieldValue == null) {
-                writer.writeNull();
-            } else {
-                getFieldEncoder(fieldModel, fieldValue).encode(writer, fieldValue, encoderContext);
-            }
-        }
-    }
-
-    private void decodeFields(final ClassAccessor<T> classAccessor, final BsonReader reader, final DecoderContext decoderContext) {
-        reader.readStartDocument();
-        while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            String name = reader.readName();
-            if (classModel.useDiscriminator() && classModel.getDiscriminatorKey().equals(name)) {
-                reader.readString();
-            } else {
-                FieldModel<T> fieldModel = (FieldModel<T>) classModel.getFieldModel(name);
-                if (fieldModel != null) {
-                    try {
-                        T value = null;
-                        if (reader.getCurrentBsonType() == BsonType.NULL) {
-                            reader.readNull();
-                        } else {
-                            Decoder<T> decoder = getFieldDecoder(fieldModel, reader.getCurrentBsonType());
-                            value = decoder.decode(reader, decoderContext);
-                        }
-                        classAccessor.set(value, fieldModel);
-                    } catch (BsonInvalidOperationException e) {
-                        throw new CodecConfigurationException(format("Failed to decode '%s'. %s", name, e.getMessage()), e);
-                    } catch (CodecConfigurationException e) {
-                        throw new CodecConfigurationException(format("Failed to decode '%s'. %s", name, e.getMessage()), e);
-                    }
-                } else {
-                    if (LOGGER.isLoggable(Level.INFO)) {
-                        LOGGER.info(format("Found field not present in the ClassModel: %s", name));
-                    }
-                    reader.skipValue();
-                }
-            }
-        }
-        reader.readEndDocument();
-    }
-
 }

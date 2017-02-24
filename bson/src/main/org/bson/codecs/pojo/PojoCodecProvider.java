@@ -40,6 +40,7 @@ public final class PojoCodecProvider implements CodecProvider {
     private final Set<String> packages;
     private final List<Convention> conventions;
     private final BsonTypeClassMap bsonTypeClassMap;
+    private final DiscriminatorLookup discriminatorLookup;
 
     private PojoCodecProvider(final Map<Class<?>, ClassModel<?>> classModels, final Set<String> packages,
                               final List<Convention> conventions, final BsonTypeClassMap bsonTypeClassMap) {
@@ -47,6 +48,7 @@ public final class PojoCodecProvider implements CodecProvider {
         this.packages = packages;
         this.conventions = conventions;
         this.bsonTypeClassMap = bsonTypeClassMap;
+        this.discriminatorLookup = new DiscriminatorLookup(classModels, packages);
     }
 
     /**
@@ -68,7 +70,7 @@ public final class PojoCodecProvider implements CodecProvider {
                 classModel = createClassModel(clazz, conventions);
                 classModels.put(clazz, classModel);
             }
-            return new PojoCodec<T>(classModel, registry, bsonTypeClassMap);
+            return new PojoCodec<T>(classModel, registry, discriminatorLookup, bsonTypeClassMap);
         }
         return null;
     }

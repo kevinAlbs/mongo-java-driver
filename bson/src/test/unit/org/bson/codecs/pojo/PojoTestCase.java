@@ -33,6 +33,8 @@ import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
+import org.bson.codecs.pojo.entities.ShapeModelCircle;
+import org.bson.codecs.pojo.entities.ShapeModelRectangle;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
 import org.bson.codecs.pojo.entities.SimpleNestedPojoModel;
@@ -75,11 +77,18 @@ abstract class PojoTestCase {
     @SuppressWarnings("unchecked")
     <T> void decodesTo(final CodecRegistry registry, final String json, final T expected) {
         Codec<T> codec = (Codec<T>) registry.get(expected.getClass());
+        decodesTo(codec, json, expected);
+    }
+
+    <T> void decodesTo(final Codec<T> codec, final String json, final T expected) {
         OutputBuffer encoded = encode(DOCUMENT_CODEC, BsonDocument.parse(json));
         T result = decode(codec, encoded);
         Assert.assertEquals("Data represent", expected, result);
     }
 
+    <T> void decodingShouldFail(final Codec<T> codec, final String json) {
+        decodesTo(codec, json, null);
+    }
 
     <T> OutputBuffer encode(final Codec<T> codec, final T value) {
         OutputBuffer buffer = new BasicOutputBuffer();
@@ -207,6 +216,14 @@ abstract class PojoTestCase {
         SimpleModel simpleModel = getSimpleModel();
         ConventionModel child = new ConventionModel("child", null, simpleModel);
         return new ConventionModel("id", child, null);
+    }
+
+    ShapeModelCircle getShapeModelCirce() {
+        return new ShapeModelCircle("orange", 4.2);
+    }
+
+    ShapeModelRectangle getShapeModelRectangle() {
+        return new ShapeModelRectangle("green", 22.1, 105.0);
     }
 
     class StringToObjectIdCodec implements Codec<String> {

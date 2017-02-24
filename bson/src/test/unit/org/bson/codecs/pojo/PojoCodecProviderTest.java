@@ -57,9 +57,6 @@ public final class PojoCodecProviderTest extends PojoTestCase {
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
         roundTrip(registry, getSimpleModel(), "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
-        roundTrip(registry, getConventionModel(), "{'_id': 'id', '_cls': 'AnnotatedConventionModel', 'myFinalField': 10,"
-                + "'myIntField': 10, 'child': {'_id': 'child', 'myFinalField': 10, 'myIntField': 10,"
-                + "                            'model': {'integerField': 42, 'stringField': 'myString'}}}");
     }
 
     @Test

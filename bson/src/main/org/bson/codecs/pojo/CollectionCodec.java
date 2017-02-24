@@ -35,20 +35,23 @@ import static org.bson.codecs.pojo.PojoHelper.getCodecFromDocument;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class CollectionCodec<T> implements Codec<Collection<T>> {
     private final CodecRegistry registry;
+    private final DiscriminatorLookup discriminatorLookup;
     private final BsonTypeClassMap bsonTypeClassMap;
     private final boolean useDiscriminator;
     private final String discriminatorKey;
     private final Class<Collection<T>> encoderClass;
     private final Codec<T> codec;
 
-    CollectionCodec(final CodecRegistry registry, final BsonTypeClassMap bsonTypeClassMap, final boolean useDiscriminator,
-                    final String discriminatorKey, final Class<Collection<T>> encoderClass) {
-        this(registry, bsonTypeClassMap, useDiscriminator, discriminatorKey, encoderClass, null);
+    CollectionCodec(final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup, final BsonTypeClassMap bsonTypeClassMap,
+                    final boolean useDiscriminator, final String discriminatorKey, final Class<Collection<T>> encoderClass) {
+        this(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, encoderClass, null);
     }
 
-    CollectionCodec(final CodecRegistry registry, final BsonTypeClassMap bsonTypeClassMap, final boolean useDiscriminator,
-                    final String discriminatorKey, final Class<Collection<T>> encoderClass, final Codec<T> codec) {
+    CollectionCodec(final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup, final BsonTypeClassMap bsonTypeClassMap,
+                    final boolean useDiscriminator, final String discriminatorKey, final Class<Collection<T>> encoderClass,
+                    final Codec<T> codec) {
         this.registry = registry;
+        this.discriminatorLookup = discriminatorLookup;
         this.bsonTypeClassMap = bsonTypeClassMap;
         this.useDiscriminator = useDiscriminator;
         this.discriminatorKey = discriminatorKey;
@@ -67,7 +70,7 @@ class CollectionCodec<T> implements Codec<Collection<T>> {
                 if (Collection.class.isAssignableFrom(clazz)) {
                     itemCodec = (Codec<T>) this;
                 } else if (Map.class.isAssignableFrom(clazz)) {
-                    itemCodec = new MapCodec(registry, bsonTypeClassMap, useDiscriminator, discriminatorKey, clazz);
+                    itemCodec = new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, clazz);
                 } else {
                     itemCodec = (Codec<T>) registry.get(clazz);
                 }
@@ -90,8 +93,8 @@ class CollectionCodec<T> implements Codec<Collection<T>> {
                 if (currentType == BsonType.ARRAY) {
                     itemCodec = (Codec<T>) this;
                 } else if (currentType == BsonType.DOCUMENT) {
-                    itemCodec = getCodecFromDocument(reader, useDiscriminator, discriminatorKey, registry,
-                            new MapCodec(registry, bsonTypeClassMap, useDiscriminator, discriminatorKey, HashMap.class));
+                    itemCodec = getCodecFromDocument(reader, useDiscriminator, discriminatorKey, registry, discriminatorLookup,
+                          new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, HashMap.class));
                 } else {
                     Class<?> fieldClazz = bsonTypeClassMap.get(reader.getCurrentBsonType());
                     itemCodec = (Codec<T>) registry.get(fieldClazz);

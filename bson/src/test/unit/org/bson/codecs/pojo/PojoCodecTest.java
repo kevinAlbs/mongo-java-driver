@@ -16,6 +16,7 @@
 
 package org.bson.codecs.pojo;
 
+import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
@@ -24,6 +25,9 @@ import org.bson.codecs.pojo.entities.ConstructorModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.ConverterModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
+import org.bson.codecs.pojo.entities.ShapeModelAbstract;
+import org.bson.codecs.pojo.entities.ShapeModelCircle;
+import org.bson.codecs.pojo.entities.ShapeModelRectangle;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
 import org.bson.codecs.pojo.entities.SimpleNestedPojoModel;
@@ -38,7 +42,6 @@ import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.bson.codecs.pojo.Conventions.NO_CONVENTIONS;
 import static org.junit.Assert.assertEquals;
@@ -74,13 +77,13 @@ public final class PojoCodecTest extends PojoTestCase {
         SimpleModel simpleModel = getSimpleModel();
         Map<String, SimpleModel> map = new HashMap<String, SimpleModel>();
         map.put("A", simpleModel);
-        String modelJson = "{'_t': 'org.bson.codecs.pojo.entities.SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
+        String modelJson = "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
 
-        CodecRegistry customRegistry = getFullTypeNameCodecRegistry(SimpleGenericsModel.class, SimpleModel.class);
+        CodecRegistry registry = getCodecRegistry(SimpleGenericsModel.class, SimpleModel.class);
         SimpleGenericsModel<Integer, SimpleModel, SimpleModel> model = new SimpleGenericsModel<Integer, SimpleModel, SimpleModel>(42,
                 42, singletonList(simpleModel), map);
-        roundTrip(customRegistry, model,
-                "{'_t': 'org.bson.codecs.pojo.entities.SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, "
+        roundTrip(registry, model,
+                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, "
                         + "    'myListField': [" + modelJson + "], 'myMapField': {'A': " + modelJson + "}}");
 
         // Nested Collections
@@ -89,8 +92,8 @@ public final class PojoCodecTest extends PojoTestCase {
 
         SimpleGenericsModel<Integer, Map<String, List<SimpleModel>>, List<SimpleModel>> nestedModel =
                 new SimpleGenericsModel<Integer, Map<String, List<SimpleModel>>, List<SimpleModel>>(42, 42, singletonList(mapA), mapA);
-        roundTrip(customRegistry, nestedModel,
-                "{'_t': 'org.bson.codecs.pojo.entities.SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
+        roundTrip(registry, nestedModel,
+                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
                         + "'myListField': [{ 'A': [" + modelJson + "]}],"
                         + "'myMapField': {'A': [" + modelJson + "]}}");
 
@@ -101,8 +104,8 @@ public final class PojoCodecTest extends PojoTestCase {
                 new SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>>(42, 42,
                         singletonList(singletonList(simpleModel)), mapB);
 
-        roundTrip(customRegistry, multiNestedModel,
-                "{'_t': 'org.bson.codecs.pojo.entities.SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
+        roundTrip(registry, multiNestedModel,
+                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
                         + "'myListField': [[" + modelJson + "]],"
                         + "'myMapField': {'A': {'A': " + modelJson + "}}}");
     }
@@ -144,6 +147,15 @@ public final class PojoCodecTest extends PojoTestCase {
                         + "'listMapListSimple': [{'ls': [" + simpleModel + "]}],"
                         + "'listMapSetSimple': [{'s': [" + simpleModel + "]}],"
                         + "}");
+    }
+
+    @Test
+    public void testDecodingUsingAbstractBasedModel() {
+        CodecRegistry registry = getCodecRegistry(ShapeModelAbstract.class, ShapeModelCircle.class, ShapeModelRectangle.class);
+        Codec<ShapeModelAbstract> abstractCodec = registry.get(ShapeModelAbstract.class);
+        ShapeModelAbstract model = getShapeModelCirce();
+
+        decodesTo(abstractCodec, "{'_t': 'ShapeModelCircle', 'color': 'orange', 'radius': 4.2}", model);
     }
 
     @Test
@@ -324,52 +336,42 @@ public final class PojoCodecTest extends PojoTestCase {
 
     @Test(expected = CodecConfigurationException.class)
     public void testDataUnknownClass() {
-        SimpleNestedPojoModel model = getSimpleNestedPojoModel();
-        roundTrip(getCodecRegistry(SimpleNestedPojoModel.class), model, "{}");
+        decodingShouldFail(getCodec(SimpleModel.class), "{'_t': 'FakeModel'}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidTypeForField() {
-        decodesTo(getCodecRegistry(SimpleModel.class), "{'_t': 'SimpleModel', 'stringField': 123}", getSimpleModel());
+        decodingShouldFail(getCodec(SimpleModel.class), "{'_t': 'SimpleModel', 'stringField': 123}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidTypeForPrimitiveField() {
-        decodesTo(getCodecRegistry(PrimitivesModel.class), "{ '_t': 'PrimitivesModel', 'myBoolean': null}", getPrimitivesModel());
+        decodingShouldFail(getCodec(PrimitivesModel.class), "{ '_t': 'PrimitivesModel', 'myBoolean': null}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidTypeForModelField() {
-        decodesTo(getCodecRegistry(SimpleNestedPojoModel.class), "{ '_t': 'SimpleNestedPojoModel', 'simple': 123}",
-                getSimpleNestedPojoModel());
+        decodingShouldFail(getCodec(SimpleNestedPojoModel.class), "{ '_t': 'SimpleNestedPojoModel', 'simple': 123}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidDiscriminatorInAMapField() {
-        SimpleModel simpleModel = getSimpleModel();
-        Map<String, SimpleModel> map = new HashMap<String, SimpleModel>();
-        map.put("A", simpleModel);
-        SimpleGenericsModel<Integer, Object, SimpleModel> model = new SimpleGenericsModel<Integer, Object, SimpleModel>(42,
-                42, emptyList(), map);
-        decodesTo(getCodecRegistry(SimpleGenericsModel.class, SimpleModel.class),
+        decodingShouldFail(getCodec(SimpleGenericsModel.class),
                 "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, 'myListField': [], "
-                        + "'myMapField': {'A': {'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}}}", model);
+                        + "'myMapField': {'A': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidDiscriminatorInAListField() {
-        SimpleModel simpleModel = getSimpleModel();
-        SimpleGenericsModel<Integer, SimpleModel, Integer> model = new SimpleGenericsModel<Integer, SimpleModel, Integer>(42,
-                42, singletonList(simpleModel), new HashMap<String, Integer>());
-        decodesTo(getCodecRegistry(SimpleGenericsModel.class, SimpleModel.class),
+        decodingShouldFail(getCodec(SimpleGenericsModel.class),
                 "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, 'myMapField': {}"
-                        + "'myListField': [{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}]}", model);
+                        + "'myListField': [{'_t': 'fakeModel', 'integerField': 42, 'stringField': 'myString'}]}");
     }
 
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidDiscriminatorInNestedModel() {
-        decodesTo(getCodecRegistry(SimpleNestedPojoModel.class), "{ '_t': 'SimpleNestedPojoModel',"
-                + "'simple': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}", getSimpleNestedPojoModel());
+        decodingShouldFail(getCodec(SimpleNestedPojoModel.class), "{ '_t': 'SimpleNestedPojoModel',"
+                + "'simple': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}");
     }
 
     @Test(expected = UnsupportedOperationException.class)

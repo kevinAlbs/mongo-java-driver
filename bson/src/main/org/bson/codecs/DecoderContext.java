@@ -17,12 +17,21 @@
 package org.bson.codecs;
 
 /**
- * The context for decoding values to BSON.  Currently this is a placeholder, as there is nothing needed yet.
+ * The context for decoding values to BSON.
  *
  * @see org.bson.codecs.Decoder
  * @since 3.0
  */
 public final class DecoderContext {
+    private final boolean checkedDiscriminator;
+
+    /**
+     * @return true if the discriminator has been checked
+     */
+    public boolean hasCheckedDiscriminator() {
+        return checkedDiscriminator;
+    }
+
     /**
      * Create a builder.
      *
@@ -39,6 +48,26 @@ public final class DecoderContext {
         private Builder() {
         }
 
+        private boolean checkedDiscriminator;
+
+        /**
+         * @return true if the discriminator has been checked
+         */
+        public boolean hasCheckedDiscriminator() {
+            return checkedDiscriminator;
+        }
+
+        /**
+         * Sets the checkedDiscriminator
+         *
+         * @param checkedDiscriminator the checkedDiscriminator
+         * @return this
+         */
+        public Builder checkedDiscriminator(final boolean checkedDiscriminator) {
+            this.checkedDiscriminator = checkedDiscriminator;
+            return this;
+        }
+
         /**
          * Build an instance of {@code DecoderContext}.
          * @return the decoder context
@@ -49,5 +78,6 @@ public final class DecoderContext {
     }
 
     private DecoderContext(final Builder builder) {
+        this.checkedDiscriminator = builder.hasCheckedDiscriminator();
     }
 }
