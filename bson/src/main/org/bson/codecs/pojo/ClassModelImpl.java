@@ -25,8 +25,8 @@ import static java.util.Collections.unmodifiableList;
 
 
 final class ClassModelImpl<T> implements ClassModel<T> {
-    private final Map<String, FieldModel<?>> fieldMap = new HashMap<String, FieldModel<?>>();
-    private final List<FieldModel<?>> fieldModels = new ArrayList<FieldModel<?>>();
+    private final Map<String, FieldModel<?>> fieldMap;
+    private final List<FieldModel<?>> fieldModels;
     private final Class<T> type;
     private final FieldModel<?> idField;
     private final boolean discriminatorEnabled;
@@ -38,6 +38,8 @@ final class ClassModelImpl<T> implements ClassModel<T> {
     ClassModelImpl(final Class<T> clazz, final ClassAccessorFactory<T> classAccessorFactory, final Boolean discriminatorEnabled,
                    final String discriminatorKey, final String discriminator, final FieldModel<?> idField,
                    final List<FieldModel<?>> fieldModels) {
+        this.fieldMap = new HashMap<String, FieldModel<?>>();
+        this.fieldModels = new ArrayList<FieldModel<?>>();
         this.idField = idField;
         this.discriminatorEnabled = discriminatorEnabled;
         this.discriminatorKey = discriminatorKey;
