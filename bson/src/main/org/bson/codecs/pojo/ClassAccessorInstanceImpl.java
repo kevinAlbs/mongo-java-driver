@@ -25,13 +25,13 @@ import java.util.Map;
 import static java.lang.String.format;
 
 final class ClassAccessorInstanceImpl<T> implements ClassAccessor<T> {
-    private final ClassModel<T> classModel;
+    private final String name;
     private final Map<String, Field> fieldsMap;
     private final Constructor<T> constructor;
     private T newInstance;
 
     ClassAccessorInstanceImpl(final ClassModel<T> classModel, final Map<String, Field> fieldsMap, final Constructor<T> constructor) {
-        this.classModel = classModel;
+        this.name = classModel.getType().getSimpleName();
         this.fieldsMap = fieldsMap;
         this.constructor = constructor;
     }
@@ -67,7 +67,7 @@ final class ClassAccessorInstanceImpl<T> implements ClassAccessor<T> {
     private Field getField(final String fieldName) {
         Field field = fieldsMap.get(fieldName);
         if (field == null) {
-            throw new CodecConfigurationException(format("ClassModel: %s does not contain field: %s", classModel, fieldName));
+            throw new CodecConfigurationException(format("ClassModel for: %s does not contain field: %s", name, fieldName));
         }
         return field;
     }

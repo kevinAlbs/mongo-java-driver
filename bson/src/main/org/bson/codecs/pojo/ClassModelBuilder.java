@@ -26,8 +26,8 @@ import java.util.Map;
 import static java.lang.String.format;
 import static org.bson.assertions.Assertions.notNull;
 import static org.bson.codecs.pojo.Conventions.DEFAULT_CONVENTIONS;
-import static org.bson.codecs.pojo.PojoHelper.configureClassModelBuilder;
-import static org.bson.codecs.pojo.PojoHelper.stateNotNull;
+import static org.bson.codecs.pojo.PojoBuilderHelper.configureClassModelBuilder;
+import static org.bson.codecs.pojo.PojoBuilderHelper.stateNotNull;
 
 /**
  * A builder for programmatically creating {@code ClassModels}.

@@ -21,6 +21,7 @@ import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,7 +69,6 @@ public final class PojoCodecProvider implements CodecProvider {
         if (classModel != null || (packages.contains(clazz.getPackage().getName()))) {
             if (classModel == null) {
                 classModel = createClassModel(clazz, conventions);
-                classModels.put(clazz, classModel);
             }
             return new PojoCodec<T>(classModel, registry, discriminatorLookup, bsonTypeClassMap);
         }
@@ -92,10 +92,15 @@ public final class PojoCodecProvider implements CodecProvider {
          * @see #register(Class...)
          */
         public PojoCodecProvider build() {
+            List<Convention> immutableConventions = conventions != null
+                    ? Collections.unmodifiableList(new ArrayList<Convention>(conventions))
+                    : null;
             for (Class<?> clazz : clazzes) {
-                register(createClassModel(clazz, conventions));
+                if (!classModels.containsKey(clazz)) {
+                    register(createClassModel(clazz, immutableConventions));
+                }
             }
-            return new PojoCodecProvider(classModels, packages, conventions, bsonTypeClassMap);
+            return new PojoCodecProvider(classModels, packages, immutableConventions, bsonTypeClassMap);
         }
 
         /**

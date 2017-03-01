@@ -43,6 +43,16 @@ public final class PojoCodecProviderTest extends PojoTestCase {
     }
 
     @Test
+    public void testRegisterClassModel() {
+        ClassModel<SimpleModel> classModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).build();
+        PojoCodecProvider provider = PojoCodecProvider.builder().register(classModel).build();
+        CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
+
+        SimpleModel model = getSimpleModel();
+        roundTrip(registry, model, "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+    }
+
+    @Test
     public void testRegisterClass() {
         PojoCodecProvider provider = PojoCodecProvider.builder().register(SimpleModel.class).build();
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
@@ -57,6 +67,16 @@ public final class PojoCodecProviderTest extends PojoTestCase {
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
         roundTrip(registry, getSimpleModel(), "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+    }
+
+    @Test
+    public void testRegisterClassModelPreferredOverClass() {
+        ClassModel<SimpleModel> classModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).discriminatorEnabled(false).build();
+        PojoCodecProvider provider = PojoCodecProvider.builder().register(SimpleModel.class).register(classModel).build();
+        CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
+
+        SimpleModel model = getSimpleModel();
+        roundTrip(registry, model, "{'integerField': 42, 'stringField': 'myString'}");
     }
 
     @Test

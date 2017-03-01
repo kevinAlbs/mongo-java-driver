@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.bson.codecs.pojo.PojoHelper.getCodecFromDocument;
+import static org.bson.codecs.pojo.PojoCodecHelper.getCodecFromDocument;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 class CollectionCodec<T> implements Codec<Collection<T>> {

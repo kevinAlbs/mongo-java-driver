@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.bson.codecs.pojo.PojoHelper.getCodecFromDocument;
+import static org.bson.codecs.pojo.PojoCodecHelper.getCodecFromDocument;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 class MapCodec<T> implements Codec<Map<String, T>> {

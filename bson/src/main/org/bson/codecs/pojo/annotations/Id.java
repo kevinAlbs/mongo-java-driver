@@ -23,9 +23,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a field as the ID for a {@link  org.bson.codecs.pojo.ClassModel}
+ * An annotation that configures the field as the id field for a {@link  org.bson.codecs.pojo.ClassModel}.
+ *
+ * <p>Note: Requires the {@link org.bson.codecs.pojo.Conventions#ANNOTATION_CONVENTION}</p>
  *
  * @since 3.5
+ * @see org.bson.codecs.pojo.Conventions#ANNOTATION_CONVENTION
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -23,9 +23,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a class for inclusion in the class mapping when using the annotation based convention.
+ * An annotation that configures the discriminator key and value.
+ *
+ * <p>Note: Requires the {@link org.bson.codecs.pojo.Conventions#ANNOTATION_CONVENTION}</p>
  *
  * @since 3.5
+ * @see org.bson.codecs.pojo.Conventions#ANNOTATION_CONVENTION
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

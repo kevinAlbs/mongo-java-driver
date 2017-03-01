@@ -44,7 +44,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.bson.codecs.pojo.Conventions.NO_CONVENTIONS;
-import static org.junit.Assert.assertEquals;
 
 public final class PojoCodecTest extends PojoTestCase {
 

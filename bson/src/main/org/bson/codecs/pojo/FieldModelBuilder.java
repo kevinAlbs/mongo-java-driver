@@ -30,8 +30,8 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static org.bson.assertions.Assertions.notNull;
-import static org.bson.codecs.pojo.PojoHelper.configureFieldModelBuilder;
-import static org.bson.codecs.pojo.PojoHelper.stateNotNull;
+import static org.bson.codecs.pojo.PojoBuilderHelper.configureFieldModelBuilder;
+import static org.bson.codecs.pojo.PojoBuilderHelper.stateNotNull;
 
 /**
  * A builder for programmatically creating {@code FieldModels}.
@@ -191,7 +191,7 @@ public final class FieldModelBuilder<T> {
      * @return this
      */
     public FieldModelBuilder<T> typeParameters(final List<Class<?>> typeParameters) {
-        this.typeParameters = unmodifiableList(notNull("typeParameters", typeParameters));
+        this.typeParameters = unmodifiableList(notNull("typeParameters", new ArrayList<Class<?>>(typeParameters)));
         return this;
     }
 
