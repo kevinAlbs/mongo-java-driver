@@ -29,7 +29,9 @@ import org.junit.Test;
 
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -162,23 +164,16 @@ public class JsonReaderTest {
         assertEquals(AbstractBsonReader.State.DONE, bsonReader.getState());
     }
 
-    @Test(expected = JsonParseException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidDateTimeISOString1() {
         String json = "{ \"$date\" : \"2015-04-16T16:55:57.626+02:0000\" }";
         bsonReader = new JsonReader(json);
         bsonReader.readBsonType();
     }
 
-    @Test(expected = JsonParseException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidDateTimeISOString2() {
         String json = "{ \"$date\" : \"2015-04-16T16:55:57.626Z invalid string\" }";
-        bsonReader = new JsonReader(json);
-        bsonReader.readBsonType();
-    }
-
-    @Test(expected = JsonParseException.class)
-    public void testInvalidDateTimeValue() {
-        String json = "{ \"$date\" : {} }";
         bsonReader = new JsonReader(json);
         bsonReader.readBsonType();
     }
@@ -325,6 +320,15 @@ public class JsonReaderTest {
         assertEquals(AbstractBsonReader.State.DONE, bsonReader.getState());
     }
 
+    @Test(expected = NumberFormatException.class)
+    public void testNumberLongExtendedJsonNonParseableLongValue() {
+        String json = "{\"$numberLong\": \"foo\"}";
+        bsonReader = new JsonReader(json);
+        assertEquals(BsonType.INT64, bsonReader.readBsonType());
+        assertEquals(123, bsonReader.readInt64());
+        assertEquals(AbstractBsonReader.State.DONE, bsonReader.getState());
+    }
+
     @Test
     public void testNumberLongWithNew() {
         String json = "new NumberLong(123)";
@@ -401,14 +405,21 @@ public class JsonReaderTest {
     }
 
     @Test
-    public void testDecimal128ExtendedJsonWithBoolean() {
-        String json = "{\"$numberDecimal\": true}";
-        bsonReader = new JsonReader(json);
-        try {
-            bsonReader.readBsonType();
-            fail("Should fail to parse NumberDecimal constructor with a string");
-        } catch (JsonParseException e) {
-            // all good
+    public void testDollarPrefixedKeyThatDoNotMatchExtendedJsonShouldParseAsDocuments() {
+
+        List<String> dollarPrefixedKeys = Arrays.asList(
+                "numberDecimal", "numberDouble", "numberLong", "numberInt", "binary", "code",
+                "minKey", "maxKey", "oid", "regex", "symbol", "timestamp", "undefined", "dbPointer", "unknown");
+
+        for (String cur : dollarPrefixedKeys) {
+            // an empty document doesn't match the extended JSON specification for any BSON type, so all of these should parse as normal
+            // documents
+            bsonReader = new JsonReader("{ $" + cur + " : {} }");
+            bsonReader.readStartDocument();
+            bsonReader.readName("$" + cur);
+            bsonReader.readStartDocument();
+            bsonReader.readEndDocument();
+            bsonReader.readEndDocument();
         }
     }
 
@@ -630,13 +641,13 @@ public class JsonReaderTest {
     public void testTimestampStrictWithOutOfOrderFields() {
         String json = "{ \"$timestamp\" : { \"i\" : 1, \"t\" : 1234 } }";
         bsonReader = new JsonReader(json);
-
-        try {
-            bsonReader.readBsonType();
-            fail("Should have failed to read timestamp with fields not in expected order");
-        } catch (JsonParseException e) {
-            // all good
-        }
+        bsonReader.readStartDocument();
+        bsonReader.readName("$timestamp");
+        bsonReader.readStartDocument();
+        bsonReader.readInt32("i");
+        bsonReader.readInt32("t");
+        bsonReader.readEndDocument();
+        bsonReader.readEndDocument();
     }
 
     @Test
@@ -665,13 +676,6 @@ public class JsonReaderTest {
         assertEquals(BsonType.UNDEFINED, bsonReader.readBsonType());
         bsonReader.readUndefined();
         assertEquals(AbstractBsonReader.State.DONE, bsonReader.getState());
-    }
-
-    @Test(expected = JsonParseException.class)
-    public void testUndefinedExtendedInvalid() {
-        String json = "{ \"$undefined\" : false }";
-        bsonReader = new JsonReader(json);
-        bsonReader.readUndefined();
     }
 
     @Test(expected = IllegalStateException.class)
