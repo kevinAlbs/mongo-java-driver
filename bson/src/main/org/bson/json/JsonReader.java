@@ -83,7 +83,7 @@ public class JsonReader extends AbstractBsonReader {
 
     @Override
     protected byte doPeekBinarySubType() {
-       return doReadBinaryData().getType();
+        return doReadBinaryData().getType();
     }
 
     @Override
@@ -609,9 +609,21 @@ public class JsonReader extends AbstractBsonReader {
                 currentValue = visitNumberLongExtendedJson();
                 setCurrentBsonType(BsonType.INT64);
                 return;
+            } else if ("$numberInt".equals(value)) {
+                currentValue = visitNumberIntExtendedJson();
+                setCurrentBsonType(BsonType.INT32);
+                return;
+            } else if ("$numberDouble".equals(value)) {
+                currentValue = visitNumberDoubleExtendedJson();
+                setCurrentBsonType(BsonType.DOUBLE);
+                return;
             } else if ("$numberDecimal".equals(value)) {
                 currentValue = visitNumberDecimalExtendedJson();
                 setCurrentBsonType(BsonType.DECIMAL128);
+                return;
+            } else if ("$dbPointer".equals(value)) {
+                currentValue = visitDbPointerExtendedJson();
+                setCurrentBsonType(BsonType.DB_POINTER);
                 return;
             }
         }
@@ -919,19 +931,30 @@ public class JsonReader extends AbstractBsonReader {
     private long visitDateTimeExtendedJson() {
         verifyToken(":");
         JsonToken valueToken = popToken();
-        verifyToken("}");
-
-        if (valueToken.getType() == JsonTokenType.INT32 || valueToken.getType() == JsonTokenType.INT64) {
-            return valueToken.getValue(Long.class);
-        } else if (valueToken.getType() == JsonTokenType.STRING) {
-            String dateTimeString = valueToken.getValue(String.class);
-            try {
-                return DatatypeConverter.parseDateTime(dateTimeString).getTimeInMillis();
-            } catch (IllegalArgumentException e) {
-                throw new JsonParseException("JSON reader expected an ISO-8601 date time string but found '%s'.", dateTimeString);
+        if (valueToken.getType() == JsonTokenType.BEGIN_OBJECT) {
+            JsonToken nameToken = popToken();
+            String name = nameToken.getValue(String.class);
+            if (!name.equals("$numberLong")) {
+                throw new JsonParseException(String.format("JSON reader expected $numberLong within $date, but found %s", name));
             }
+            long value = visitNumberLongExtendedJson();
+            verifyToken("}");
+            return value;
         } else {
-            throw new JsonParseException("JSON reader expected an integer or string but found '%s'.", valueToken.getValue());
+            verifyToken("}");
+
+            if (valueToken.getType() == JsonTokenType.INT32 || valueToken.getType() == JsonTokenType.INT64) {
+                return valueToken.getValue(Long.class);
+            } else if (valueToken.getType() == JsonTokenType.STRING) {
+                String dateTimeString = valueToken.getValue(String.class);
+                try {
+                    return DatatypeConverter.parseDateTime(dateTimeString).getTimeInMillis();
+                } catch (IllegalArgumentException e) {
+                    throw new JsonParseException("JSON reader expected an ISO-8601 date time string but found '%s'.", dateTimeString);
+                }
+            } else {
+                throw new JsonParseException("JSON reader expected an integer or string but found '%s'.", valueToken.getValue());
+            }
         }
     }
 
@@ -994,31 +1017,38 @@ public class JsonReader extends AbstractBsonReader {
 
     private BsonTimestamp visitTimestampExtendedJson() {
         verifyToken(":");
-        verifyToken("{");
-        verifyString("t");
-        verifyToken(":");
+        JsonToken nextToken = popToken();
+        if (nextToken.getType() == JsonTokenType.STRING) {
+            BsonTimestamp value = new BsonTimestamp(Long.parseLong(nextToken.getValue(String.class)));
+            verifyToken("}");
+            return value;
+        } else if (nextToken.getType() == JsonTokenType.BEGIN_OBJECT) {
+            verifyString("t");
+            verifyToken(":");
 
-        JsonToken timeToken = popToken();
-        int time;
-        if (timeToken.getType() == JsonTokenType.INT32) {
-            time = timeToken.getValue(Integer.class);
-        } else {
-            throw new JsonParseException("JSON reader expected an integer but found '%s'.", timeToken.getValue());
-        }
-        verifyToken(",");
-        verifyString("i");
-        verifyToken(":");
-        JsonToken incrementToken = popToken();
-        int increment;
-        if (incrementToken.getType() == JsonTokenType.INT32) {
-            increment = incrementToken.getValue(Integer.class);
-        } else {
-            throw new JsonParseException("JSON reader expected an integer but found '%s'.", timeToken.getValue());
-        }
+            JsonToken timeToken = popToken();
+            int time;
+            if (timeToken.getType() == JsonTokenType.INT32) {
+                time = timeToken.getValue(Integer.class);
+            } else {
+                throw new JsonParseException("JSON reader expected an integer but found '%s'.", timeToken.getValue());
+            }
+            verifyToken(",");
+            verifyString("i");
+            verifyToken(":");
+            JsonToken incrementToken = popToken();
+            int increment;
+            if (incrementToken.getType() == JsonTokenType.INT32) {
+                increment = incrementToken.getValue(Integer.class);
+            } else {
+                throw new JsonParseException("JSON reader expected an integer but found '%s'.", timeToken.getValue());
+            }
 
-        verifyToken("}");
-        verifyToken("}");
-        return new BsonTimestamp(time, increment);
+            verifyToken("}");
+            return new BsonTimestamp(time, increment);
+        } else {
+            throw new JsonParseException("JSON reader expected a string or start object, but found '%s'.", nextToken.getValue());
+        }
     }
 
     private void visitJavaScriptExtendedJson() {
@@ -1051,7 +1081,7 @@ public class JsonReader extends AbstractBsonReader {
         JsonToken nameToken = popToken();
         if (!nameToken.getValue(String.class).equals("true")) {
             throw new JsonParseException("JSON reader requires $undefined to have the value of true but found '%s'.",
-                                         nameToken.getValue());
+                                                nameToken.getValue());
         }
         verifyToken("}");
         return new BsonUndefined();
@@ -1067,6 +1097,26 @@ public class JsonReader extends AbstractBsonReader {
         return nameToken.getValue(Long.class);
     }
 
+    private Integer visitNumberIntExtendedJson() {
+        verifyToken(":");
+        JsonToken nameToken = popToken();
+        if (nameToken.getType() != JsonTokenType.STRING) {
+            throw new JsonParseException("JSON reader expected a string but found '%s'.", nameToken.getValue());
+        }
+        verifyToken("}");
+        return nameToken.getValue(Integer.class);
+    }
+
+    private Double visitNumberDoubleExtendedJson() {
+        verifyToken(":");
+        JsonToken nameToken = popToken();
+        if (nameToken.getType() != JsonTokenType.STRING) {
+            throw new JsonParseException("JSON reader expected a string but found '%s'.", nameToken.getValue());
+        }
+        verifyToken("}");
+        return nameToken.getValue(Double.class);
+    }
+
     private Decimal128 visitNumberDecimalExtendedJson() {
         verifyToken(":");
         JsonToken nameToken = popToken();
@@ -1077,19 +1127,36 @@ public class JsonReader extends AbstractBsonReader {
         return nameToken.getValue(Decimal128.class);
     }
 
+    private BsonDbPointer visitDbPointerExtendedJson() {
+        verifyToken(":");
+        verifyToken("{");
+        verifyToken("$ref");
+        verifyToken(":");
+        JsonToken refToken = popToken();
+        verifyToken(",");
+        verifyToken("$id");
+        verifyToken(":");
+        verifyToken("{");
+        verifyToken("$oid");
+        ObjectId oid = visitObjectIdExtendedJson();
+        verifyToken("}");
+        verifyToken("}");
+        return new BsonDbPointer(refToken.getValue(String.class), oid);
+    }
+
     @Override
     public void mark() {
         if (mark != null) {
-             throw new BSONException("A mark already exists; it needs to be reset before creating a new one");
-         }
+            throw new BSONException("A mark already exists; it needs to be reset before creating a new one");
+        }
         mark = new Mark();
     }
 
     @Override
     public void reset() {
         if (mark == null) {
-             throw new BSONException("trying to reset a mark before creating it");
-         }
+            throw new BSONException("trying to reset a mark before creating it");
+        }
         mark.reset();
         mark = null;
     }
@@ -1098,6 +1165,7 @@ public class JsonReader extends AbstractBsonReader {
     protected Context getContext() {
         return (Context) super.getContext();
     }
+
     protected class Mark extends AbstractBsonReader.Mark {
         private JsonToken pushedToken;
         private Object currentValue;
