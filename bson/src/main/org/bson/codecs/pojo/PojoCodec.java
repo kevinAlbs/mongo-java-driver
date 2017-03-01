@@ -36,7 +36,7 @@ import static org.bson.codecs.pojo.PojoHelper.decodeClassModel;
 import static org.bson.codecs.pojo.PojoHelper.encodeClassModel;
 
 
-final class PojoCodec<T> implements CollectibleCodec<T> {
+final class PojoCodec<T> implements Codec<T> {
 
     private final ClassModel<T> classModel;
     private final CodecRegistry registry;
@@ -71,25 +71,6 @@ final class PojoCodec<T> implements CollectibleCodec<T> {
     @Override
     public Class<T> getEncoderClass() {
         return classModel.getType();
-    }
-
-    @Override
-    public T generateIdIfAbsentFromDocument(final T instance) {
-        if (classModel.getIdFieldModel() == null) {
-            throw new CodecConfigurationException(format("ClassModel for %s has no IdFieldModel and can't be inserted.",
-                    classModel.getType()));
-        }
-        return instance;
-    }
-
-    @Override
-    public boolean documentHasId(final T instance) {
-        throw new UnsupportedOperationException("Checking if the instance has an _id field is not supported.");
-    }
-
-    @Override
-    public BsonValue getDocumentId(final T instance) {
-        throw new UnsupportedOperationException("Getting the BsonValue for the _id field is not supported.");
     }
 
     @Override

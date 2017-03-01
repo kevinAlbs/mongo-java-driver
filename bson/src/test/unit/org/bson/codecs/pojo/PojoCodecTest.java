@@ -328,12 +328,6 @@ public final class PojoCodecTest extends PojoTestCase {
         decodesTo(getCodecRegistry(SimpleModel.class), "{'_t': 'SimpleModel', 'stringField': 'myString'}", model);
     }
 
-    @Test
-    public void testGenerateIdIfAbsentFromModelWithId() {
-        ConverterModel model = new ConverterModel("123", "myName");
-        assertEquals(model, getCodec(ConverterModel.class).generateIdIfAbsentFromDocument(model));
-    }
-
     @Test(expected = CodecConfigurationException.class)
     public void testDataUnknownClass() {
         decodingShouldFail(getCodec(SimpleModel.class), "{'_t': 'FakeModel'}");
@@ -374,18 +368,4 @@ public final class PojoCodecTest extends PojoTestCase {
                 + "'simple': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testDocumentHasId() {
-        getCodec(SimpleModel.class).documentHasId(getSimpleModel());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetDocumentId() {
-        getCodec(SimpleModel.class).getDocumentId(getSimpleModel());
-    }
-
-    @Test(expected = CodecConfigurationException.class)
-    public void testGenerateIdIfAbsentFromModelWithoutId() {
-        getCodec(SimpleModel.class).generateIdIfAbsentFromDocument(getSimpleModel());
-    }
 }
