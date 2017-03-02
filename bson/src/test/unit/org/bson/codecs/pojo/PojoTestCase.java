@@ -27,11 +27,12 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.ValueCodecProvider;
-import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
+import org.bson.codecs.pojo.entities.GenericHolderModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
 import org.bson.codecs.pojo.entities.ShapeModelCircle;
 import org.bson.codecs.pojo.entities.ShapeModelRectangle;
@@ -58,20 +59,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.pojo.Conventions.DEFAULT_CONVENTIONS;
 
 abstract class PojoTestCase {
 
     static final BsonDocumentCodec DOCUMENT_CODEC = new BsonDocumentCodec();
 
     @SuppressWarnings("unchecked")
-    <T> void roundTrip(final CodecRegistry registry, final T value, final String extendedJson) {
+    <T> void roundTrip(final PojoCodecProvider.Builder builder, final T value, final String json) {
+        encodesTo(getCodecRegistry(builder), value, json);
+        decodesTo(getCodecRegistry(builder), json, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> void roundTrip(final CodecRegistry registry, final T value, final String json) {
+        encodesTo(registry, value, json);
+        decodesTo(registry, json, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> void encodesTo(final CodecRegistry registry, final T value, final String json) {
         Codec<T> codec = (Codec<T>) registry.get(value.getClass());
+        encodesTo(codec, value, json);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> void encodesTo(final Codec<T> codec, final T value, final String json) {
         OutputBuffer encoded = encode(codec, value);
 
         BsonDocument asBsonDocument = decode(DOCUMENT_CODEC, encoded);
-        Assert.assertEquals("Document representations", BsonDocument.parse(extendedJson), asBsonDocument);
-        Assert.assertEquals("Codec Round Trip", value, decode(codec, encoded));
+        Assert.assertEquals("Encoded value", BsonDocument.parse(json), asBsonDocument);
     }
 
     @SuppressWarnings("unchecked")
@@ -83,7 +99,7 @@ abstract class PojoTestCase {
     <T> void decodesTo(final Codec<T> codec, final String json, final T expected) {
         OutputBuffer encoded = encode(DOCUMENT_CODEC, BsonDocument.parse(json));
         T result = decode(codec, encoded);
-        Assert.assertEquals("Data represent", expected, result);
+        Assert.assertEquals("Decoded value", expected, result);
     }
 
     <T> void decodingShouldFail(final Codec<T> codec, final String json) {
@@ -102,44 +118,36 @@ abstract class PojoTestCase {
         return codec.decode(reader, DecoderContext.builder().build());
     }
 
-    CodecRegistry getCodecRegistry(final Class<?>... classes) {
+    PojoCodecProvider.Builder getPojoCodecProviderBuilder(final Class<?>... classes) {
         PojoCodecProvider.Builder builder = PojoCodecProvider.builder();
         for (final Class<?> clazz : classes) {
             builder.register(clazz);
         }
-        return getCodecRegistry(builder.build());
+        return builder;
+    }
+
+    <T> PojoCodec<T> getCodec(final PojoCodecProvider.Builder builder, final Class<T> clazz) {
+        return (PojoCodec<T>) getCodecRegistry(builder).get(clazz);
     }
 
     <T> PojoCodec<T> getCodec(final Class<T> clazz) {
-        return (PojoCodec<T>) getCodecRegistry(clazz).get(clazz);
+        return getCodec(getPojoCodecProviderBuilder(clazz), clazz);
     }
 
-    CodecRegistry getFullTypeNameCodecRegistry(final Class<?>... classes) {
-        PojoCodecProvider.Builder builder = PojoCodecProvider.builder();
-        for (final Class<?> clazz : classes) {
-            builder.register(clazz);
-        }
-        List<Convention> conventions = new ArrayList<Convention>(DEFAULT_CONVENTIONS);
-        conventions.add(new Convention() {
-            @Override
-            public void apply(final ClassModelBuilder<?> classModelBuilder) {
-                classModelBuilder.discriminator(classModelBuilder.getType().getName());
-            }
-        });
-        builder.conventions(conventions);
-        return getCodecRegistry(builder.build());
-    }
-
-    CodecRegistry getCodecRegistry(final ClassModelBuilder<?>... classModelBuilders) {
+    PojoCodecProvider.Builder getPojoCodecProviderBuilder(final ClassModelBuilder<?>... classModelBuilders) {
         List<ClassModel<?>> builders = new ArrayList<ClassModel<?>>();
         for (ClassModelBuilder<?> classModelBuilder : classModelBuilders) {
             builders.add(classModelBuilder.build());
         }
-        return getCodecRegistry(PojoCodecProvider.builder().register(builders.toArray(new ClassModel<?>[builders.size()])).build());
+        return PojoCodecProvider.builder().register(builders.toArray(new ClassModel<?>[builders.size()]));
     }
 
-    CodecRegistry getCodecRegistry(final CodecProvider provider) {
-        return fromProviders(provider, new ValueCodecProvider());
+    CodecRegistry getCodecRegistry(final Class<?>... classes) {
+        return getCodecRegistry(getPojoCodecProviderBuilder(classes));
+    }
+
+    CodecRegistry getCodecRegistry(final PojoCodecProvider.Builder builder) {
+        return fromProviders(builder.build(), new ValueCodecProvider());
     }
 
     SimpleModel getSimpleModel() {
@@ -224,6 +232,10 @@ abstract class PojoTestCase {
 
     ShapeModelRectangle getShapeModelRectangle() {
         return new ShapeModelRectangle("green", 22.1, 105.0);
+    }
+
+    NestedGenericHolderModel getNestedGenericHolderModel() {
+        return new NestedGenericHolderModel(new GenericHolderModel<Long>(10L));
     }
 
     class StringToObjectIdCodec implements Codec<String> {

@@ -29,7 +29,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,10 +75,11 @@ final class PojoBuilderHelper {
 
     @SuppressWarnings("unchecked")
     static <T> FieldModelBuilder<T> getFieldModelBuilder(final ResolvedField resolvedField) {
-        Class<T> erasedType = (Class<T>) resolvedField.getType().getErasedType();
+        List<Class<?>> typeParams = extractTypeParameters(resolvedField.getType());
+        Class<T> fieldType = (Class<T>) typeParams.remove(0);
         return configureFieldModelBuilder(new FieldModelBuilder<T>(), resolvedField.getRawMember())
-                .type(erasedType)
-                .typeParameters(getTypeParameters(resolvedField.getType()));
+                .type(fieldType)
+                .typeParameters(typeParams);
     }
 
     @SuppressWarnings("unchecked")
@@ -93,12 +93,6 @@ final class PojoBuilderHelper {
                 .documentFieldName(field.getName())
                 .annotations(asList(field.getDeclaredAnnotations()))
                 .fieldModelSerialization(new FieldModelSerializationImpl<T>());
-    }
-
-    static List<Class<?>> getTypeParameters(final ResolvedType type) {
-        Class<?> erasedType = type.getErasedType();
-        boolean isCollectionOrMap = Collection.class.isAssignableFrom(erasedType) || Map.class.isAssignableFrom(erasedType);
-        return isCollectionOrMap ? extractTypeParameters(type) : Collections.<Class<?>>emptyList();
     }
 
     static List<Class<?>> extractTypeParameters(final ResolvedType type) {
@@ -134,6 +128,9 @@ final class PojoBuilderHelper {
             classes.addAll(extractTypeParameters(valueType));
         } else {
             classes.add(erasedType);
+            for (ResolvedType resolvedType : type.getTypeParameters()) {
+                classes.add(resolvedType.getErasedType());
+            }
         }
 
         return classes;

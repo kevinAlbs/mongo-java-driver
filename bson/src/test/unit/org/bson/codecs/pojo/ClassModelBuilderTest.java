@@ -18,7 +18,9 @@ package org.bson.codecs.pojo;
 
 import org.bson.codecs.pojo.annotations.Property;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
+import org.bson.codecs.pojo.entities.GenericHolderModel;
 import org.bson.codecs.pojo.entities.InvalidMapModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.UpperBoundsModel;
 import org.bson.codecs.pojo.entities.UpperBoundsSubClassModel;
@@ -26,13 +28,14 @@ import org.junit.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -81,14 +84,22 @@ public final class ClassModelBuilderTest {
     }
 
     @Test
+    public void testNestedGenericHolderModel() {
+        ClassModelBuilder<NestedGenericHolderModel> builder =
+                new ClassModelBuilder<NestedGenericHolderModel>(NestedGenericHolderModel.class);
+        assertEquals(GenericHolderModel.class, builder.getField("nested").getType());
+        assertEquals(singletonList(Long.class), builder.getField("nested").getTypeParameters());
+    }
+
+    @Test
     public void testFieldsMappedClassTypes() {
         ClassModelBuilder<ConcreteCollectionsModel> builder =
                 new ClassModelBuilder<ConcreteCollectionsModel>(ConcreteCollectionsModel.class);
 
-        assertEquals(Collection.class, builder.getField("collection").getType());
-        assertEquals(List.class, builder.getField("list").getType());
+        assertEquals(ArrayList.class, builder.getField("collection").getType());
+        assertEquals(ArrayList.class, builder.getField("list").getType());
         assertEquals(LinkedList.class, builder.getField("linked").getType());
-        assertEquals(Map.class, builder.getField("map").getType());
+        assertEquals(HashMap.class, builder.getField("map").getType());
         assertEquals(ConcurrentHashMap.class, builder.getField("concurrent").getType());
     }
 

@@ -16,6 +16,8 @@
 
 package org.bson.codecs;
 
+import org.bson.BsonReader;
+
 /**
  * The context for decoding values to BSON.
  *
@@ -23,6 +25,7 @@ package org.bson.codecs;
  * @since 3.0
  */
 public final class DecoderContext {
+    private static final DecoderContext DEFAULT_CONTEXT = DecoderContext.builder().build();
     private final boolean checkedDiscriminator;
 
     /**
@@ -75,6 +78,19 @@ public final class DecoderContext {
         public DecoderContext build() {
             return new DecoderContext(this);
         }
+    }
+
+    /**
+     * Creates a child context and then deserializes using the reader.
+     *
+     * @param decoder the decoder to decode with
+     * @param reader the reader to decode to
+     * @param <T> the type of the decoder
+     * @return the decoded value
+     * @since 3.5
+     */
+    public <T> T decodeWithChildContext(final Decoder<T> decoder, final BsonReader reader) {
+        return decoder.decode(reader, DEFAULT_CONTEXT);
     }
 
     private DecoderContext(final Builder builder) {

@@ -125,7 +125,7 @@ final class PojoCodec<T> implements Codec<T> {
             if (fieldValue == null) {
                 writer.writeNull();
             } else {
-                getCodec(fieldModel, (Class<S>) fieldValue.getClass()).encode(writer, fieldValue, encoderContext);
+                getEncoderCodec(fieldModel, (Class<S>) fieldValue.getClass()).encode(writer, fieldValue, encoderContext);
             }
         }
     }
@@ -154,7 +154,7 @@ final class PojoCodec<T> implements Codec<T> {
                     reader.readNull();
                 } else {
                     Class<S> clazz = (Class<S>) bsonTypeClassMap.get(reader.getCurrentBsonType());
-                    value = getCodec(fieldModel, clazz).decode(reader, decoderContext);
+                    value = decoderContext.decodeWithChildContext(getDecoderCodec(fieldModel, clazz), reader);
                 }
                 classAccessor.set(value, fieldModel);
             } catch (BsonInvalidOperationException e) {
@@ -170,36 +170,55 @@ final class PojoCodec<T> implements Codec<T> {
         }
     }
 
+    private <S> Codec<S> getEncoderCodec(final FieldModel<S> fieldModel, final Class<S> instanceClass) {
+        return getCodec(fieldModel, instanceClass, null);
+    }
+
+    private <S> Codec<S> getDecoderCodec(final FieldModel<S> fieldModel, final Class<S> defaultClass) {
+        return getCodec(fieldModel, null, defaultClass);
+    }
+
     @SuppressWarnings("unchecked")
-    private <S> Codec<S> getCodec(final FieldModel<S> fieldModel, final Class<S> fieldClazz) {
-        Codec<S> codec = (Codec<S>) codecCache.get(fieldModel.getFieldName());
+    private <S> Codec<S> getCodec(final FieldModel<S> fieldModel, final Class<S> instanceClass, final Class<S> defaultClass) {
+        String cacheKey = format("%s/%s", fieldModel.getFieldName(),
+                instanceClass != null ? instanceClass.getName() : defaultClass.getName());
+        Codec<S> codec = (Codec<S>) codecCache.get(cacheKey);
         if (codec == null) {
             codec = fieldModel.getCodec();
-            if (codec == null && !fieldModel.getTypeParameters().isEmpty()) {
-                codec = createFieldCodecFromTypeParameters(fieldModel, fieldModel.getTypeParameters());
+            if (codec == null) {
+                codec = createFieldCodecFromTypeParameters(fieldModel, fieldModel.getFieldType(), fieldModel.getTypeParameters());
+            }
+            if (codec == null && instanceClass != null) {
+                codec = getFieldCodecFromRegistry(fieldModel, instanceClass);
             }
             if (codec == null) {
-                codec = getFieldCodecFromRegistry(fieldModel, fieldClazz);
+                codec = getFieldCodecFromRegistry(fieldModel, fieldModel.getFieldType());
+            }
+            if (codec == null && defaultClass != null) {
+                codec = getFieldCodecFromRegistry(fieldModel, defaultClass);
+            }
+            if (codec == null) {
+                throw new CodecConfigurationException(format("No codec available for: %s", fieldModel.getFieldType().getSimpleName()));
             }
 
-            codecCache.put(fieldModel.getFieldName(), codec);
+            codecCache.put(cacheKey, codec);
         }
         return codec;
     }
 
-
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private <S> Codec<S> createFieldCodecFromTypeParameters(final FieldModel<S> fieldModel, final List<Class<?>> types) {
+    private <S> Codec<S> createFieldCodecFromTypeParameters(final FieldModel<S> fieldModel, final Class<?> head,
+                                                            final List<Class<?>> tail) {
         Codec<S> codec = null;
-        Class<?> head = types.get(0);
-        List<Class<?>> remainder = types.size() > 1 ? types.subList(1, types.size()) : Collections.<Class<?>>emptyList();
+        Class<?> nextHead = tail.isEmpty() ? null : tail.get(0);
+        List<Class<?>> nextTail = tail.size() > 1 ? tail.subList(1, tail.size()) : Collections.<Class<?>>emptyList();
 
         if (Collection.class.isAssignableFrom(head)) {
             codec = new CollectionCodec(registry, discriminatorLookup, bsonTypeClassMap, fieldModel.useDiscriminator(),
-                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, remainder));
+                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, nextHead, nextTail));
         } else if (Map.class.isAssignableFrom(head)) {
             codec = new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, fieldModel.useDiscriminator(),
-                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, remainder));
+                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, nextHead, nextTail));
         }
         return codec;
     }
@@ -211,10 +230,10 @@ final class PojoCodec<T> implements Codec<T> {
             codec = (Codec<S>) registry.get(clazz);
             if (codec instanceof PojoCodec) {
                 ClassModel<S> classModel = ((PojoCodec<S>) codec).getClassModel();
-                boolean createNewCodec = !fieldModel.useDiscriminator() && classModel.useDiscriminator()
+                boolean changeDiscriminator = !fieldModel.useDiscriminator() && classModel.useDiscriminator()
                         || (fieldModel.useDiscriminator() && classModel.getDiscriminatorKey() != null
                         && classModel.getDiscriminator() != null);
-                if (createNewCodec) {
+                if (changeDiscriminator) {
                     ClassModelImpl<S> newClassModel = new ClassModelImpl<S>(classModel.getType(), classModel.getClassAccessorFactory(),
                             fieldModel.useDiscriminator(), classModel.getDiscriminatorKey(),
                             classModel.getDiscriminator(), classModel.getIdFieldModel(), classModel.getFieldModels());
@@ -222,8 +241,7 @@ final class PojoCodec<T> implements Codec<T> {
                 }
             }
         } catch (final CodecConfigurationException e) {
-            throw new CodecConfigurationException(format("Missing codec for '%s', no codec available for '%s'.",
-                    fieldModel.getDocumentFieldName(), clazz.getSimpleName()), e);
+            // No codec found
         }
         return codec;
     }

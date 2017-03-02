@@ -176,18 +176,18 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * Returns the typeParameters
+     * Returns the parameterized types on the model's underlying type
      *
-     * @return the typeParameters
+     * @return the parameterized types on the model's underlying type
      */
     public List<Class<?>> getTypeParameters() {
         return typeParameters;
     }
 
     /**
-     * Sets the typeParameters
+     * Sets the parameterized types on the model's underlying type
      *
-     * @param typeParameters the typeParameters
+     * @param typeParameters the parameterized types on the model's underlying type
      * @return this
      */
     public FieldModelBuilder<T> typeParameters(final List<Class<?>> typeParameters) {
