@@ -27,6 +27,11 @@ import java.util.List;
 public interface ClassModel<T> {
 
     /**
+     * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     */
+    List<String> getGenericFieldNames();
+
+    /**
      * @return a new ClassAccessor instance for the ClassModel
      */
     ClassAccessor<T> getClassAccessor();

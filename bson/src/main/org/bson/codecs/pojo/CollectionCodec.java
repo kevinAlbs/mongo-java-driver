@@ -19,42 +19,19 @@ package org.bson.codecs.pojo;
 import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
-import org.bson.codecs.BsonTypeClassMap;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecConfigurationException;
-import org.bson.codecs.configuration.CodecRegistry;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.bson.codecs.pojo.PojoCodecHelper.getCodecFromDocument;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
 class CollectionCodec<T> implements Codec<Collection<T>> {
-    private final CodecRegistry registry;
-    private final DiscriminatorLookup discriminatorLookup;
-    private final BsonTypeClassMap bsonTypeClassMap;
-    private final boolean useDiscriminator;
-    private final String discriminatorKey;
     private final Class<Collection<T>> encoderClass;
     private final Codec<T> codec;
 
-    CollectionCodec(final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup, final BsonTypeClassMap bsonTypeClassMap,
-                    final boolean useDiscriminator, final String discriminatorKey, final Class<Collection<T>> encoderClass) {
-        this(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, encoderClass, null);
-    }
-
-    CollectionCodec(final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup, final BsonTypeClassMap bsonTypeClassMap,
-                    final boolean useDiscriminator, final String discriminatorKey, final Class<Collection<T>> encoderClass,
-                    final Codec<T> codec) {
-        this.registry = registry;
-        this.discriminatorLookup = discriminatorLookup;
-        this.bsonTypeClassMap = bsonTypeClassMap;
-        this.useDiscriminator = useDiscriminator;
-        this.discriminatorKey = discriminatorKey;
+    CollectionCodec(final Class<Collection<T>> encoderClass, final Codec<T> codec) {
         this.encoderClass = encoderClass;
         this.codec = codec;
     }
@@ -62,49 +39,20 @@ class CollectionCodec<T> implements Codec<Collection<T>> {
     @Override
     public void encode(final BsonWriter writer, final Collection<T> collection, final EncoderContext encoderContext) {
         writer.writeStartArray();
-
         for (final T value : collection) {
-            Codec<T> itemCodec = codec;
-            if (codec == null) {
-                Class<?> clazz = value.getClass();
-                if (Collection.class.isAssignableFrom(clazz)) {
-                    itemCodec = (Codec<T>) this;
-                } else if (Map.class.isAssignableFrom(clazz)) {
-                    itemCodec = new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, clazz);
-                } else {
-                    itemCodec = (Codec<T>) registry.get(clazz);
-                }
-            }
-            itemCodec.encode(writer, value, encoderContext);
+            codec.encode(writer, value, encoderContext);
         }
-
         writer.writeEndArray();
     }
 
     @Override
     public Collection<T> decode(final BsonReader reader, final DecoderContext context) {
-        reader.readStartArray();
-
         Collection<T> collection = getInstance();
+        reader.readStartArray();
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            Codec<T> itemCodec = codec;
-            if (codec == null) {
-                BsonType currentType = reader.getCurrentBsonType();
-                if (currentType == BsonType.ARRAY) {
-                    itemCodec = (Codec<T>) this;
-                } else if (currentType == BsonType.DOCUMENT) {
-                    itemCodec = getCodecFromDocument(reader, useDiscriminator, discriminatorKey, registry, discriminatorLookup,
-                          new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, useDiscriminator, discriminatorKey, HashMap.class));
-                } else {
-                    Class<?> fieldClazz = bsonTypeClassMap.get(reader.getCurrentBsonType());
-                    itemCodec = (Codec<T>) registry.get(fieldClazz);
-                }
-            }
-            collection.add(itemCodec.decode(reader, context));
+            collection.add(codec.decode(reader, context));
         }
-
         reader.readEndArray();
-
         return collection;
     }
 

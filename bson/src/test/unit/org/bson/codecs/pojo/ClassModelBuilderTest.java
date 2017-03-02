@@ -35,7 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Collections.singletonList;
+import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -48,6 +48,7 @@ public final class ClassModelBuilderTest {
         ClassModelBuilder builder = new ClassModelBuilder();
 
         assertTrue(builder.getFields().isEmpty());
+        assertTrue(builder.getGenericFieldNames().isEmpty());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertNull(builder.getType());
@@ -66,6 +67,7 @@ public final class ClassModelBuilderTest {
         for (Field field : clazz.getDeclaredFields()) {
             assertEquals(field.getName(), builder.getField(field.getName()).getDocumentFieldName());
         }
+        assertEquals(asList("myGenericField", "myListField", "myMapField"), builder.getGenericFieldNames());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertEquals(clazz, builder.getType());
@@ -77,18 +79,18 @@ public final class ClassModelBuilderTest {
     @Test
     public void testMappedBoundedClasses() {
         ClassModelBuilder<? extends UpperBoundsModel> builder = new ClassModelBuilder<UpperBoundsModel>(UpperBoundsModel.class);
-        assertEquals(Number.class, builder.getField("myGenericField").getType());
+        assertEquals(Number.class, builder.getField("myGenericField").getTypeData().getType());
 
         builder = new ClassModelBuilder<UpperBoundsSubClassModel>(UpperBoundsSubClassModel.class);
-        assertEquals(Long.class, builder.getField("myGenericField").getType());
+        assertEquals(Long.class, builder.getField("myGenericField").getTypeData().getType());
     }
 
     @Test
     public void testNestedGenericHolderModel() {
         ClassModelBuilder<NestedGenericHolderModel> builder =
                 new ClassModelBuilder<NestedGenericHolderModel>(NestedGenericHolderModel.class);
-        assertEquals(GenericHolderModel.class, builder.getField("nested").getType());
-        assertEquals(singletonList(Long.class), builder.getField("nested").getTypeParameters());
+        assertEquals(GenericHolderModel.class, builder.getField("nested").getTypeData().getType());
+        //assertEquals(singletonList(String.class), builder.getField("nested").getTypeParameters());
     }
 
     @Test
@@ -96,11 +98,11 @@ public final class ClassModelBuilderTest {
         ClassModelBuilder<ConcreteCollectionsModel> builder =
                 new ClassModelBuilder<ConcreteCollectionsModel>(ConcreteCollectionsModel.class);
 
-        assertEquals(ArrayList.class, builder.getField("collection").getType());
-        assertEquals(ArrayList.class, builder.getField("list").getType());
-        assertEquals(LinkedList.class, builder.getField("linked").getType());
-        assertEquals(HashMap.class, builder.getField("map").getType());
-        assertEquals(ConcurrentHashMap.class, builder.getField("concurrent").getType());
+        assertEquals(ArrayList.class, builder.getField("collection").getTypeData().getType());
+        assertEquals(ArrayList.class, builder.getField("list").getTypeData().getType());
+        assertEquals(LinkedList.class, builder.getField("linked").getTypeData().getType());
+        assertEquals(HashMap.class, builder.getField("map").getTypeData().getType());
+        assertEquals(ConcurrentHashMap.class, builder.getField("concurrent").getTypeData().getType());
     }
 
     @Test

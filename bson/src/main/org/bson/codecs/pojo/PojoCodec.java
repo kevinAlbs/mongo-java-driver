@@ -19,7 +19,6 @@ import org.bson.BsonInvalidOperationException;
 import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
-import org.bson.codecs.BsonTypeClassMap;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
@@ -27,11 +26,11 @@ import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.diagnostics.Loggers;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,26 +41,28 @@ import static org.bson.codecs.pojo.PojoCodecHelper.getCodecFromDocument;
 
 
 final class PojoCodec<T> implements Codec<T> {
-
     private static final Logger LOGGER = Loggers.getLogger("PojoCodec");
     private final ClassModel<T> classModel;
     private final CodecRegistry registry;
     private final DiscriminatorLookup discriminatorLookup;
-    private final BsonTypeClassMap bsonTypeClassMap;
-    private final Map<String, Codec<?>> codecCache;
+    private final Map<String, Codec<?>> fieldCodecMap;
 
-    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
-              final BsonTypeClassMap bsonTypeClassMap) {
-        this(classModel, registry, discriminatorLookup, bsonTypeClassMap, new ConcurrentHashMap<String, Codec<?>>());
-    }
-
-    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
-              final BsonTypeClassMap bsonTypeClassMap, final Map<String, Codec<?>> codecCache) {
+    @SuppressWarnings("unchecked")
+    PojoCodec(final ClassModel<T> classModel, final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup) {
         this.classModel = classModel;
         this.registry = fromRegistries(fromCodecs(this), registry);
         this.discriminatorLookup = discriminatorLookup;
-        this.bsonTypeClassMap = bsonTypeClassMap;
-        this.codecCache = codecCache;
+        this.fieldCodecMap = new HashMap<String, Codec<?>>();
+        for (FieldModel<?> fieldModel : classModel.getFieldModels()) {
+            Class<?> fieldType = fieldModel.getTypeData().getType();
+            if (classModel.getType().equals(fieldType)) {
+                fieldCodecMap.put(fieldModel.getFieldName(), specialisePojoCodec((FieldModel<T>) fieldModel, this));
+            } else if (fieldType.equals(Object.class)) {
+                fieldCodecMap.put(fieldModel.getFieldName(), getCodecOrNull(Object.class));
+            } else {
+                fieldCodecMap.put(fieldModel.getFieldName(), getCodec(fieldModel));
+            }
+        }
     }
 
     @Override
@@ -84,7 +85,6 @@ final class PojoCodec<T> implements Codec<T> {
             }
             encodeField(writer, value, encoderContext, classAccessor, fieldModel);
         }
-
         writer.writeEndDocument();
     }
 
@@ -111,7 +111,6 @@ final class PojoCodec<T> implements Codec<T> {
         return format("PojoCodec<%s>", classModel);
     }
 
-
     ClassModel<T> getClassModel() {
         return classModel;
     }
@@ -125,7 +124,7 @@ final class PojoCodec<T> implements Codec<T> {
             if (fieldValue == null) {
                 writer.writeNull();
             } else {
-                getEncoderCodec(fieldModel, (Class<S>) fieldValue.getClass()).encode(writer, fieldValue, encoderContext);
+                getEncoderCodec(fieldModel, fieldValue.getClass()).encode(writer, fieldValue, encoderContext);
             }
         }
     }
@@ -153,8 +152,7 @@ final class PojoCodec<T> implements Codec<T> {
                 if (reader.getCurrentBsonType() == BsonType.NULL) {
                     reader.readNull();
                 } else {
-                    Class<S> clazz = (Class<S>) bsonTypeClassMap.get(reader.getCurrentBsonType());
-                    value = decoderContext.decodeWithChildContext(getDecoderCodec(fieldModel, clazz), reader);
+                    value = decoderContext.decodeWithChildContext(getDecoderCodec(fieldModel), reader);
                 }
                 classAccessor.set(value, fieldModel);
             } catch (BsonInvalidOperationException e) {
@@ -170,79 +168,133 @@ final class PojoCodec<T> implements Codec<T> {
         }
     }
 
-    private <S> Codec<S> getEncoderCodec(final FieldModel<S> fieldModel, final Class<S> instanceClass) {
-        return getCodec(fieldModel, instanceClass, null);
-    }
-
-    private <S> Codec<S> getDecoderCodec(final FieldModel<S> fieldModel, final Class<S> defaultClass) {
-        return getCodec(fieldModel, null, defaultClass);
+    @SuppressWarnings("unchecked")
+    private <S> Codec<S> getDecoderCodec(final FieldModel<S> fieldModel) {
+        Codec<S> codec = (Codec<S>) fieldCodecMap.get(fieldModel.getFieldName());
+        if (codec == null) {
+            throw new CodecConfigurationException(format("Failed to decode '%s'. No codec for type: %s", fieldModel.getFieldName(),
+                    fieldModel.getTypeData().getType()));
+        }
+        return codec;
     }
 
     @SuppressWarnings("unchecked")
-    private <S> Codec<S> getCodec(final FieldModel<S> fieldModel, final Class<S> instanceClass, final Class<S> defaultClass) {
-        String cacheKey = format("%s/%s", fieldModel.getFieldName(),
-                instanceClass != null ? instanceClass.getName() : defaultClass.getName());
-        Codec<S> codec = (Codec<S>) codecCache.get(cacheKey);
+    private <S, V> Codec<S> getEncoderCodec(final FieldModel<S> fieldModel, final Class<V> instanceType) {
+        Codec<S> codec = (Codec<S>) fieldCodecMap.get(fieldModel.getFieldName());
+        Class<S> fieldType = codec.getEncoderClass();
+        if (fieldType != instanceType && fieldType.isAssignableFrom(instanceType)) {
+            codec = specialisePojoCodec(fieldModel, getCodecOrNull((Class<S>) instanceType));
+        }
         if (codec == null) {
-            codec = fieldModel.getCodec();
-            if (codec == null) {
-                codec = createFieldCodecFromTypeParameters(fieldModel, fieldModel.getFieldType(), fieldModel.getTypeParameters());
-            }
-            if (codec == null && instanceClass != null) {
-                codec = getFieldCodecFromRegistry(fieldModel, instanceClass);
-            }
-            if (codec == null) {
-                codec = getFieldCodecFromRegistry(fieldModel, fieldModel.getFieldType());
-            }
-            if (codec == null && defaultClass != null) {
-                codec = getFieldCodecFromRegistry(fieldModel, defaultClass);
-            }
-            if (codec == null) {
-                throw new CodecConfigurationException(format("No codec available for: %s", fieldModel.getFieldType().getSimpleName()));
-            }
+            throw new CodecConfigurationException(format("Failed to encode '%s'. No codec for type: %s", fieldModel.getFieldName(),
+                    fieldModel.getTypeData().getType()));
+        }
+        return codec;
+    }
 
-            codecCache.put(cacheKey, codec);
+    private <S> Codec<S> getCodec(final FieldModel<S> fieldModel) {
+        Codec<S> codec = fieldModel.getCodec();
+        if (codec == null) {
+            codec =  specialisePojoCodec(fieldModel, getCodecFromFieldTypeData(fieldModel.getTypeData()));
+        }
+        if (codec == null) {
+            throw new CodecConfigurationException(format("No codec available for: %s: %s", fieldModel.getFieldName(),
+                    fieldModel.getTypeData().getType().getSimpleName()));
+        }
+        return codec;
+    }
+
+    private <S> Codec<S> specialisePojoCodec(final FieldModel<S> fieldModel, final Codec<S> defaultCodec) {
+        Codec<S> codec = defaultCodec;
+        if (codec != null && codec instanceof PojoCodec) {
+            ClassModel<S> original = ((PojoCodec<S>) codec).getClassModel();
+            ClassModel<S> specialised = specialise(((PojoCodec<S>) codec).getClassModel(), fieldModel);
+            if (!original.equals(specialised)) {
+                codec = new PojoCodec<S>(specialised, registry, discriminatorLookup);
+            }
         }
         return codec;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private <S> Codec<S> createFieldCodecFromTypeParameters(final FieldModel<S> fieldModel, final Class<?> head,
-                                                            final List<Class<?>> tail) {
+    private  <S> Codec<S> getCodecFromFieldTypeData(final TypeData<S> typeData) {
         Codec<S> codec = null;
-        Class<?> nextHead = tail.isEmpty() ? null : tail.get(0);
-        List<Class<?>> nextTail = tail.size() > 1 ? tail.subList(1, tail.size()) : Collections.<Class<?>>emptyList();
+        Class<S> head = typeData.getType();
 
         if (Collection.class.isAssignableFrom(head)) {
-            codec = new CollectionCodec(registry, discriminatorLookup, bsonTypeClassMap, fieldModel.useDiscriminator(),
-                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, nextHead, nextTail));
+            Codec<?> nestedCodec = getCodecFromFieldTypeData(typeData.getTypeParameters().get(0));
+            codec = new CollectionCodec(head, nestedCodec);
         } else if (Map.class.isAssignableFrom(head)) {
-            codec = new MapCodec(registry, discriminatorLookup, bsonTypeClassMap, fieldModel.useDiscriminator(),
-                    classModel.getDiscriminatorKey(), head, createFieldCodecFromTypeParameters(fieldModel, nextHead, nextTail));
+            codec = new MapCodec(head, getCodecFromFieldTypeData(typeData.getTypeParameters().get(1)));
+        } else {
+            codec = getCodecOrNull(head);
         }
         return codec;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private <S> Codec<S> getFieldCodecFromRegistry(final FieldModel<S> fieldModel, final Class<?> clazz) {
+    @SuppressWarnings("unchecked")
+    private <S> Codec<S> getCodecOrNull(final Class<S> clazz) {
         Codec<S> codec = null;
         try {
-            codec = (Codec<S>) registry.get(clazz);
-            if (codec instanceof PojoCodec) {
-                ClassModel<S> classModel = ((PojoCodec<S>) codec).getClassModel();
-                boolean changeDiscriminator = !fieldModel.useDiscriminator() && classModel.useDiscriminator()
-                        || (fieldModel.useDiscriminator() && classModel.getDiscriminatorKey() != null
-                        && classModel.getDiscriminator() != null);
-                if (changeDiscriminator) {
-                    ClassModelImpl<S> newClassModel = new ClassModelImpl<S>(classModel.getType(), classModel.getClassAccessorFactory(),
-                            fieldModel.useDiscriminator(), classModel.getDiscriminatorKey(),
-                            classModel.getDiscriminator(), classModel.getIdFieldModel(), classModel.getFieldModels());
-                    codec = new PojoCodec<S>(newClassModel, registry, discriminatorLookup, bsonTypeClassMap, codecCache);
-                }
-            }
+            codec = registry.get(clazz);
         } catch (final CodecConfigurationException e) {
             // No codec found
         }
         return codec;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private <S, V> ClassModel<S> specialise(final ClassModel<S> clazzModel, final FieldModel<V> fieldModel) {
+        boolean changeDiscriminator = !fieldModel.useDiscriminator() && clazzModel.useDiscriminator()
+                || (fieldModel.useDiscriminator() && !clazzModel.useDiscriminator() && clazzModel.getDiscriminatorKey() != null
+                && clazzModel.getDiscriminator() != null);
+        if (clazzModel.getGenericFieldNames().isEmpty() && !changeDiscriminator){
+            return clazzModel;
+        }
+
+        TypeData fieldTypeData = fieldModel.getTypeData();
+        ArrayList<FieldModel<?>> concreteFieldModels = new ArrayList<FieldModel<?>>(clazzModel.getFieldModels());
+        FieldModel<?> concreteIdField = clazzModel.getIdFieldModel();
+
+        List<TypeData> fieldTypeParameters = fieldTypeData.getTypeParameters();
+        for (int i = 0; i < concreteFieldModels.size(); i++) {
+            FieldModel<?> model = concreteFieldModels.get(i);
+            String fieldName = model.getFieldName();
+            int index = clazzModel.getGenericFieldNames().indexOf(fieldName);
+            if (index > -1 && index < fieldTypeParameters.size()) {
+                FieldModel<?> concreteFieldModel = createFieldModelWithTypes(model, fieldTypeParameters.get(index));
+                concreteFieldModels.set(i, concreteFieldModel);
+                if (concreteIdField != null && concreteIdField.getFieldName().equals(fieldName)) {
+                    concreteIdField = concreteFieldModel;
+                }
+            }
+        }
+
+        boolean useDiscriminator = changeDiscriminator ? fieldModel.useDiscriminator() : clazzModel.useDiscriminator();
+        return new ClassModelImpl<S>(clazzModel.getType(), clazzModel.getGenericFieldNames(), clazzModel.getClassAccessorFactory(),
+                useDiscriminator, clazzModel.getDiscriminatorKey(), clazzModel.getDiscriminator(), concreteIdField, concreteFieldModels);
+    }
+
+    private <V> FieldModel<V> createFieldModelWithTypes(final FieldModel<V> fieldModel, final TypeData<V> typeData) {
+        if (fieldModel.getTypeData().equals(typeData)) {
+            return fieldModel;
+        }
+
+        TypeData<V> fieldTypeData = typeData;
+        if (List.class.isAssignableFrom(fieldModel.getTypeData().getType())) {
+            fieldTypeData = TypeData.builder(fieldModel.getTypeData().getType()).addTypeParameter(typeData).build();
+        } else if (Map.class.isAssignableFrom(fieldModel.getTypeData().getType())) {
+            fieldTypeData = TypeData.builder(fieldModel.getTypeData().getType())
+                    .addTypeParameter(TypeData.builder(String.class).build()).addTypeParameter(typeData).build();
+        }
+
+        return new FieldModelImpl<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
+                new FieldModelSerialization<V>() {
+                    @Override
+                    public boolean shouldSerialize(final V value) {
+                        return fieldModel.shouldSerialize(value);
+                    }
+                },
+                fieldModel.useDiscriminator());
     }
 }

@@ -15,7 +15,6 @@
  */
 package org.bson.codecs.pojo;
 
-import org.bson.codecs.BsonTypeClassMap;
 import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -40,15 +39,13 @@ public final class PojoCodecProvider implements CodecProvider {
     private final Map<Class<?>, ClassModel<?>> classModels;
     private final Set<String> packages;
     private final List<Convention> conventions;
-    private final BsonTypeClassMap bsonTypeClassMap;
     private final DiscriminatorLookup discriminatorLookup;
 
     private PojoCodecProvider(final Map<Class<?>, ClassModel<?>> classModels, final Set<String> packages,
-                              final List<Convention> conventions, final BsonTypeClassMap bsonTypeClassMap) {
+                              final List<Convention> conventions) {
         this.classModels = classModels;
         this.packages = packages;
         this.conventions = conventions;
-        this.bsonTypeClassMap = bsonTypeClassMap;
         this.discriminatorLookup = new DiscriminatorLookup(classModels, packages);
     }
 
@@ -70,7 +67,7 @@ public final class PojoCodecProvider implements CodecProvider {
             if (classModel == null) {
                 classModel = createClassModel(clazz, conventions);
             }
-            return new PojoCodec<T>(classModel, registry, discriminatorLookup, bsonTypeClassMap);
+            return new PojoCodec<T>(classModel, registry, discriminatorLookup);
         }
         return null;
     }
@@ -83,7 +80,6 @@ public final class PojoCodecProvider implements CodecProvider {
         private final Map<Class<?>, ClassModel<?>> classModels = new HashMap<Class<?>, ClassModel<?>>();
         private final List<Class<?>> clazzes = new ArrayList<Class<?>>();
         private List<Convention> conventions = null;
-        private BsonTypeClassMap bsonTypeClassMap = new BsonTypeClassMap();
 
         /**
          * Creates the PojoCodecProvider with the classes or packages that configured and registered.
@@ -100,7 +96,7 @@ public final class PojoCodecProvider implements CodecProvider {
                     register(createClassModel(clazz, immutableConventions));
                 }
             }
-            return new PojoCodecProvider(classModels, packages, immutableConventions, bsonTypeClassMap);
+            return new PojoCodecProvider(classModels, packages, immutableConventions);
         }
 
         /**
@@ -111,18 +107,6 @@ public final class PojoCodecProvider implements CodecProvider {
          */
         public Builder conventions(final List<Convention> conventions) {
             this.conventions = notNull("conventions", conventions);
-            return this;
-        }
-
-        /**
-         * Sets the {@code BsonTypeClassMap} to use when decoding generic values in instances where the {@link ClassModel} and the
-         * {@link FieldModel} do not provide any concrete type information.
-         *
-         * @param bsonTypeClassMap the BsonTypeClassMap
-         * @return this
-         */
-        public Builder bsonTypeClassMap(final BsonTypeClassMap bsonTypeClassMap) {
-            this.bsonTypeClassMap = notNull("bsonTypeClassMap", bsonTypeClassMap);
             return this;
         }
 

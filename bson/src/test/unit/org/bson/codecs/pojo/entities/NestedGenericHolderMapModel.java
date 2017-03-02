@@ -16,22 +16,24 @@
 
 package org.bson.codecs.pojo.entities;
 
-public final class NestedGenericHolderModel {
+import java.util.Map;
 
-    private GenericHolderModel<String> nested;
+public final class NestedGenericHolderMapModel {
 
-    public NestedGenericHolderModel() {
+    private GenericHolderModel<Map<String, SimpleModel>> nested;
+
+    public NestedGenericHolderMapModel() {
     }
 
-    public NestedGenericHolderModel(final GenericHolderModel<String> nested) {
+    public NestedGenericHolderMapModel(final GenericHolderModel<Map<String, SimpleModel>> nested) {
         this.nested = nested;
     }
 
-    public GenericHolderModel<String> getNested() {
+    public GenericHolderModel<Map<String, SimpleModel>> getNested() {
         return nested;
     }
 
-    public void setNested(final GenericHolderModel<String> nested) {
+    public void setNested(final GenericHolderModel<Map<String, SimpleModel>> nested) {
         this.nested = nested;
     }
 
@@ -40,20 +42,29 @@ public final class NestedGenericHolderModel {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof NestedGenericHolderModel)) {
+        if (!(o instanceof NestedGenericHolderMapModel)) {
             return false;
         }
 
-        NestedGenericHolderModel that = (NestedGenericHolderModel) o;
+        NestedGenericHolderMapModel that = (NestedGenericHolderMapModel) o;
 
         if (getNested() != null ? !getNested().equals(that.getNested()) : that.getNested() != null) {
             return false;
         }
+
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getNested() != null ? getNested().hashCode() : 0;
+        int result = getNested() != null ? getNested().hashCode() : 0;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "NestedGenericHolderMapModel{"
+                + "nested=" + nested
+                + "}";
     }
 }

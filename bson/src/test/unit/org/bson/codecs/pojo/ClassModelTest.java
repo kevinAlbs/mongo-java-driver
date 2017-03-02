@@ -44,6 +44,57 @@ public final class ClassModelTest {
     }
 
     @Test
+    @SuppressWarnings("rawtypes")
+    public void testCollectionNestedPojoModelFieldTypes() {
+//        ClassModel<?> classModel = new ClassModelBuilder<CollectionNestedPojoModel>(CollectionNestedPojoModel.class).build();
+//        assertEquals(singletonList(SimpleModel.class), classModel.getFieldModels().get(0).getTypeParameters());
+//        assertEquals(asList(ArrayList.class, SimpleModel.class), classModel.getFieldModels().get(1).getTypeParameters());
+//
+//        assertEquals(singletonList(SimpleModel.class), classModel.getFieldModels().get(2).getTypeParameters());
+//        assertEquals(asList(HashSet.class, SimpleModel.class), classModel.getFieldModels().get(3).getTypeParameters());
+//
+//        assertEquals(asList(String.class, SimpleModel.class), classModel.getFieldModels().get(4).getTypeParameters());
+//        assertEquals(asList(String.class, HashMap.class, String.class, SimpleModel.class),
+//                classModel.getFieldModels().get(5).getTypeParameters());
+//
+//        assertEquals(asList(String.class, ArrayList.class, SimpleModel.class), classModel.getFieldModels().get(6).getTypeParameters());
+//        assertEquals(asList(String.class, ArrayList.class, HashMap.class, String.class, SimpleModel.class),
+//                classModel.getFieldModels().get(7).getTypeParameters());
+//        assertEquals(asList(String.class, HashSet.class, SimpleModel.class), classModel.getFieldModels().get(8).getTypeParameters());
+//
+//        assertEquals(asList(HashMap.class, String.class, SimpleModel.class), classModel.getFieldModels().get(9).getTypeParameters());
+//        assertEquals(asList(HashMap.class, String.class, ArrayList.class, SimpleModel.class),
+//                classModel.getFieldModels().get(10).getTypeParameters());
+//        assertEquals(asList(HashMap.class, String.class, HashSet.class, SimpleModel.class),
+//                classModel.getFieldModels().get(11).getTypeParameters());
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void testMappingConcreteGenericTypes() {
+//        ClassModel<?> classModel = new ClassModelBuilder<NestedGenericHolderMapModel>(NestedGenericHolderMapModel.class).build();
+//        assertEquals(GenericHolderModel.class, classModel.getFieldModels().get(0).getFieldType());
+//        assertEquals(asList(HashMap.class, String.class, SimpleModel.class), classModel.getFieldModels().get(0).getTypeParameters());
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void testMappingSimpleGenericsModelTypes() {
+//        ClassModel<?> classModel = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class).build();
+//        assertEquals(Integer.class, classModel.getFieldModels().get(0).getFieldType());
+//        assertEquals(emptyList(), classModel.getFieldModels().get(0).getTypeParameters());
+//
+//        assertEquals(Object.class, classModel.getFieldModels().get(1).getFieldType());
+//        assertEquals(emptyList(), classModel.getFieldModels().get(1).getTypeParameters());
+//
+//        assertEquals(ArrayList.class, classModel.getFieldModels().get(2).getFieldType());
+//        assertEquals(singletonList(Object.class), classModel.getFieldModels().get(2).getTypeParameters());
+//
+//        assertEquals(HashMap.class, classModel.getFieldModels().get(3).getFieldType());
+//        assertEquals(asList(String.class, Object.class), classModel.getFieldModels().get(3).getTypeParameters());
+    }
+
+    @Test
     public void testAnnotationModel() {
         ClassModel<?> classModel = new ClassModelBuilder<AnnotationModel>(AnnotationModel.class).build();
         FieldModel<?> fieldModel = classModel.getFieldModels().get(0);

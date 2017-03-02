@@ -18,8 +18,6 @@ package org.bson.codecs.pojo;
 
 import org.bson.codecs.Codec;
 
-import java.util.List;
-
 /**
  * Represents a field on a class and stores various metadata such as generic parameters
  *
@@ -47,14 +45,9 @@ public interface FieldModel<T> {
     String getDocumentFieldName();
 
     /**
-     * @return the backing class for the model
+     * @return the fields type data
      */
-    Class<T> getFieldType();
-
-    /**
-     * @return the parameterized types on the model's underlying type
-     */
-    List<Class<?>> getTypeParameters();
+    TypeData<T> getTypeData();
 
     /**
      * @return the custom codec to use if set or null

@@ -240,4 +240,22 @@ public final class CollectionNestedPojoModel {
         result = 31 * result + (getListMapSetSimple() != null ? getListMapSetSimple().hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "CollectionNestedPojoModel{"
+                + "listSimple=" + listSimple
+                + ", listListSimple=" + listListSimple
+                + ", setSimple=" + setSimple
+                + ", setSetSimple=" + setSetSimple
+                + ", mapSimple=" + mapSimple
+                + ", mapMapSimple=" + mapMapSimple
+                + ", mapListSimple=" + mapListSimple
+                + ", mapListMapSimple=" + mapListMapSimple
+                + ", mapSetSimple=" + mapSetSimple
+                + ", listMapSimple=" + listMapSimple
+                + ", listMapListSimple=" + listMapListSimple
+                + ", listMapSetSimple=" + listMapSetSimple
+                + "}";
+    }
 }

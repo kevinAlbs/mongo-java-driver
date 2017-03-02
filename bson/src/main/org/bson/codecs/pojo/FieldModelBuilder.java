@@ -20,11 +20,7 @@ import org.bson.codecs.Codec;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -43,11 +39,10 @@ import static org.bson.codecs.pojo.PojoBuilderHelper.stateNotNull;
 public final class FieldModelBuilder<T> {
     private String fieldName;
     private String documentFieldName;
-    private Class<T> type;
+    private TypeData<T> typeData;
     private FieldModelSerialization<T> fieldModelSerialization;
     private Codec<T> codec;
     private List<Annotation> annotations = emptyList();
-    private List<Class<?>> typeParameters = emptyList();
     private boolean discriminatorEnabled = true;
 
     /**
@@ -102,10 +97,21 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * @return the type
+     * @return the FieldTypeData
      */
-    public Class<T> getType() {
-        return type;
+    public TypeData<T> getTypeData() {
+        return typeData;
+    }
+
+    /**
+     * Sets the FieldTypeData
+     *
+     * @param typeData the FieldTypeData
+     * @return this
+     */
+    public FieldModelBuilder<T> typeData(final TypeData<T> typeData) {
+        this.typeData = notNull("typeData", typeData);
+        return this;
     }
 
     /**
@@ -124,17 +130,6 @@ public final class FieldModelBuilder<T> {
      */
     Codec<T> getCodec() {
         return codec;
-    }
-
-    /**
-     * Sets the type for the field
-     *
-     * @param type the type for the field
-     * @return this
-     */
-    public FieldModelBuilder<T> type(final Class<T> type) {
-        this.type = notNull("type", type);
-        return this;
     }
 
     /**
@@ -176,26 +171,6 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * Returns the parameterized types on the model's underlying type
-     *
-     * @return the parameterized types on the model's underlying type
-     */
-    public List<Class<?>> getTypeParameters() {
-        return typeParameters;
-    }
-
-    /**
-     * Sets the parameterized types on the model's underlying type
-     *
-     * @param typeParameters the parameterized types on the model's underlying type
-     * @return this
-     */
-    public FieldModelBuilder<T> typeParameters(final List<Class<?>> typeParameters) {
-        this.typeParameters = unmodifiableList(notNull("typeParameters", new ArrayList<Class<?>>(typeParameters)));
-        return this;
-    }
-
-    /**
      * @return true if a discriminator should be used when serializing, otherwise false
      */
     public boolean isDiscriminatorEnabled() {
@@ -222,8 +197,7 @@ public final class FieldModelBuilder<T> {
         return new FieldModelImpl(
                 stateNotNull("fieldName", fieldName),
                 stateNotNull("documentFieldName", documentFieldName),
-                boxType(stateNotNull("type", type)),
-                boxTypes(typeParameters),
+                stateNotNull("typeData", typeData),
                 codec,
                 stateNotNull("fieldModelSerialization", fieldModelSerialization),
                 discriminatorEnabled);
@@ -231,37 +205,7 @@ public final class FieldModelBuilder<T> {
 
     @Override
     public String toString() {
-        return format("FieldModelBuilder{type=%s, fieldName=%s}", type, fieldName);
-    }
-
-    private Class<?> boxType(final Class<?> clazz) {
-        if (clazz.isPrimitive()) {
-            return PRIMITIVE_CLASS_MAP.get(clazz);
-        } else {
-            return clazz;
-        }
-    }
-
-    private List<Class<?>> boxTypes(final List<Class<?>> clazzes) {
-        List<Class<?>> boxedTypes = new ArrayList<Class<?>>();
-        for (Class<?> clazz : clazzes) {
-            boxedTypes.add(boxType(clazz));
-        }
-        return boxedTypes;
-    }
-
-    private static final Map<Class<?>, Class<?>> PRIMITIVE_CLASS_MAP;
-    static {
-        Map<Class<?>, Class<?>> map = new HashMap<Class<?>, Class<?>>();
-        map.put(boolean.class, Boolean.class);
-        map.put(byte.class, Byte.class);
-        map.put(char.class, Character.class);
-        map.put(double.class, Double.class);
-        map.put(float.class, Float.class);
-        map.put(int.class, Integer.class);
-        map.put(long.class, Long.class);
-        map.put(short.class, Short.class);
-        PRIMITIVE_CLASS_MAP = Collections.unmodifiableMap(map);
+        return format("FieldModelBuilder{fieldName=%s, typeData=%s}", fieldName, typeData);
     }
 
 }

@@ -37,8 +37,7 @@ public final class FieldModelTest {
 
         assertEquals(fieldName, fieldModel.getFieldName());
         assertEquals(fieldName, fieldModel.getDocumentFieldName());
-        assertEquals(Integer.class, fieldModel.getFieldType());
-        assertTrue(fieldModel.getTypeParameters().isEmpty());
+        assertEquals(TypeData.builder(Integer.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.useDiscriminator());
         assertTrue(fieldModel.shouldSerialize(1));
@@ -48,8 +47,7 @@ public final class FieldModelTest {
     public void testSimpleModelGeneric() throws NoSuchFieldException {
         FieldModel<Object> fieldModel = new FieldModelBuilder<Object>(SimpleGenericsModel.class.getDeclaredField("myGenericField")).build();
 
-        assertEquals(Object.class, fieldModel.getFieldType());
-        assertTrue(fieldModel.getTypeParameters().isEmpty());
+        assertEquals(TypeData.builder(Object.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
         assertTrue(fieldModel.useDiscriminator());
@@ -59,9 +57,8 @@ public final class FieldModelTest {
     @SuppressWarnings("rawtypes")
     public void testSimpleModelGenericList() throws NoSuchFieldException {
         FieldModel<?> fieldModel = new FieldModelBuilder(SimpleGenericsModel.class.getDeclaredField("myListField")).build();
-
-        assertEquals(List.class, fieldModel.getFieldType());
-        assertTrue(fieldModel.getTypeParameters().isEmpty());
+        assertEquals(TypeData.builder(List.class)
+                .addTypeParameter(TypeData.builder(Object.class).build()).build(), fieldModel.getTypeData());
     }
 
     @Test

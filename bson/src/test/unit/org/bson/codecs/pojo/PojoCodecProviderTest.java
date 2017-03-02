@@ -16,17 +16,11 @@
 
 package org.bson.codecs.pojo;
 
-import org.bson.BsonType;
-import org.bson.codecs.BsonTypeClassMap;
 import org.bson.codecs.Codec;
 import org.bson.codecs.ValueCodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
 
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.pojo.Conventions.NO_CONVENTIONS;
@@ -89,23 +83,6 @@ public final class PojoCodecProviderTest extends PojoTestCase {
                 "{'myFinalField': 10, 'myIntField': 10, 'customId': 'id',"
                         + "'child': {'myFinalField': 10, 'myIntField': 10, 'customId': 'child',"
                         + "          'simpleModel': {'integerField': 42, 'stringField': 'myString' } } }");
-    }
-
-    @Test
-    public void testBsonTypeMap() {
-        HashMap<BsonType, Class<?>> replacements = new HashMap<BsonType, Class<?>>();
-        replacements.put(BsonType.DOCUMENT, SimpleModel.class);
-        BsonTypeClassMap bsonTypeClassMap = new BsonTypeClassMap(replacements);
-
-        PojoCodecProvider provider = PojoCodecProvider.builder().bsonTypeClassMap(bsonTypeClassMap).register(SimpleGenericsModel.class)
-                .register(SimpleModel.class).build();
-        CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
-
-        SimpleModel simpleModel = getSimpleModel();
-        SimpleGenericsModel<SimpleModel, Integer, Integer> model = new SimpleGenericsModel<SimpleModel,  Integer, Integer>(42,
-                simpleModel, Collections.<Integer>emptyList(), null);
-        decodesTo(registry, "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': "
-                + "{'integerField': 42, 'stringField': 'myString'}, 'myListField': []}", model);
     }
 
 }

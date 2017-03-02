@@ -16,7 +16,7 @@
 
 package org.bson.codecs.pojo;
 
-import org.bson.codecs.Codec;
+import org.bson.codecs.ValueCodecProvider;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
@@ -25,7 +25,9 @@ import org.bson.codecs.pojo.entities.ConstructorModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.ConverterModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderSimpleGenericsModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
 import org.bson.codecs.pojo.entities.ShapeHolderModel;
 import org.bson.codecs.pojo.entities.ShapeModelAbstract;
@@ -44,18 +46,16 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.pojo.Conventions.NO_CONVENTIONS;
-import static org.junit.Assert.assertEquals;
 
 public final class PojoCodecTest extends PojoTestCase {
 
     @Test
     public void testRoundTripSimpleModel() {
         SimpleModel model = getSimpleModel();
-        roundTrip(getPojoCodecProviderBuilder(SimpleModel.class), model,
-                "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+        roundTrip(getPojoCodecProviderBuilder(SimpleModel.class), model, SIMPLE_MODEL_JSON);
     }
 
     @Test
@@ -68,49 +68,15 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test
-    public void testRoundTripSimpleGenericsModel() {
+    public void testRoundTripSimpleGenericsModelWithObjectCodec() {
+        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(SimpleGenericsModel.class).build(),
+                new ValueCodecProvider(), new ObjectCodecProvider());
         SimpleGenericsModel<String, String, Integer> model = getSimpleGenericsModel();
-        roundTrip(getPojoCodecProviderBuilder(SimpleGenericsModel.class), model,
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 'A'"
-                        + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}");
-    }
+        String json = "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 'A'"
+                + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}";
 
-    @Test
-    public void testRoundTripSimpleGenericsModelWithEmbeddedModels() {
-        SimpleModel simpleModel = getSimpleModel();
-        Map<String, SimpleModel> map = new HashMap<String, SimpleModel>();
-        map.put("A", simpleModel);
-        String modelJson = "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
-
-        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(SimpleGenericsModel.class, SimpleModel.class);
-        SimpleGenericsModel<Integer, SimpleModel, SimpleModel> model = new SimpleGenericsModel<Integer, SimpleModel, SimpleModel>(42,
-                42, singletonList(simpleModel), map);
-        roundTrip(builder, model,
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, "
-                        + "    'myListField': [" + modelJson + "], 'myMapField': {'A': " + modelJson + "}}");
-
-        // Nested Collections
-        Map<String, List<SimpleModel>> mapA = new HashMap<String, List<SimpleModel>>();
-        mapA.put("A", asList(simpleModel));
-
-        SimpleGenericsModel<Integer, Map<String, List<SimpleModel>>, List<SimpleModel>> nestedModel =
-                new SimpleGenericsModel<Integer, Map<String, List<SimpleModel>>, List<SimpleModel>>(42, 42, singletonList(mapA), mapA);
-        roundTrip(builder, nestedModel,
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
-                        + "'myListField': [{ 'A': [" + modelJson + "]}],"
-                        + "'myMapField': {'A': [" + modelJson + "]}}");
-
-        // Multiple levels of nesting
-        Map<String, Map<String, SimpleModel>> mapB = new HashMap<String, Map<String, SimpleModel>>();
-        mapB.put("A", map);
-        SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>> multiNestedModel =
-                new SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>>(42, 42,
-                        singletonList(singletonList(simpleModel)), mapB);
-
-        roundTrip(builder, multiNestedModel,
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
-                        + "'myListField': [[" + modelJson + "]],"
-                        + "'myMapField': {'A': {'A': " + modelJson + "}}}");
+        encodesTo(registry, model, json);
+        decodesTo(registry, json, model);
     }
 
     @Test
@@ -126,35 +92,26 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testRoundTripSimpleNestedPojoModel() {
         SimpleNestedPojoModel model = getSimpleNestedPojoModel();
         roundTrip(getPojoCodecProviderBuilder(SimpleNestedPojoModel.class, SimpleModel.class), model,
-                "{'_t': 'SimpleNestedPojoModel', 'simple': {'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}}");
-    }
-
-    @Test
-    public void testDecodesSimpleNestedPojoModel() {
-        SimpleNestedPojoModel model = getSimpleNestedPojoModel();
-        decodesTo(getCodecRegistry(SimpleNestedPojoModel.class, SimpleModel.class),
-                "{'_t': 'SimpleNestedPojoModel', 'simple': {'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}}",
-                model);
+                "{'_t': 'SimpleNestedPojoModel', 'simple': " + SIMPLE_MODEL_JSON + "}");
     }
 
     @Test
     public void testRoundTripCollectionNestedPojoModel() {
         CollectionNestedPojoModel model = getCollectionNestedPojoModel();
-        String simpleModel = "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
         roundTrip(getPojoCodecProviderBuilder(CollectionNestedPojoModel.class, SimpleModel.class), model,
                 "{'_t': 'CollectionNestedPojoModel',"
-                        + "'listSimple': [" + simpleModel + "],"
-                        + "'listListSimple': [[" + simpleModel + "]],"
-                        + "'setSimple': [" + simpleModel + "],"
-                        + "'setSetSimple': [[" + simpleModel + "]],"
-                        + "'mapSimple': {'s': " + simpleModel + "},"
-                        + "'mapMapSimple': {'ms': {'s': " + simpleModel + "}},"
-                        + "'mapListSimple': {'ls': [" + simpleModel + "]},"
-                        + "'mapListMapSimple': {'lm': [{'s': " + simpleModel + "}]},"
-                        + "'mapSetSimple': {'s': [" + simpleModel + "]},"
-                        + "'listMapSimple': [{'s': " + simpleModel + "}],"
-                        + "'listMapListSimple': [{'ls': [" + simpleModel + "]}],"
-                        + "'listMapSetSimple': [{'s': [" + simpleModel + "]}],"
+                        + "'listSimple': [" + SIMPLE_MODEL_JSON + "],"
+                        + "'listListSimple': [[" + SIMPLE_MODEL_JSON + "]],"
+                        + "'setSimple': [" + SIMPLE_MODEL_JSON + "],"
+                        + "'setSetSimple': [[" + SIMPLE_MODEL_JSON + "]],"
+                        + "'mapSimple': {'s': " + SIMPLE_MODEL_JSON + "},"
+                        + "'mapMapSimple': {'ms': {'s': " + SIMPLE_MODEL_JSON + "}},"
+                        + "'mapListSimple': {'ls': [" + SIMPLE_MODEL_JSON + "]},"
+                        + "'mapListMapSimple': {'lm': [{'s': " + SIMPLE_MODEL_JSON + "}]},"
+                        + "'mapSetSimple': {'s': [" + SIMPLE_MODEL_JSON + "]},"
+                        + "'listMapSimple': [{'s': " + SIMPLE_MODEL_JSON + "}],"
+                        + "'listMapListSimple': [{'ls': [" + SIMPLE_MODEL_JSON + "]}],"
+                        + "'listMapSetSimple': [{'s': [" + SIMPLE_MODEL_JSON + "]}],"
                         + "}");
     }
 
@@ -174,7 +131,46 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testNestedGenericHolderModel() {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderModel.class, GenericHolderModel.class);
         roundTrip(builder, getNestedGenericHolderModel(),
-                "{'_t': 'NestedGenericHolderModel', 'nested': {'_t': 'GenericHolderModel', 'myGenericField': {'$numberLong': '10'}}}");
+                "{'_t': 'NestedGenericHolderModel', 'nested': {'_t': 'GenericHolderModel', 'myGenericField': 'generic',"
+                        + "'myLongField': {'$numberLong': '1'}}}");
+    }
+
+    @Test
+    public void testNestedGenericHolderMapModel() {
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderMapModel.class,
+                GenericHolderModel.class, SimpleGenericsModel.class, SimpleModel.class);
+        roundTrip(builder, getNestedGenericHolderMapModel(),
+                "{'_t': 'NestedGenericHolderMapModel', "
+                        + "'nested': {'_t': 'GenericHolderModel', 'myGenericField': {'s': " + SIMPLE_MODEL_JSON + "}, "
+                        + "           'myLongField': {'$numberLong': '1'}}}");
+    }
+
+
+    @Test
+    public void testGenericsRoundTrip() {
+        // Multiple levels of nesting
+        SimpleModel simpleModel = getSimpleModel();
+        Map<String, SimpleModel> map = new HashMap<String, SimpleModel>();
+        map.put("A", simpleModel);
+        Map<String, Map<String, SimpleModel>> mapB = new HashMap<String, Map<String, SimpleModel>>();
+        mapB.put("A", map);
+        SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>> simpleGenericsModel =
+                new SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>>(42, 42,
+                        singletonList(singletonList(simpleModel)), mapB);
+        GenericHolderModel<SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>>> nested =
+                new GenericHolderModel<SimpleGenericsModel<Integer, List<SimpleModel>, Map<String, SimpleModel>>>(simpleGenericsModel, 42L);
+
+        NestedGenericHolderSimpleGenericsModel model = new NestedGenericHolderSimpleGenericsModel(nested);
+
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderSimpleGenericsModel.class,
+                GenericHolderModel.class, SimpleGenericsModel.class, SimpleModel.class);
+        roundTrip(builder, model,
+                "{'_t': 'NestedGenericHolderSimpleGenericsModel',"
+                        + "'nested': {'_t': 'GenericHolderModel', "
+                        + "           'myGenericField': {'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
+                        + "                              'myListField': [[" + SIMPLE_MODEL_JSON + "]], "
+                        + "                              'myMapField': {'A': {'A': " + SIMPLE_MODEL_JSON + "}}},"
+                        + "            'myLongField': {'$numberLong': '42' }}}");
     }
 
     @Test
@@ -365,20 +361,6 @@ public final class PojoCodecTest extends PojoTestCase {
     @Test(expected = CodecConfigurationException.class)
     public void testInvalidTypeForModelField() {
         decodingShouldFail(getCodec(SimpleNestedPojoModel.class), "{ '_t': 'SimpleNestedPojoModel', 'simple': 123}");
-    }
-
-    @Test(expected = CodecConfigurationException.class)
-    public void testInvalidDiscriminatorInAMapField() {
-        decodingShouldFail(getCodec(SimpleGenericsModel.class),
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, 'myListField': [], "
-                        + "'myMapField': {'A': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}}");
-    }
-
-    @Test(expected = CodecConfigurationException.class)
-    public void testInvalidDiscriminatorInAListField() {
-        decodingShouldFail(getCodec(SimpleGenericsModel.class),
-                "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42, 'myMapField': {}"
-                        + "'myListField': [{'_t': 'fakeModel', 'integerField': 42, 'stringField': 'myString'}]}");
     }
 
     @Test(expected = CodecConfigurationException.class)

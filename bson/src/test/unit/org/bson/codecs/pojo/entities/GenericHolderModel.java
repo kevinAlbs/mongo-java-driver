@@ -16,23 +16,33 @@
 
 package org.bson.codecs.pojo.entities;
 
-public class GenericHolderModel<T> {
+public class GenericHolderModel<P> {
 
-    private T myGenericField;
+    private P myGenericField;
+    private Long myLongField;
 
     public GenericHolderModel() {
     }
 
-    public GenericHolderModel(final T myGenericField) {
+    public GenericHolderModel(final P myGenericField, final Long myLongField) {
         this.myGenericField = myGenericField;
+        this.myLongField = myLongField;
     }
 
-    public T getMyGenericField() {
+    public P getMyGenericField() {
         return myGenericField;
     }
 
-    public void setMyGenericField(final T myGenericField) {
+    public void setMyGenericField(final P myGenericField) {
         this.myGenericField = myGenericField;
+    }
+
+    public Long getMyLongField() {
+        return myLongField;
+    }
+
+    public void setMyLongField(final Long myLongField) {
+        this.myLongField = myLongField;
     }
 
     @Override
@@ -49,12 +59,17 @@ public class GenericHolderModel<T> {
         if (getMyGenericField() != null ? !getMyGenericField().equals(that.getMyGenericField()) : that.getMyGenericField() != null) {
             return false;
         }
+        if (getMyLongField() != null ? !getMyLongField().equals(that.getMyLongField()) : that.getMyLongField() != null) {
+            return false;
+        }
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getMyGenericField() != null ? getMyGenericField().hashCode() : 0;
+        int result = getMyGenericField() != null ? getMyGenericField().hashCode() : 0;
+        result = 31 * result + (getMyLongField() != null ? getMyLongField().hashCode() : 0);
+        return result;
     }
 }

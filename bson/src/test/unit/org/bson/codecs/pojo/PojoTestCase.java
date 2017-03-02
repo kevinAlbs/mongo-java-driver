@@ -32,6 +32,7 @@ import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
 import org.bson.codecs.pojo.entities.ShapeModelCircle;
@@ -235,8 +236,16 @@ abstract class PojoTestCase {
     }
 
     NestedGenericHolderModel getNestedGenericHolderModel() {
-        return new NestedGenericHolderModel(new GenericHolderModel<Long>(10L));
+        return new NestedGenericHolderModel(new GenericHolderModel<String>("generic", 1L));
     }
+
+    NestedGenericHolderMapModel getNestedGenericHolderMapModel() {
+        Map<String, SimpleModel> mapSimple = new HashMap<String, SimpleModel>();
+        mapSimple.put("s", getSimpleModel());
+        return new NestedGenericHolderMapModel(new GenericHolderModel<Map<String, SimpleModel>>(mapSimple, 1L));
+    }
+
+    static final String SIMPLE_MODEL_JSON = "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
 
     class StringToObjectIdCodec implements Codec<String> {
 

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static org.bson.assertions.Assertions.notNull;
 import static org.bson.codecs.pojo.Conventions.DEFAULT_CONVENTIONS;
 import static org.bson.codecs.pojo.PojoBuilderHelper.configureClassModelBuilder;
@@ -41,8 +42,9 @@ public class ClassModelBuilder<T> {
     private final List<FieldModelBuilder<?>> fields = new ArrayList<FieldModelBuilder<?>>();
     private ClassAccessorFactory<T> classAccessorFactory;
     private Class<T> type;
+    private List<String> genericFieldNames = emptyList();
     private List<Convention> conventions = DEFAULT_CONVENTIONS;
-    private List<Annotation> annotations = Collections.emptyList();
+    private List<Annotation> annotations = emptyList();
     private Boolean discriminatorEnabled;
     private String discriminator;
     private String discriminatorKey;
@@ -97,6 +99,24 @@ public class ClassModelBuilder<T> {
      */
     public Class<T> getType() {
         return type;
+    }
+
+    /**
+     * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     */
+    public List<String> getGenericFieldNames() {
+        return genericFieldNames;
+    }
+
+    /**
+     * Sets a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     *
+     * @param genericFieldNames the generic field names
+     * @return this
+     */
+    public ClassModelBuilder<T> genericFieldNames(final List<String> genericFieldNames) {
+        this.genericFieldNames = genericFieldNames;
+        return this;
     }
 
     /**
@@ -293,8 +313,8 @@ public class ClassModelBuilder<T> {
             }
         }
         validateFieldModels(fieldModels);
-        return new ClassModelImpl<T>(type, classAccessorFactory, useDiscriminator, discriminatorKey, discriminator, idFieldModel,
-                fieldModels);
+        return new ClassModelImpl<T>(type, genericFieldNames, classAccessorFactory, useDiscriminator, discriminatorKey, discriminator,
+                idFieldModel, fieldModels);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package org.bson.codecs.pojo;
 
+import org.bson.codecs.IntegerCodec;
 import org.bson.codecs.pojo.annotations.Property;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.junit.Test;
@@ -41,8 +42,7 @@ public final class FieldModelBuilderTest {
         assertNull(fieldModelBuilder.getFieldName());
         assertTrue(fieldModelBuilder.getAnnotations().isEmpty());
         assertNull(fieldModelBuilder.getFieldModelSerialization());
-        assertNull(fieldModelBuilder.getType());
-        assertTrue(fieldModelBuilder.getTypeParameters().isEmpty());
+        assertNull(fieldModelBuilder.getTypeData());
         assertTrue(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
@@ -54,31 +54,29 @@ public final class FieldModelBuilderTest {
 
         assertEquals(field.getName(), fieldModelBuilder.getFieldName());
         assertEquals(field.getName(), fieldModelBuilder.getDocumentFieldName());
-        assertEquals(List.class, fieldModelBuilder.getType());
         assertTrue(fieldModelBuilder.getAnnotations().isEmpty());
-        assertTrue(fieldModelBuilder.getTypeParameters().isEmpty());
         assertTrue(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
     @Test
     public void testFieldOverrides() throws NoSuchFieldException {
+        IntegerCodec integerCodec = new IntegerCodec();
         Field field = SimpleGenericsModel.class.getDeclaredField("myIntegerField");
-        List<Class<?>> typeParameters = Collections.<Class<?>>singletonList(Integer.class);
         FieldModelBuilder<Integer> fieldModelBuilder = new FieldModelBuilder<Integer>(field)
                 .fieldName("fieldName")
+                .codec(integerCodec)
                 .documentFieldName("altDocumentFieldName")
                 .annotations(TEST_ANNOTATIONS)
                 .fieldModelSerialization(CUSTOM_SERIALIZATION)
-                .type(Integer.class)
-                .typeParameters(typeParameters)
+                .typeData(TypeData.builder(Integer.class).build())
                 .discriminatorEnabled(false);
 
         assertEquals("fieldName", fieldModelBuilder.getFieldName());
         assertEquals("altDocumentFieldName", fieldModelBuilder.getDocumentFieldName());
-        assertEquals(Integer.class, fieldModelBuilder.getType());
+        assertEquals(integerCodec, fieldModelBuilder.getCodec());
+        assertEquals(Integer.class, fieldModelBuilder.getTypeData().getType());
         assertEquals(TEST_ANNOTATIONS, fieldModelBuilder.getAnnotations());
         assertEquals(CUSTOM_SERIALIZATION, fieldModelBuilder.getFieldModelSerialization());
-        assertEquals(typeParameters, fieldModelBuilder.getTypeParameters());
         assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
     }
 

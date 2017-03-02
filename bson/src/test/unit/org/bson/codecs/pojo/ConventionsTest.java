@@ -89,11 +89,12 @@ public final class ConventionsTest {
                 .classAccessorFactory(new ClassAccessorFactoryImpl<SimpleModel>(Collections.<Constructor<SimpleModel>>emptyList(), null));
 
         FieldModelBuilder<Integer> fieldModelBuilder = new FieldModelBuilder<Integer>()
-                .type(Integer.class)
+                .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("id")
                 .fieldModelSerialization(new FieldModelSerializationImpl<Integer>());
 
-        FieldModelBuilder<Integer> fieldModelBuilder2 = new FieldModelBuilder<Integer>().type(Integer.class)
+        FieldModelBuilder<Integer> fieldModelBuilder2 = new FieldModelBuilder<Integer>()
+                .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("customId")
                 .documentFieldName("_id")
                 .fieldModelSerialization(new FieldModelSerializationImpl<Integer>());
