@@ -23,7 +23,7 @@ class ExtendedJsonTimestampConverter implements Converter<BsonTimestamp> {
     @Override
     public void convert(final BsonTimestamp value, final StrictJsonWriter writer) {
         writer.writeStartObject();
-        writer.writeString("$timestamp", Long.toString(value.getValue()));
+        writer.writeString("$timestamp", Long.toUnsignedString(value.getValue()));
         writer.writeEndObject();
     }
 }

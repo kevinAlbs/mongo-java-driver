@@ -1019,7 +1019,7 @@ public class JsonReader extends AbstractBsonReader {
         verifyToken(":");
         JsonToken nextToken = popToken();
         if (nextToken.getType() == JsonTokenType.STRING) {
-            BsonTimestamp value = new BsonTimestamp(Long.parseLong(nextToken.getValue(String.class)));
+            BsonTimestamp value = new BsonTimestamp(Long.parseUnsignedLong(nextToken.getValue(String.class)));
             verifyToken("}");
             return value;
         } else if (nextToken.getType() == JsonTokenType.BEGIN_OBJECT) {
