@@ -34,6 +34,9 @@ class CollectionCodec<T> implements Codec<Collection<T>> {
     CollectionCodec(final Class<Collection<T>> encoderClass, final Codec<T> codec) {
         this.encoderClass = encoderClass;
         this.codec = codec;
+        if (codec instanceof PojoCodec) {
+            ((PojoCodec<T>) codec).populateCodecCache();
+        }
     }
 
     @Override

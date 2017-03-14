@@ -69,7 +69,7 @@ final class FieldModelImpl<T> implements FieldModel<T> {
         return "FieldModel{"
                 + "fieldName='" + fieldName + "'"
                 + ", documentFieldName='" + documentFieldName + "'"
-                + ", type=" + typeData.getType()
+                + ", typeData=" + typeData
                 + "}";
     }
 

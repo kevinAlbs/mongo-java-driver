@@ -18,7 +18,9 @@ package org.bson.codecs.pojo;
 
 import org.bson.codecs.Codec;
 import org.bson.codecs.ValueCodecProvider;
+import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
 import org.junit.Test;
 
@@ -83,6 +85,15 @@ public final class PojoCodecProviderTest extends PojoTestCase {
                 "{'myFinalField': 10, 'myIntField': 10, 'customId': 'id',"
                         + "'child': {'myFinalField': 10, 'myIntField': 10, 'customId': 'child',"
                         + "          'simpleModel': {'integerField': 42, 'stringField': 'myString' } } }");
+    }
+
+    @Test(expected = CodecConfigurationException.class)
+    public void testThrowsIfThereAreMissingCodecs(){
+        ClassModel<NestedGenericHolderModel> classModel =
+                new ClassModelBuilder<NestedGenericHolderModel>(NestedGenericHolderModel.class).build();
+        PojoCodecProvider provider = PojoCodecProvider.builder().register(classModel).build();
+        CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
+        registry.get(NestedGenericHolderModel.class);
     }
 
 }

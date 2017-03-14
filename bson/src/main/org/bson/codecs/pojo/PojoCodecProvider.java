@@ -60,14 +60,22 @@ public final class PojoCodecProvider implements CodecProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> Codec<T> get(final Class<T> clazz, final CodecRegistry registry) {
+        PojoCodec<T> codec = getPojoCodec(clazz, registry);
+        if (codec != null) {
+            codec.populateCodecCache();
+        }
+        return codec;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> PojoCodec<T> getPojoCodec(final Class<T> clazz, final CodecRegistry registry) {
         ClassModel<T> classModel = (ClassModel<T>) classModels.get(clazz);
         if (classModel != null || (packages.contains(clazz.getPackage().getName()))) {
             if (classModel == null) {
                 classModel = createClassModel(clazz, conventions);
             }
-            return new PojoCodec<T>(classModel, registry, discriminatorLookup);
+            return new PojoCodec<T>(classModel, this, registry, discriminatorLookup);
         }
         return null;
     }
