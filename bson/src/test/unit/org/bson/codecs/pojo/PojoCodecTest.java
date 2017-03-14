@@ -197,9 +197,9 @@ public final class PojoCodecTest extends PojoTestCase {
     @Test
     public void testConventionsEmpty() {
         ConventionModel model = getConventionModel();
-        ClassModelBuilder<ConventionModel> classModel = new ClassModelBuilder<ConventionModel>(ConventionModel.class)
+        ClassModelBuilder<ConventionModel> classModel = ClassModel.builder(ConventionModel.class)
                 .conventions(NO_CONVENTIONS);
-        ClassModelBuilder<SimpleModel> nestedClassModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).conventions(NO_CONVENTIONS);
+        ClassModelBuilder<SimpleModel> nestedClassModel = ClassModel.builder(SimpleModel.class).conventions(NO_CONVENTIONS);
 
         roundTrip(getPojoCodecProviderBuilder(classModel, nestedClassModel), model,
                 "{'myFinalField': 10, 'myIntField': 10, 'customId': 'id',"
@@ -229,9 +229,9 @@ public final class PojoCodecTest extends PojoTestCase {
                     }
                 });
 
-        ClassModelBuilder<ConventionModel> classModel = new ClassModelBuilder<ConventionModel>(ConventionModel.class)
+        ClassModelBuilder<ConventionModel> classModel = ClassModel.builder(ConventionModel.class)
                 .conventions(conventions);
-        ClassModelBuilder<SimpleModel> nestedClassModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).conventions(conventions);
+        ClassModelBuilder<SimpleModel> nestedClassModel = ClassModel.builder(SimpleModel.class).conventions(conventions);
 
         roundTrip(getPojoCodecProviderBuilder(classModel, nestedClassModel), model,
                 "{ '_id': 'id', '_cls': 'convention_model', 'my_final_field': 10, 'my_int_field': 10,"
@@ -245,7 +245,7 @@ public final class PojoCodecTest extends PojoTestCase {
         ObjectId id = new ObjectId();
         ConverterModel model = new ConverterModel(id.toHexString(), "myName");
 
-        ClassModelBuilder<ConverterModel> classModel = new ClassModelBuilder<ConverterModel>(ConverterModel.class);
+        ClassModelBuilder<ConverterModel> classModel = ClassModel.builder(ConverterModel.class);
         FieldModelBuilder<String> idFieldModelBuilder = (FieldModelBuilder<String>) classModel.getField("id");
         idFieldModelBuilder.codec(new StringToObjectIdCodec());
 
@@ -258,7 +258,7 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testCustomFieldSerializer() {
         SimpleModel model = getSimpleModel();
         model.setIntegerField(null);
-        ClassModelBuilder<SimpleModel> classModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class);
+        ClassModelBuilder<SimpleModel> classModel = ClassModel.builder(SimpleModel.class);
         ((FieldModelBuilder<Integer>) classModel.getField("integerField"))
                 .fieldModelSerialization(new FieldModelSerialization<Integer>() {
                     @Override
@@ -275,7 +275,7 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testCanHandleNullValuesForNestedModels() {
         SimpleNestedPojoModel model = getSimpleNestedPojoModel();
         model.setSimple(null);
-        ClassModelBuilder<SimpleNestedPojoModel> classModel = new ClassModelBuilder<SimpleNestedPojoModel>(SimpleNestedPojoModel.class);
+        ClassModelBuilder<SimpleNestedPojoModel> classModel = ClassModel.builder(SimpleNestedPojoModel.class);
         ((FieldModelBuilder<SimpleModel>) classModel.getField("simple"))
                 .fieldModelSerialization(new FieldModelSerialization<SimpleModel>() {
                     @Override
@@ -283,7 +283,7 @@ public final class PojoCodecTest extends PojoTestCase {
                         return true;
                     }
                 });
-        ClassModelBuilder<SimpleModel> classModelSimple = new ClassModelBuilder<SimpleModel>(SimpleModel.class);
+        ClassModelBuilder<SimpleModel> classModelSimple = ClassModel.builder(SimpleModel.class);
 
         roundTrip(getPojoCodecProviderBuilder(classModel, classModelSimple), model, "{'_t': 'SimpleNestedPojoModel', 'simple': null}");
     }
@@ -296,7 +296,7 @@ public final class PojoCodecTest extends PojoTestCase {
         model.setMap(null);
 
         ClassModelBuilder<ConcreteCollectionsModel> classModel =
-                new ClassModelBuilder<ConcreteCollectionsModel>(ConcreteCollectionsModel.class);
+                ClassModel.builder(ConcreteCollectionsModel.class);
         ((FieldModelBuilder<Collection<Integer>>) classModel.getField("collection"))
                 .fieldModelSerialization(new FieldModelSerialization<Collection<Integer>>() {
                     @Override

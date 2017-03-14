@@ -40,7 +40,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
 
     @Test
     public void testRegisterClassModel() {
-        ClassModel<SimpleModel> classModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).build();
+        ClassModel<SimpleModel> classModel = ClassModel.builder(SimpleModel.class).build();
         PojoCodecProvider provider = PojoCodecProvider.builder().register(classModel).build();
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
@@ -67,7 +67,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
 
     @Test
     public void testRegisterClassModelPreferredOverClass() {
-        ClassModel<SimpleModel> classModel = new ClassModelBuilder<SimpleModel>(SimpleModel.class).discriminatorEnabled(false).build();
+        ClassModel<SimpleModel> classModel = ClassModel.builder(SimpleModel.class).discriminatorEnabled(false).build();
         PojoCodecProvider provider = PojoCodecProvider.builder().register(SimpleModel.class).register(classModel).build();
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
@@ -90,7 +90,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
     @Test(expected = CodecConfigurationException.class)
     public void testThrowsIfThereAreMissingCodecs(){
         ClassModel<NestedGenericHolderModel> classModel =
-                new ClassModelBuilder<NestedGenericHolderModel>(NestedGenericHolderModel.class).build();
+                ClassModel.builder(NestedGenericHolderModel.class).build();
         PojoCodecProvider provider = PojoCodecProvider.builder().register(classModel).build();
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
         registry.get(NestedGenericHolderModel.class);

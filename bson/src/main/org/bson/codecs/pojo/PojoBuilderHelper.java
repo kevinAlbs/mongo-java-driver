@@ -67,6 +67,7 @@ final class PojoBuilderHelper {
             genericTypeNames.add(classTypeVariable.getName());
         }
 
+        
         Map<String, Field> fieldsMap = new HashMap<String, Field>();
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
         List<String> genericFieldOrder = new ArrayList<String>();
@@ -124,7 +125,7 @@ final class PojoBuilderHelper {
     }
 
     private static <T> FieldModelBuilder<T> getFieldBuilder(final Field field, final Class<T> clazz, final ResolvedType resolvedType) {
-        return new FieldModelBuilder<T>(field).typeData(getFieldTypeData(TypeData.builder(clazz), resolvedType));
+        return FieldModel.<T>builder(field).typeData(getFieldTypeData(TypeData.builder(clazz), resolvedType));
     }
 
     private static <T> TypeData<T> getFieldTypeData(final TypeData.Builder<T> type, final ResolvedType resolvedType) {

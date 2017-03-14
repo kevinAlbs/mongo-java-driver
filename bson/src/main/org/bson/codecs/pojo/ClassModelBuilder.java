@@ -50,18 +50,11 @@ public class ClassModelBuilder<T> {
     private String discriminatorKey;
     private String idField;
 
-    /**
-     * Creates a new ClassModelBuilder instance
-     */
-    public ClassModelBuilder() {
+
+    ClassModelBuilder() {
     }
 
-    /**
-     * Creates a new ClassModelBuilder instance using reflection on the {@code clazz}.
-     *
-     * @param clazz the POJO to reflect and configure the builder with.
-     */
-    public ClassModelBuilder(final Class<T> clazz) {
+    ClassModelBuilder(final Class<T> clazz) {
         configureClassModelBuilder(this, clazz);
     }
 
@@ -313,7 +306,7 @@ public class ClassModelBuilder<T> {
             }
         }
         validateFieldModels(fieldModels);
-        return new ClassModelImpl<T>(type, genericFieldNames, classAccessorFactory, useDiscriminator, discriminatorKey, discriminator,
+        return new ClassModel<T>(type, genericFieldNames, classAccessorFactory, useDiscriminator, discriminatorKey, discriminator,
                 idFieldModel, fieldModels);
     }
 

@@ -262,7 +262,7 @@ final class PojoCodec<T> implements Codec<T> {
         }
 
         boolean useDiscriminator = changeDiscriminator ? fieldModel.useDiscriminator() : clazzModel.useDiscriminator();
-        return new ClassModelImpl<S>(clazzModel.getType(), clazzModel.getGenericFieldNames(), clazzModel.getClassAccessorFactory(),
+        return new ClassModel<S>(clazzModel.getType(), clazzModel.getGenericFieldNames(), clazzModel.getClassAccessorFactory(),
                 useDiscriminator, clazzModel.getDiscriminatorKey(), clazzModel.getDiscriminator(), concreteIdField, concreteFieldModels);
     }
 
@@ -279,13 +279,7 @@ final class PojoCodec<T> implements Codec<T> {
                     .addTypeParameter(TypeData.builder(String.class).build()).addTypeParameter(typeData).build();
         }
 
-        return new FieldModelImpl<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
-                new FieldModelSerialization<V>() {
-                    @Override
-                    public boolean shouldSerialize(final V value) {
-                        return fieldModel.shouldSerialize(value);
-                    }
-                },
-                fieldModel.useDiscriminator());
+        return new FieldModel<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
+                fieldModel.getFieldModelSerialization(), fieldModel.useDiscriminator());
     }
 }

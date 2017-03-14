@@ -169,7 +169,7 @@ public final class PojoCodecProvider implements CodecProvider {
     }
 
     private static <T> ClassModel<T> createClassModel(final Class<T> clazz, final List<Convention> conventions) {
-        ClassModelBuilder<T> builder = new ClassModelBuilder<T>(clazz);
+        ClassModelBuilder<T> builder = ClassModel.builder(clazz);
         if (conventions != null) {
             builder.conventions(conventions);
         }

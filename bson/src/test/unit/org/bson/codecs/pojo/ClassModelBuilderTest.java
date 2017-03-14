@@ -45,7 +45,7 @@ public final class ClassModelBuilderTest {
 
     @Test
     public void testDefaults() {
-        ClassModelBuilder builder = new ClassModelBuilder();
+        ClassModelBuilder builder = ClassModel.builder();
 
         assertTrue(builder.getFields().isEmpty());
         assertTrue(builder.getGenericFieldNames().isEmpty());
@@ -62,7 +62,7 @@ public final class ClassModelBuilderTest {
     @Test
     public void testReturnsConfiguredValues() {
         Class<SimpleGenericsModel> clazz = SimpleGenericsModel.class;
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>(clazz);
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.builder(clazz);
         assertEquals(4, builder.getFields().size());
         for (Field field : clazz.getDeclaredFields()) {
             assertEquals(field.getName(), builder.getField(field.getName()).getDocumentFieldName());
@@ -78,17 +78,17 @@ public final class ClassModelBuilderTest {
 
     @Test
     public void testMappedBoundedClasses() {
-        ClassModelBuilder<? extends UpperBoundsModel> builder = new ClassModelBuilder<UpperBoundsModel>(UpperBoundsModel.class);
+        ClassModelBuilder<? extends UpperBoundsModel> builder = ClassModel.builder(UpperBoundsModel.class);
         assertEquals(Number.class, builder.getField("myGenericField").getTypeData().getType());
 
-        builder = new ClassModelBuilder<UpperBoundsSubClassModel>(UpperBoundsSubClassModel.class);
+        builder = ClassModel.builder(UpperBoundsSubClassModel.class);
         assertEquals(Long.class, builder.getField("myGenericField").getTypeData().getType());
     }
 
     @Test
     public void testNestedGenericHolderModel() {
         ClassModelBuilder<NestedGenericHolderModel> builder =
-                new ClassModelBuilder<NestedGenericHolderModel>(NestedGenericHolderModel.class);
+                ClassModel.builder(NestedGenericHolderModel.class);
         assertEquals(GenericHolderModel.class, builder.getField("nested").getTypeData().getType());
         //assertEquals(singletonList(String.class), builder.getField("nested").getTypeParameters());
     }
@@ -96,7 +96,7 @@ public final class ClassModelBuilderTest {
     @Test
     public void testFieldsMappedClassTypes() {
         ClassModelBuilder<ConcreteCollectionsModel> builder =
-                new ClassModelBuilder<ConcreteCollectionsModel>(ConcreteCollectionsModel.class);
+                ClassModel.builder(ConcreteCollectionsModel.class);
 
         assertEquals(ArrayList.class, builder.getField("collection").getTypeData().getType());
         assertEquals(ArrayList.class, builder.getField("list").getTypeData().getType());
@@ -109,8 +109,8 @@ public final class ClassModelBuilderTest {
     public void testOverrides() throws NoSuchFieldException {
         Class<SimpleGenericsModel> clazz = SimpleGenericsModel.class;
         Field myIntegerField = clazz.getDeclaredFields()[0];
-        FieldModelBuilder<Integer> field = new FieldModelBuilder<Integer>(myIntegerField);
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>()
+        FieldModelBuilder<Integer> field = FieldModel.<Integer>builder(myIntegerField);
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.<SimpleGenericsModel>builder()
                 .type(clazz)
                 .addField(field)
                 .annotations(TEST_ANNOTATIONS)
@@ -131,7 +131,7 @@ public final class ClassModelBuilderTest {
 
     @Test
     public void testCanRemoveField() {
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class)
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.builder(SimpleGenericsModel.class)
                 .idField("ID");
         assertEquals(4, builder.getFields().size());
         builder.removeField("myIntegerField");
@@ -143,44 +143,44 @@ public final class ClassModelBuilderTest {
 
     @Test(expected = IllegalStateException.class)
     public void testValidationClassModelRequiresType() {
-        new ClassModelBuilder<Object>().build();
+        ClassModel.<Object>builder().build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testValidationCollectionName() {
-        new ClassModelBuilder<SimpleGenericsModel>().type(SimpleGenericsModel.class)
+        ClassModel.<SimpleGenericsModel>builder().type(SimpleGenericsModel.class)
                 .conventions(Collections.<Convention>emptyList()).build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testValidationIdField() {
-        new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class).idField("ID").build();
+        ClassModel.builder(SimpleGenericsModel.class).idField("ID").build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testValidationDuplicateField() {
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class);
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.builder(SimpleGenericsModel.class);
         builder.addField(builder.getField("myIntegerField"));
         builder.build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testValidationDuplicateFieldName() {
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class);
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.builder(SimpleGenericsModel.class);
         builder.getField("myIntegerField").fieldName("myGenericField");
         builder.build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testValidationDuplicateDocumentFieldName() {
-        ClassModelBuilder<SimpleGenericsModel> builder = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class);
+        ClassModelBuilder<SimpleGenericsModel> builder = ClassModel.builder(SimpleGenericsModel.class);
         builder.getField("myIntegerField").documentFieldName("myGenericField");
         builder.build();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testIllegalMapKey() {
-        new ClassModelBuilder<InvalidMapModel>(InvalidMapModel.class).build();
+        ClassModel.builder(InvalidMapModel.class).build();
     }
 
     private static final List<Annotation> TEST_ANNOTATIONS = Collections.<Annotation>singletonList(

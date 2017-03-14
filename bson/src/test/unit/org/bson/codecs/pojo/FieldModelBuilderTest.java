@@ -36,7 +36,7 @@ public final class FieldModelBuilderTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testDefaults() {
-        FieldModelBuilder fieldModelBuilder = new FieldModelBuilder();
+        FieldModelBuilder fieldModelBuilder = FieldModel.builder();
 
         assertNull(fieldModelBuilder.getDocumentFieldName());
         assertNull(fieldModelBuilder.getFieldName());
@@ -50,7 +50,7 @@ public final class FieldModelBuilderTest {
     @SuppressWarnings("rawtypes")
     public void testFieldMapping() throws NoSuchFieldException {
         Field field = SimpleGenericsModel.class.getDeclaredField("myListField");
-        FieldModelBuilder<SimpleGenericsModel> fieldModelBuilder = new FieldModelBuilder<SimpleGenericsModel>(field);
+        FieldModelBuilder<SimpleGenericsModel> fieldModelBuilder = FieldModel.<SimpleGenericsModel>builder(field);
 
         assertEquals(field.getName(), fieldModelBuilder.getFieldName());
         assertEquals(field.getName(), fieldModelBuilder.getDocumentFieldName());
@@ -62,7 +62,7 @@ public final class FieldModelBuilderTest {
     public void testFieldOverrides() throws NoSuchFieldException {
         IntegerCodec integerCodec = new IntegerCodec();
         Field field = SimpleGenericsModel.class.getDeclaredField("myIntegerField");
-        FieldModelBuilder<Integer> fieldModelBuilder = new FieldModelBuilder<Integer>(field)
+        FieldModelBuilder<Integer> fieldModelBuilder = FieldModel.<Integer>builder(field)
                 .fieldName("fieldName")
                 .codec(integerCodec)
                 .documentFieldName("altDocumentFieldName")
@@ -82,7 +82,7 @@ public final class FieldModelBuilderTest {
 
     @Test(expected = IllegalStateException.class)
     public void testCallingBuildValidates() {
-        new FieldModelBuilder<Object>().build();
+        FieldModel.<Object>builder().build();
     }
 
     private static final List<Annotation> TEST_ANNOTATIONS = Collections.<Annotation>singletonList(

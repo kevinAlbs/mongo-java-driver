@@ -33,7 +33,7 @@ public final class FieldModelTest {
     @Test
     public void testSimpleModelInteger() throws NoSuchFieldException {
         String fieldName = "integerField";
-        FieldModel<Integer> fieldModel = new FieldModelBuilder<Integer>(SimpleModel.class.getDeclaredField(fieldName)).build();
+        FieldModel<Integer> fieldModel = FieldModel.<Integer>builder(SimpleModel.class.getDeclaredField(fieldName)).build();
 
         assertEquals(fieldName, fieldModel.getFieldName());
         assertEquals(fieldName, fieldModel.getDocumentFieldName());
@@ -45,7 +45,7 @@ public final class FieldModelTest {
 
     @Test
     public void testSimpleModelGeneric() throws NoSuchFieldException {
-        FieldModel<Object> fieldModel = new FieldModelBuilder<Object>(SimpleGenericsModel.class.getDeclaredField("myGenericField")).build();
+        FieldModel<Object> fieldModel = FieldModel.<Object>builder(SimpleGenericsModel.class.getDeclaredField("myGenericField")).build();
 
         assertEquals(TypeData.builder(Object.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
@@ -56,7 +56,7 @@ public final class FieldModelTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testSimpleModelGenericList() throws NoSuchFieldException {
-        FieldModel<?> fieldModel = new FieldModelBuilder(SimpleGenericsModel.class.getDeclaredField("myListField")).build();
+        FieldModel<?> fieldModel = FieldModel.builder(SimpleGenericsModel.class.getDeclaredField("myListField")).build();
         assertEquals(TypeData.builder(List.class)
                 .addTypeParameter(TypeData.builder(Object.class).build()).build(), fieldModel.getTypeData());
     }
@@ -65,7 +65,7 @@ public final class FieldModelTest {
     public void testConverter() throws NoSuchFieldException {
         String fieldName = "integerField";
         Codec<Integer> codec = new IntegerCodec();
-        FieldModel<Integer> fieldModel = new FieldModelBuilder<Integer>(SimpleModel.class.getDeclaredField(fieldName))
+        FieldModel<Integer> fieldModel = FieldModel.<Integer>builder(SimpleModel.class.getDeclaredField(fieldName))
                 .codec(codec).build();
         assertEquals(codec, fieldModel.getCodec());
     }

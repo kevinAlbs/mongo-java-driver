@@ -29,7 +29,7 @@ public final class ClassModelTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testSimpleGenericsModel() {
-        ClassModel<?> classModel = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class).build();
+        ClassModel<?> classModel = ClassModel.builder(SimpleGenericsModel.class).build();
         FieldModel<?> fieldModel = classModel.getFieldModels().get(0);
 
         assertEquals("SimpleGenericsModel", classModel.getName());
@@ -46,7 +46,7 @@ public final class ClassModelTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testCollectionNestedPojoModelFieldTypes() {
-//        ClassModel<?> classModel = new ClassModelBuilder<CollectionNestedPojoModel>(CollectionNestedPojoModel.class).build();
+//        ClassModel<?> classModel = ClassModel.builder(CollectionNestedPojoModel.class).build();
 //        assertEquals(singletonList(SimpleModel.class), classModel.getFieldModels().get(0).getTypeParameters());
 //        assertEquals(asList(ArrayList.class, SimpleModel.class), classModel.getFieldModels().get(1).getTypeParameters());
 //
@@ -72,7 +72,7 @@ public final class ClassModelTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testMappingConcreteGenericTypes() {
-//        ClassModel<?> classModel = new ClassModelBuilder<NestedGenericHolderMapModel>(NestedGenericHolderMapModel.class).build();
+//        ClassModel<?> classModel = ClassModel.builder(NestedGenericHolderMapModel.class).build();
 //        assertEquals(GenericHolderModel.class, classModel.getFieldModels().get(0).getFieldType());
 //        assertEquals(asList(HashMap.class, String.class, SimpleModel.class), classModel.getFieldModels().get(0).getTypeParameters());
     }
@@ -80,7 +80,7 @@ public final class ClassModelTest {
     @Test
     @SuppressWarnings("rawtypes")
     public void testMappingSimpleGenericsModelTypes() {
-//        ClassModel<?> classModel = new ClassModelBuilder<SimpleGenericsModel>(SimpleGenericsModel.class).build();
+//        ClassModel<?> classModel = ClassModel.builder(SimpleGenericsModel.class).build();
 //        assertEquals(Integer.class, classModel.getFieldModels().get(0).getFieldType());
 //        assertEquals(emptyList(), classModel.getFieldModels().get(0).getTypeParameters());
 //
@@ -96,7 +96,7 @@ public final class ClassModelTest {
 
     @Test
     public void testAnnotationModel() {
-        ClassModel<?> classModel = new ClassModelBuilder<AnnotationModel>(AnnotationModel.class).build();
+        ClassModel<?> classModel = ClassModel.builder(AnnotationModel.class).build();
         FieldModel<?> fieldModel = classModel.getFieldModels().get(0);
 
         assertEquals("AnnotationModel", classModel.getName());

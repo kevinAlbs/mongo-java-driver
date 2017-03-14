@@ -37,7 +37,7 @@ public final class ConventionsTest {
 
     @Test
     public void testDefaultConventions() {
-        ClassModel<AnnotationModel> classModel = new ClassModelBuilder<AnnotationModel>(AnnotationModel.class)
+        ClassModel<AnnotationModel> classModel = ClassModel.builder(AnnotationModel.class)
                 .conventions(DEFAULT_CONVENTIONS).build();
 
         assertTrue(classModel.useDiscriminator());
@@ -60,7 +60,7 @@ public final class ConventionsTest {
 
     @Test
     public void testAnnotationDefaults() {
-        ClassModel<AnnotationDefaultsModel> classModel = new ClassModelBuilder<AnnotationDefaultsModel>(AnnotationDefaultsModel.class)
+        ClassModel<AnnotationDefaultsModel> classModel = ClassModel.builder(AnnotationDefaultsModel.class)
                 .conventions(singletonList(ANNOTATION_CONVENTION)).build();
 
         assertTrue(classModel.useDiscriminator());
@@ -80,7 +80,7 @@ public final class ConventionsTest {
 
     @Test
     public void testClassAndFieldConventionDoesNotOverwrite() {
-        ClassModelBuilder<SimpleModel> builder = new ClassModelBuilder<SimpleModel>()
+        ClassModelBuilder<SimpleModel> builder = ClassModel.<SimpleModel>builder()
                 .type(SimpleModel.class)
                 .discriminatorEnabled(true)
                 .discriminatorKey("_cls")
@@ -88,12 +88,12 @@ public final class ConventionsTest {
                 .conventions(singletonList(CLASS_AND_FIELD_CONVENTION))
                 .classAccessorFactory(new ClassAccessorFactoryImpl<SimpleModel>(Collections.<Constructor<SimpleModel>>emptyList(), null));
 
-        FieldModelBuilder<Integer> fieldModelBuilder = new FieldModelBuilder<Integer>()
+        FieldModelBuilder<Integer> fieldModelBuilder = FieldModel.<Integer>builder()
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("id")
                 .fieldModelSerialization(new FieldModelSerializationImpl<Integer>());
 
-        FieldModelBuilder<Integer> fieldModelBuilder2 = new FieldModelBuilder<Integer>()
+        FieldModelBuilder<Integer> fieldModelBuilder2 = FieldModel.<Integer>builder()
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("customId")
                 .documentFieldName("_id")

@@ -45,18 +45,10 @@ public final class FieldModelBuilder<T> {
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled = true;
 
-    /**
-     * Creates a new FieldModelBuilder instance
-     */
-    public FieldModelBuilder() {
+    FieldModelBuilder() {
     }
 
-    /**
-     * Creates a new FieldModelBuilder instance using reflection on the {@code field}.
-     *
-     * @param field the field to reflect and configure the builder with.
-     */
-    public FieldModelBuilder(final Field field) {
+    FieldModelBuilder(final Field field) {
         configureFieldModelBuilder(this, field);
     }
 
@@ -194,7 +186,7 @@ public final class FieldModelBuilder<T> {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public FieldModel<T> build() {
-        return new FieldModelImpl(
+        return new FieldModel(
                 stateNotNull("fieldName", fieldName),
                 stateNotNull("documentFieldName", documentFieldName),
                 stateNotNull("typeData", typeData),
