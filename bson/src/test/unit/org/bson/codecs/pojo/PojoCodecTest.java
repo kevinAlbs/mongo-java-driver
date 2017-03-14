@@ -25,6 +25,7 @@ import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
 import org.bson.codecs.pojo.entities.ConstructorModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.ConverterModel;
+import org.bson.codecs.pojo.entities.FieldWithMultipleTypeParamsModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
@@ -342,6 +343,11 @@ public final class PojoCodecTest extends PojoTestCase {
         model.setIntegerField(null);
 
         decodesTo(getCodec(SimpleModel.class), "{'_t': 'SimpleModel', 'stringField': 'myString'}", model);
+    }
+
+    @Test(expected = CodecConfigurationException.class)
+    public void testDoesNotSupportReflectingMultipleGenericParameters() {
+        getCodec(FieldWithMultipleTypeParamsModel.class);
     }
 
     @Test(expected = CodecConfigurationException.class)

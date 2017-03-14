@@ -25,6 +25,7 @@ import com.fasterxml.classmate.TypeBindings;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.RawConstructor;
 import com.fasterxml.classmate.members.ResolvedField;
+import org.bson.codecs.configuration.CodecConfigurationException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -34,11 +35,13 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.bson.assertions.Assertions.notNull;
 
 final class PojoBuilderHelper {
@@ -67,10 +70,13 @@ final class PojoBuilderHelper {
             genericTypeNames.add(classTypeVariable.getName());
         }
 
-        
+
         Map<String, Field> fieldsMap = new HashMap<String, Field>();
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
         List<String> genericFieldOrder = new ArrayList<String>();
+        for (int i = 1; i < genericTypeNames.size(); i++) {
+            genericFieldOrder.add(null);
+        }
         for (final ResolvedField resolvedField : resolvedFields) {
             if (resolvedField.isTransient()) {
                 continue;
@@ -79,8 +85,8 @@ final class PojoBuilderHelper {
             Field field = resolvedField.getRawMember();
             fieldsMap.put(name, field);
 
-            int genericTypeIndex = fieldGenericTypeIndex(genericTypeNames, resolvedField);
-            if (genericTypeIndex > -1) {
+            List<Integer> genericTypeIndexes = fieldGenericTypeIndexes(genericTypeNames, resolvedField);
+            for (Integer genericTypeIndex : genericTypeIndexes) {
                 genericFieldOrder.add(genericTypeIndex, name);
             }
 
@@ -89,27 +95,35 @@ final class PojoBuilderHelper {
 
             resolvedField.getRawMember().setAccessible(true);
         }
+
+        genericFieldOrder.removeAll(singletonList(null));
+        if (genericFieldOrder.size() != new HashSet<String>(genericFieldOrder).size()) {
+            throw new CodecConfigurationException("Multiple generic types for a single field are not supported via reflection.");
+        }
         classModelBuilder
                 .genericFieldNames(genericFieldOrder)
                 .classAccessorFactory(new ClassAccessorFactoryImpl<T>(publicConstructors, fieldsMap));
     }
 
-    static int fieldGenericTypeIndex(final List<String> genericTypeNames, final ResolvedField resolvedField) {
+    static List<Integer> fieldGenericTypeIndexes(final List<String> genericTypeNames, final ResolvedField resolvedField) {
         Type fieldGenericType = resolvedField.getRawMember().getGenericType();
+        List<Integer> indexes = new ArrayList<Integer>();
         int index = genericTypeNames.indexOf(fieldGenericType.toString());
-        if (index == -1 && !resolvedField.getType().getTypeBindings().getTypeParameters().isEmpty()) {
+        if (index != -1) {
+            indexes.add(index);
+        } else if (index == -1 && !resolvedField.getType().getTypeBindings().getTypeParameters().isEmpty()) {
             Type type = resolvedField.getRawMember().getGenericType();
             if (type instanceof ParameterizedType) {
                 ParameterizedType pt = (ParameterizedType) type;
                 for (Type tp : pt.getActualTypeArguments()) {
                     index = genericTypeNames.indexOf(tp.toString());
                     if (index != -1) {
-                        return index;
+                        indexes.add(index);
                     }
                 }
             }
         }
-        return index;
+        return indexes;
     }
 
 

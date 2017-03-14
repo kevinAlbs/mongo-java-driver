@@ -20,8 +20,6 @@ import org.bson.codecs.Codec;
 
 import java.lang.reflect.Field;
 
-import static org.bson.codecs.pojo.PojoBuilderHelper.configureFieldModelBuilder;
-
 /**
  * Represents a field on a class and stores various metadata such as generic parameters
  *
@@ -52,7 +50,7 @@ public final class FieldModel<T> {
      * @param <S> the type of field
      * @return a new Field Model builder
      */
-    public final static <S> FieldModelBuilder<S> builder() {
+    public static <S> FieldModelBuilder<S> builder() {
         return new FieldModelBuilder<S>();
     }
 
@@ -63,7 +61,7 @@ public final class FieldModel<T> {
      * @param <S> the class type of the field
      * @return a new Field Model builder using reflection on the {@code field}.
      */
-    public final static <S> FieldModelBuilder<S> builder(final Field field) {
+    public static <S> FieldModelBuilder<S> builder(final Field field) {
         return new FieldModelBuilder<S>(field);
     }
 

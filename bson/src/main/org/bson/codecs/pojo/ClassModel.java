@@ -59,7 +59,7 @@ public class ClassModel<T> {
      * @param <S> the class type
      * @return a new Class Model builder
      */
-    public final static <S> ClassModelBuilder<S> builder() {
+    public static <S> ClassModelBuilder<S> builder() {
         return new ClassModelBuilder<S>();
     }
 
@@ -70,7 +70,7 @@ public class ClassModel<T> {
      * @param <S> the type of the class
      * @return a new Class Model builder instance using reflection on the {@code clazz}.
      */
-    public final static <S> ClassModelBuilder<S> builder(final Class<S> clazz) {
+    public static <S> ClassModelBuilder<S> builder(final Class<S> clazz) {
         return new ClassModelBuilder<S>(clazz);
     }
 
