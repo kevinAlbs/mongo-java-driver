@@ -16,6 +16,7 @@
 
 package org.bson.codecs.pojo;
 
+import org.bson.codecs.ObjectCodecProvider;
 import org.bson.codecs.ValueCodecProvider;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
