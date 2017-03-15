@@ -28,7 +28,6 @@ import org.bson.diagnostics.Loggers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -37,7 +36,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static org.bson.codecs.configuration.CodecRegistries.fromCodecs;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
-import static org.bson.codecs.pojo.PojoCodecHelper.getCodecFromDocument;
 
 
 final class PojoCodec<T> implements Codec<T> {
@@ -46,7 +44,7 @@ final class PojoCodec<T> implements Codec<T> {
     private final PojoCodecProvider codecProvider;
     private final CodecRegistry registry;
     private final DiscriminatorLookup discriminatorLookup;
-    private final Map<String, Codec<?>> codecCache;
+    private final ClassModelCodecCache codecCache;
     private boolean setFields;
 
     @SuppressWarnings("unchecked")
@@ -56,17 +54,21 @@ final class PojoCodec<T> implements Codec<T> {
         this.codecProvider = codecProvider;
         this.registry = fromRegistries(fromCodecs(this), registry);
         this.discriminatorLookup = discriminatorLookup;
-        this.codecCache = new HashMap<String, Codec<?>>();
+        this.codecCache = new ClassModelCodecCache();
     }
 
     PojoCodec<T> populateCodecCache() {
         if (!setFields) {
             setFields = true;
             for (FieldModel<?> fieldModel : classModel.getFieldModels()) {
-                codecCache.put(fieldModel.getFieldName(), getCodecFromFieldModel(fieldModel));
+                addToCache(fieldModel);
             }
         }
         return this;
+    }
+
+    private <S> void addToCache(final FieldModel<S> fieldModel) {
+        codecCache.put(fieldModel.getFieldName(), fieldModel.getTypeData().getType(), getCodecFromFieldModel(fieldModel));
     }
 
     @Override
@@ -99,9 +101,8 @@ final class PojoCodec<T> implements Codec<T> {
             decodeFields(reader, decoderContext, classAccessor);
             return classAccessor.create();
         } else {
-            Codec<T> codec = getCodecFromDocument(reader, classModel.useDiscriminator(), classModel.getDiscriminatorKey(), registry,
-                    discriminatorLookup, this);
-            return codec.decode(reader, DecoderContext.builder().checkedDiscriminator(true).build());
+            return getCodecFromDocument(reader, classModel.useDiscriminator(), classModel.getDiscriminatorKey(), registry,
+                    discriminatorLookup, this).decode(reader, DecoderContext.builder().checkedDiscriminator(true).build());
         }
     }
 
@@ -174,7 +175,7 @@ final class PojoCodec<T> implements Codec<T> {
 
     @SuppressWarnings("unchecked")
     private <S> Codec<S> getCachedCodec(final FieldModel<S> fieldModel) {
-        return (Codec<S>) codecCache.get(fieldModel.getFieldName());
+        return codecCache.get(fieldModel.getFieldName(), fieldModel.getTypeData().getType());
     }
 
     @SuppressWarnings("unchecked")
@@ -183,6 +184,7 @@ final class PojoCodec<T> implements Codec<T> {
         Class<S> fieldType = codec.getEncoderClass();
         if (fieldType != instanceType && fieldType.isAssignableFrom(instanceType)) {
             codec = specializePojoCodec(fieldModel, getCodecFromClass((Class<S>) instanceType));
+            codecCache.put(fieldModel.getFieldName(), instanceType, (Codec<V>) codec);
         }
         return codec;
     }
@@ -282,4 +284,28 @@ final class PojoCodec<T> implements Codec<T> {
         return new FieldModel<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
                 fieldModel.getFieldModelSerialization(), fieldModel.useDiscriminator());
     }
+
+    @SuppressWarnings("unchecked")
+    static <T> Codec<T> getCodecFromDocument(final BsonReader reader, final boolean useDiscriminator, final String discriminatorKey,
+                                             final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
+                                             final Codec<T> defaultCodec) {
+        Codec<T> codec = defaultCodec;
+        if (useDiscriminator && discriminatorKey != null) {
+            reader.mark();
+            reader.readStartDocument();
+            boolean discriminatorKeyFound = false;
+            while (!discriminatorKeyFound && reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
+                String name = reader.readName();
+                if (discriminatorKey.equals(name)) {
+                    discriminatorKeyFound = true;
+                    codec = (Codec<T>) registry.get(discriminatorLookup.lookup(reader.readString()));
+                } else {
+                    reader.skipValue();
+                }
+            }
+            reader.reset();
+        }
+        return codec;
+    }
+
 }

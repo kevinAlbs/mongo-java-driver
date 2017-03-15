@@ -42,7 +42,7 @@ public final class FieldWithMultipleTypeParamsModel<C, B, A> {
      * @param simpleGenericsModel the simpleGenericsModel
      * @return this
      */
-    public FieldWithMultipleTypeParamsModel simpleGenericsModel(final SimpleGenericsModel<A, B, C> simpleGenericsModel) {
+    public FieldWithMultipleTypeParamsModel<C, B, A> simpleGenericsModel(final SimpleGenericsModel<A, B, C> simpleGenericsModel) {
         this.simpleGenericsModel = simpleGenericsModel;
         return this;
     }
