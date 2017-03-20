@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("rawtypes")
@@ -53,7 +54,7 @@ public final class ClassModelBuilderTest {
         assertTrue(builder.getAnnotations().isEmpty());
         assertNull(builder.getType());
         assertNull(builder.getIdField());
-        assertNull(builder.isDiscriminatorEnabled());
+        assertFalse(builder.isDiscriminatorEnabled());
         assertNull(builder.getDiscriminatorKey());
         assertNull(builder.getDiscriminator());
         assertNull(builder.getField("Missing"));
@@ -72,7 +73,7 @@ public final class ClassModelBuilderTest {
         assertTrue(builder.getAnnotations().isEmpty());
         assertEquals(clazz, builder.getType());
         assertNull(builder.getIdField());
-        assertNull(builder.isDiscriminatorEnabled());
+        assertFalse(builder.isDiscriminatorEnabled());
         assertNull(builder.getDiscriminator());
     }
 

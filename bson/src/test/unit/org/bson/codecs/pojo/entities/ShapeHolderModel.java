@@ -16,7 +16,11 @@
 
 package org.bson.codecs.pojo.entities;
 
+import org.bson.codecs.pojo.annotations.Property;
+
 public final class ShapeHolderModel {
+
+    @Property(useDiscriminator = true)
     private ShapeModelAbstract shape;
 
     public ShapeHolderModel() {

@@ -20,7 +20,6 @@ import org.bson.codecs.pojo.annotations.Discriminator;
 
 import java.util.Date;
 
-@Discriminator("")
 public final class Grade {
 
     private Date date;

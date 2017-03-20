@@ -245,7 +245,7 @@ abstract class PojoTestCase {
         return new NestedGenericHolderMapModel(new GenericHolderModel<Map<String, SimpleModel>>(mapSimple, 1L));
     }
 
-    static final String SIMPLE_MODEL_JSON = "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}";
+    static final String SIMPLE_MODEL_JSON = "{'integerField': 42, 'stringField': 'myString'}";
 
     class StringToObjectIdCodec implements Codec<String> {
 

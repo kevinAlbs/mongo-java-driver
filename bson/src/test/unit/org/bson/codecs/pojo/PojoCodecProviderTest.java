@@ -45,7 +45,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
         SimpleModel model = getSimpleModel();
-        roundTrip(registry, model, "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+        roundTrip(registry, model, "{'integerField': 42, 'stringField': 'myString'}");
     }
 
     @Test
@@ -54,7 +54,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
         SimpleModel model = getSimpleModel();
-        roundTrip(registry, model, "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+        roundTrip(registry, model, "{'integerField': 42, 'stringField': 'myString'}");
     }
 
     @Test
@@ -62,7 +62,7 @@ public final class PojoCodecProviderTest extends PojoTestCase {
         PojoCodecProvider provider = PojoCodecProvider.builder().register("org.bson.codecs.pojo.entities").build();
         CodecRegistry registry = fromProviders(provider, new ValueCodecProvider());
 
-        roundTrip(registry, getSimpleModel(), "{'_t': 'SimpleModel', 'integerField': 42, 'stringField': 'myString'}");
+        roundTrip(registry, getSimpleModel(), "{'integerField': 42, 'stringField': 'myString'}");
     }
 
     @Test

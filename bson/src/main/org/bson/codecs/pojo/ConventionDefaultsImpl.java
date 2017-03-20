@@ -20,9 +20,6 @@ final class ConventionDefaultsImpl implements Convention {
     @Override
     public void apply(final ClassModelBuilder<?> classModelBuilder) {
 
-        if (classModelBuilder.isDiscriminatorEnabled() == null) {
-            classModelBuilder.discriminatorEnabled(true);
-        }
         if (classModelBuilder.getDiscriminatorKey() == null) {
             classModelBuilder.discriminatorKey("_t");
         }

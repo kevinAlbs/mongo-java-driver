@@ -45,7 +45,7 @@ public class ClassModelBuilder<T> {
     private List<String> genericFieldNames = emptyList();
     private List<Convention> conventions = DEFAULT_CONVENTIONS;
     private List<Annotation> annotations = emptyList();
-    private Boolean discriminatorEnabled;
+    private boolean discriminatorEnabled;
     private String discriminator;
     private String discriminatorKey;
     private String idField;
@@ -287,8 +287,7 @@ public class ClassModelBuilder<T> {
         }
 
         stateNotNull("classAccessorFactory", classAccessorFactory);
-        boolean useDiscriminator = discriminatorEnabled != null ? discriminatorEnabled : false;
-        if (useDiscriminator) {
+        if (discriminatorEnabled) {
             stateNotNull("discriminatorKey", discriminatorKey);
             stateNotNull("discriminator", discriminator);
         }
@@ -306,7 +305,7 @@ public class ClassModelBuilder<T> {
             }
         }
         validateFieldModels(fieldModels);
-        return new ClassModel<T>(type, genericFieldNames, classAccessorFactory, useDiscriminator, discriminatorKey, discriminator,
+        return new ClassModel<T>(type, genericFieldNames, classAccessorFactory, discriminatorEnabled, discriminatorKey, discriminator,
                 idFieldModel, fieldModels);
     }
 

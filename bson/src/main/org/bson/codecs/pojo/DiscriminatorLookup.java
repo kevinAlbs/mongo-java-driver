@@ -28,7 +28,7 @@ final class DiscriminatorLookup {
 
     DiscriminatorLookup(final Map<Class<?>, ClassModel<?>> classModels, final Set<String> packages) {
         for (ClassModel<?> classModel : classModels.values()) {
-            if (classModel.useDiscriminator()) {
+            if (classModel.getDiscriminator() != null) {
                 discriminatorClassMap.put(classModel.getDiscriminator(), classModel.getType());
             }
         }

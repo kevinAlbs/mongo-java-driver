@@ -30,6 +30,7 @@ import java.util.HashSet;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public final class ClassModelTest {
@@ -42,7 +43,7 @@ public final class ClassModelTest {
 
         assertEquals("SimpleGenericsModel", classModel.getName());
         assertEquals(SimpleGenericsModel.class, classModel.getType());
-        assertTrue(classModel.useDiscriminator());
+        assertFalse(classModel.useDiscriminator());
         assertEquals("_t", classModel.getDiscriminatorKey());
         assertEquals("SimpleGenericsModel", classModel.getDiscriminator());
         assertNull(classModel.getIdFieldModel());

@@ -44,5 +44,5 @@ public @interface Property {
     /**
      * @return whether to include a discriminator when serializing nested Pojos.
      */
-    boolean useDiscriminator() default true;
+    boolean useDiscriminator() default false;
 }

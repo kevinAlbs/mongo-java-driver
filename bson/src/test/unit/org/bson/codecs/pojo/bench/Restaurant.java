@@ -16,22 +16,19 @@
 
 package org.bson.codecs.pojo.bench;
 
-import org.bson.codecs.pojo.annotations.Discriminator;
 import org.bson.codecs.pojo.annotations.Property;
 
 import java.util.List;
 
-@Discriminator("")
 public final class Restaurant {
 
-    private String resturant_id;
+    @Property(name = "restaurant_id")
+    private String restaurantId;
 
-    @Property(useDiscriminator = false)
     private Address address;
     private String borough;
     private String cuisine;
 
-    @Property(useDiscriminator = false)
     private List<Grade> grades;
     private String name;
 
@@ -39,9 +36,9 @@ public final class Restaurant {
     }
 
 
-    public Restaurant(final String resturant_id, final Address address, final String borough, final String cuisine,
+    public Restaurant(final String restaurantId, final Address address, final String borough, final String cuisine,
                       final List<Grade> grades, final String name) {
-        this.resturant_id = resturant_id;
+        this.restaurantId = restaurantId;
         this.address = address;
         this.borough = borough;
         this.cuisine = cuisine;
@@ -50,12 +47,12 @@ public final class Restaurant {
     }
 
     /**
-     * Returns the resturant_id
+     * Returns the restaurantId
      *
-     * @return the resturant_id
+     * @return the restaurantId
      */
-    public String getResturant_id() {
-        return resturant_id;
+    public String getRestaurantId() {
+        return restaurantId;
     }
 
     /**
@@ -115,7 +112,7 @@ public final class Restaurant {
 
         Restaurant restaurant = (Restaurant) o;
 
-        if (getResturant_id() != null ? !getResturant_id().equals(restaurant.getResturant_id()) : restaurant.getResturant_id() != null) {
+        if (getRestaurantId() != null ? !getRestaurantId().equals(restaurant.getRestaurantId()) : restaurant.getRestaurantId() != null) {
             return false;
         }
         if (getAddress() != null ? !getAddress().equals(restaurant.getAddress()) : restaurant.getAddress() != null) {
@@ -139,7 +136,7 @@ public final class Restaurant {
 
     @Override
     public int hashCode() {
-        int result = getResturant_id() != null ? getResturant_id().hashCode() : 0;
+        int result = getRestaurantId() != null ? getRestaurantId().hashCode() : 0;
         result = 31 * result + (getAddress() != null ? getAddress().hashCode() : 0);
         result = 31 * result + (getBorough() != null ? getBorough().hashCode() : 0);
         result = 31 * result + (getCuisine() != null ? getCuisine().hashCode() : 0);

@@ -64,8 +64,7 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testRoundTripPrimitivesModel() {
         PrimitivesModel model = getPrimitivesModel();
         roundTrip(getPojoCodecProviderBuilder(PrimitivesModel.class), model,
-                "{ '_t': 'PrimitivesModel', 'myBoolean': true, 'myByte': 1, "
-                        + "'myCharacter': '1', 'myDouble': 1.0, 'myFloat': 2.0, 'myInteger': 3, "
+                "{ 'myBoolean': true, 'myByte': 1, 'myCharacter': '1', 'myDouble': 1.0, 'myFloat': 2.0, 'myInteger': 3, "
                         + "'myLong': { '$numberLong': '5' }, 'myShort': 6}");
     }
 
@@ -74,8 +73,7 @@ public final class PojoCodecTest extends PojoTestCase {
         CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(SimpleGenericsModel.class).build(),
                 new ValueCodecProvider(), new ObjectCodecProvider());
         SimpleGenericsModel<String, String, Integer> model = getSimpleGenericsModel();
-        String json = "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 'A'"
-                + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}";
+        String json = "{'myIntegerField': 42, 'myGenericField': 'A' 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}";
 
         encodesTo(registry, model, json);
         decodesTo(registry, json, model);
@@ -85,8 +83,7 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testRoundTripConcreteCollectionsModel() {
         ConcreteCollectionsModel  model = getConcreteCollectionsModel();
         roundTrip(getPojoCodecProviderBuilder(ConcreteCollectionsModel.class), model,
-                "{'_t': 'ConcreteCollectionsModel', 'collection': [1, 2, 3],"
-                        + "'list': [4, 5, 6], 'linked': [7, 8, 9], 'map': {'A': 1.1, 'B': 2.2, 'C': 3.3},"
+                "{'collection': [1, 2, 3], 'list': [4, 5, 6], 'linked': [7, 8, 9], 'map': {'A': 1.1, 'B': 2.2, 'C': 3.3},"
                         + "'concurrent': {'D': 4.4, 'E': 5.5, 'F': 6.6}}");
     }
 
@@ -94,15 +91,14 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testRoundTripSimpleNestedPojoModel() {
         SimpleNestedPojoModel model = getSimpleNestedPojoModel();
         roundTrip(getPojoCodecProviderBuilder(SimpleNestedPojoModel.class, SimpleModel.class), model,
-                "{'_t': 'SimpleNestedPojoModel', 'simple': " + SIMPLE_MODEL_JSON + "}");
+                "{'simple': " + SIMPLE_MODEL_JSON + "}");
     }
 
     @Test
     public void testRoundTripCollectionNestedPojoModel() {
         CollectionNestedPojoModel model = getCollectionNestedPojoModel();
         roundTrip(getPojoCodecProviderBuilder(CollectionNestedPojoModel.class, SimpleModel.class), model,
-                "{'_t': 'CollectionNestedPojoModel',"
-                        + "'listSimple': [" + SIMPLE_MODEL_JSON + "],"
+                "{ 'listSimple': [" + SIMPLE_MODEL_JSON + "],"
                         + "'listListSimple': [[" + SIMPLE_MODEL_JSON + "]],"
                         + "'setSimple': [" + SIMPLE_MODEL_JSON + "],"
                         + "'setSetSimple': [[" + SIMPLE_MODEL_JSON + "]],"
@@ -123,18 +119,17 @@ public final class PojoCodecTest extends PojoTestCase {
                 ShapeModelCircle.class, ShapeModelRectangle.class, ShapeHolderModel.class);
 
         roundTrip(builder, new ShapeHolderModel(getShapeModelCirce()),
-                "{'_t': 'ShapeHolderModel', 'shape': {'_t': 'ShapeModelCircle', 'color': 'orange', 'radius': 4.2}}");
+                "{'shape': {'_t': 'ShapeModelCircle', 'color': 'orange', 'radius': 4.2}}");
 
         roundTrip(builder, new ShapeHolderModel(getShapeModelRectangle()),
-                "{'_t': 'ShapeHolderModel', 'shape': {'_t': 'ShapeModelRectangle', 'color': 'green', 'width': 22.1, 'height': 105.0} }");
+                "{'shape': {'_t': 'ShapeModelRectangle', 'color': 'green', 'width': 22.1, 'height': 105.0} }");
     }
 
     @Test
     public void testNestedGenericHolderModel() {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderModel.class, GenericHolderModel.class);
         roundTrip(builder, getNestedGenericHolderModel(),
-                "{'_t': 'NestedGenericHolderModel', 'nested': {'_t': 'GenericHolderModel', 'myGenericField': 'generic',"
-                        + "'myLongField': {'$numberLong': '1'}}}");
+                "{'nested': {'myGenericField': 'generic', 'myLongField': {'$numberLong': '1'}}}");
     }
 
     @Test
@@ -142,9 +137,7 @@ public final class PojoCodecTest extends PojoTestCase {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderMapModel.class,
                 GenericHolderModel.class, SimpleGenericsModel.class, SimpleModel.class);
         roundTrip(builder, getNestedGenericHolderMapModel(),
-                "{'_t': 'NestedGenericHolderMapModel', "
-                        + "'nested': {'_t': 'GenericHolderModel', 'myGenericField': {'s': " + SIMPLE_MODEL_JSON + "}, "
-                        + "           'myLongField': {'$numberLong': '1'}}}");
+                "{ 'nested': { 'myGenericField': {'s': " + SIMPLE_MODEL_JSON + "}, 'myLongField': {'$numberLong': '1'}}}");
     }
 
 
@@ -167,23 +160,21 @@ public final class PojoCodecTest extends PojoTestCase {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderSimpleGenericsModel.class,
                 GenericHolderModel.class, SimpleGenericsModel.class, SimpleModel.class);
         roundTrip(builder, model,
-                "{'_t': 'NestedGenericHolderSimpleGenericsModel',"
-                        + "'nested': {'_t': 'GenericHolderModel', "
-                        + "           'myGenericField': {'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': 42,"
-                        + "                              'myListField': [[" + SIMPLE_MODEL_JSON + "]], "
-                        + "                              'myMapField': {'A': {'A': " + SIMPLE_MODEL_JSON + "}}},"
-                        + "            'myLongField': {'$numberLong': '42' }}}");
+                "{ 'nested': {'myGenericField': {'myIntegerField': 42, 'myGenericField': 42,"
+                        + "                           'myListField': [[" + SIMPLE_MODEL_JSON + "]], "
+                        + "                           'myMapField': {'A': {'A': " + SIMPLE_MODEL_JSON + "}}},"
+                        + "         'myLongField': {'$numberLong': '42' }}}");
     }
 
     @Test
     public void testConstructorModel() {
         ConstructorModel model = new ConstructorModel(99);
         roundTrip(getPojoCodecProviderBuilder(ConstructorModel.class), model,
-                "{'_t': 'ConstructorModel', 'integerField': 99}");
+                "{'integerField': 99}");
 
         model = new ConstructorModel(99, "myString");
         roundTrip(getPojoCodecProviderBuilder(ConstructorModel.class), model,
-                "{'_t': 'ConstructorModel', 'integerField': 99, 'stringField': 'myString'}");
+                "{'integerField': 99, 'stringField': 'myString'}");
     }
 
     @Test
@@ -230,14 +221,13 @@ public final class PojoCodecTest extends PojoTestCase {
                     }
                 });
 
-        ClassModelBuilder<ConventionModel> classModel = ClassModel.builder(ConventionModel.class)
-                .conventions(conventions);
+        ClassModelBuilder<ConventionModel> classModel = ClassModel.builder(ConventionModel.class).conventions(conventions);
         ClassModelBuilder<SimpleModel> nestedClassModel = ClassModel.builder(SimpleModel.class).conventions(conventions);
 
         roundTrip(getPojoCodecProviderBuilder(classModel, nestedClassModel), model,
                 "{ '_id': 'id', '_cls': 'convention_model', 'my_final_field': 10, 'my_int_field': 10,"
-                        + "'child': { '_id': 'child', '_cls': 'convention_model', 'my_final_field': 10, 'my_int_field': 10, "
-                        + "           'simple_model': { '_cls': 'simple_model', 'integer_field': 42, 'string_field': 'myString' } } }");
+                        + "'child': { '_id': 'child', 'my_final_field': 10, 'my_int_field': 10, "
+                        + "           'simple_model': {'integer_field': 42, 'string_field': 'myString' } } }");
     }
 
     @Test
@@ -251,7 +241,7 @@ public final class PojoCodecTest extends PojoTestCase {
         idFieldModelBuilder.codec(new StringToObjectIdCodec());
 
         roundTrip(getPojoCodecProviderBuilder(classModel), model,
-                format("{'_id': {'$oid': '%s'}, '_t': 'ConverterModel', 'name': 'myName'}", id.toHexString()));
+                format("{'_id': {'$oid': '%s'}, 'name': 'myName'}", id.toHexString()));
     }
 
     @Test
@@ -268,7 +258,7 @@ public final class PojoCodecTest extends PojoTestCase {
                     }
                 });
 
-        roundTrip(getPojoCodecProviderBuilder(classModel), model, "{'_t': 'SimpleModel', 'integerField': null, 'stringField': 'myString'}");
+        roundTrip(getPojoCodecProviderBuilder(classModel), model, "{'integerField': null, 'stringField': 'myString'}");
     }
 
     @Test
@@ -286,7 +276,7 @@ public final class PojoCodecTest extends PojoTestCase {
                 });
         ClassModelBuilder<SimpleModel> classModelSimple = ClassModel.builder(SimpleModel.class);
 
-        roundTrip(getPojoCodecProviderBuilder(classModel, classModelSimple), model, "{'_t': 'SimpleNestedPojoModel', 'simple': null}");
+        roundTrip(getPojoCodecProviderBuilder(classModel, classModelSimple), model, "{'simple': null}");
     }
 
     @Test
@@ -314,16 +304,14 @@ public final class PojoCodecTest extends PojoTestCase {
                 });
 
         roundTrip(getPojoCodecProviderBuilder(classModel), model,
-                "{'_t': 'ConcreteCollectionsModel', 'collection': null,"
-                        + "'list': [4, 5, 6], 'linked': [7, 8, 9], 'map': null,"
+                "{'collection': null, 'list': [4, 5, 6], 'linked': [7, 8, 9], 'map': null,"
                         + "'concurrent': {'D': 4.4, 'E': 5.5, 'F': 6.6}}");
     }
 
     @Test
     public void testCanHandleExtraData() {
-        SimpleModel model = getSimpleModel();
-        decodesTo(getCodec(SimpleModel.class), "{'_t': 'SimpleModel', 'integerField': 42, "
-                + "'stringField': 'myString', 'extraFieldA': 1, 'extraFieldB': 2}", model);
+        decodesTo(getCodec(SimpleModel.class), "{'integerField': 42,  'stringField': 'myString', 'extraFieldA': 1, 'extraFieldB': 2}",
+                getSimpleModel());
     }
 
     @Test
@@ -352,7 +340,8 @@ public final class PojoCodecTest extends PojoTestCase {
 
     @Test(expected = CodecConfigurationException.class)
     public void testDataUnknownClass() {
-        decodingShouldFail(getCodec(SimpleModel.class), "{'_t': 'FakeModel'}");
+        ClassModel<SimpleModel> classModel = ClassModel.builder(SimpleModel.class).discriminatorEnabled(true).build();
+        decodingShouldFail(getCodec(PojoCodecProvider.builder().register(classModel), SimpleModel.class), "{'_t': 'FakeModel'}");
     }
 
     @Test(expected = CodecConfigurationException.class)

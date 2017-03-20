@@ -44,7 +44,7 @@ public final class FieldModelBuilder<T> {
     private Codec<T> codec;
     private FieldAccessorFactory<T> fieldAccessorFactory;
     private List<Annotation> annotations = emptyList();
-    private boolean discriminatorEnabled = true;
+    private boolean discriminatorEnabled;
 
     FieldModelBuilder() {
     }

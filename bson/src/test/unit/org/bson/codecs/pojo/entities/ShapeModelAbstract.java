@@ -16,6 +16,7 @@
 
 package org.bson.codecs.pojo.entities;
 
+
 public abstract class ShapeModelAbstract {
 
     private String color;

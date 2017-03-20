@@ -72,7 +72,7 @@ public final class ConventionsTest {
 
         FieldModel<?> childFieldModel = classModel.getFieldModel("child");
         assertNotNull(childFieldModel);
-        assertTrue(childFieldModel.useDiscriminator());
+        assertFalse(childFieldModel.useDiscriminator());
     }
 
     @Test
@@ -115,7 +115,7 @@ public final class ConventionsTest {
         assertEquals("_id", idFieldModel.getDocumentFieldName());
 
         FieldModel<?> childFieldModel = classModel.getFieldModel("id");
-        assertTrue(childFieldModel.useDiscriminator());
+        assertFalse(childFieldModel.useDiscriminator());
     }
 
     private class FieldAccessorFactoryImpl<T> implements FieldAccessorFactory<T> {
