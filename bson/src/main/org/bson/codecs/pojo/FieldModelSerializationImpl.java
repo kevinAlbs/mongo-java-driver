@@ -16,7 +16,7 @@
 
 package org.bson.codecs.pojo;
 
-class FieldModelSerializationImpl<T> implements FieldModelSerialization<T> {
+class FieldModelSerializationImpl<T> implements FieldSerialization<T> {
 
     FieldModelSerializationImpl() {
     }

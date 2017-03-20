@@ -40,8 +40,9 @@ public final class FieldModelBuilder<T> {
     private String fieldName;
     private String documentFieldName;
     private TypeData<T> typeData;
-    private FieldModelSerialization<T> fieldModelSerialization;
+    private FieldSerialization<T> fieldSerialization;
     private Codec<T> codec;
+    private FieldAccessorFactory<T> fieldAccessorFactory;
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled = true;
 
@@ -125,21 +126,21 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * Sets the {@link FieldModelSerialization} checker
+     * Sets the {@link FieldSerialization} checker
      *
-     * @param fieldModelSerialization checks if a field should be serialized
+     * @param fieldSerialization checks if a field should be serialized
      * @return this
      */
-    public FieldModelBuilder<T> fieldModelSerialization(final FieldModelSerialization<T> fieldModelSerialization) {
-        this.fieldModelSerialization = notNull("fieldModelSerializationChecker", fieldModelSerialization);
+    public FieldModelBuilder<T> fieldSerialization(final FieldSerialization<T> fieldSerialization) {
+        this.fieldSerialization = notNull("fieldSerialization", fieldSerialization);
         return this;
     }
 
     /**
-     * @return the {@link FieldModelSerialization} checker if set or null
+     * @return the {@link FieldSerialization} checker
      */
-    public FieldModelSerialization<T> getFieldModelSerialization() {
-        return fieldModelSerialization;
+    public FieldSerialization<T> getFieldSerialization() {
+        return fieldSerialization;
     }
 
     /**
@@ -181,6 +182,26 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
+     * Returns the fieldAccessorFactory
+     *
+     * @return the fieldAccessorFactory
+     */
+    public FieldAccessorFactory<T> getFieldAccessorFactory() {
+        return fieldAccessorFactory;
+    }
+
+    /**
+     * Sets the fieldAccessorFactory
+     *
+     * @param fieldAccessorFactory the fieldAccessorFactory
+     * @return this
+     */
+    public FieldModelBuilder<T> fieldAccessorFactory(final FieldAccessorFactory<T> fieldAccessorFactory) {
+        this.fieldAccessorFactory = fieldAccessorFactory;
+        return this;
+    }
+
+    /**
      * Creates the FieldModel from the FieldModelBuilder.
      * @return the fieldModel
      */
@@ -191,8 +212,9 @@ public final class FieldModelBuilder<T> {
                 stateNotNull("documentFieldName", documentFieldName),
                 stateNotNull("typeData", typeData),
                 codec,
-                stateNotNull("fieldModelSerialization", fieldModelSerialization),
-                discriminatorEnabled);
+                stateNotNull("fieldModelSerialization", fieldSerialization),
+                discriminatorEnabled,
+                stateNotNull("fieldAccessorFactory", fieldAccessorFactory));
     }
 
     @Override

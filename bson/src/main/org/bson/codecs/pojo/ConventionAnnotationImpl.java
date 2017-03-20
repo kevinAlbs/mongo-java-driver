@@ -49,6 +49,8 @@ final class ConventionAnnotationImpl implements Convention {
                     classModelBuilder.discriminatorKey(key);
                 }
                 classModelBuilder.discriminatorEnabled(true);
+            } else {
+                classModelBuilder.discriminatorEnabled(false);
             }
         }
     }

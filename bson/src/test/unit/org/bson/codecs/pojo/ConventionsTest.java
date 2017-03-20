@@ -21,9 +21,6 @@ import org.bson.codecs.pojo.entities.conventions.AnnotationDefaultsModel;
 import org.bson.codecs.pojo.entities.conventions.AnnotationModel;
 import org.junit.Test;
 
-import java.lang.reflect.Constructor;
-import java.util.Collections;
-
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -86,18 +83,25 @@ public final class ConventionsTest {
                 .discriminatorKey("_cls")
                 .discriminator("Simples")
                 .conventions(singletonList(CLASS_AND_FIELD_CONVENTION))
-                .classAccessorFactory(new ClassAccessorFactoryImpl<SimpleModel>(Collections.<Constructor<SimpleModel>>emptyList(), null));
+                .classAccessorFactory(new ClassAccessorFactory<SimpleModel>() {
+                    @Override
+                    public ClassAccessor<SimpleModel> create(final ClassModel<SimpleModel> classModel) {
+                        return null;
+                    }
+                });
 
         FieldModelBuilder<Integer> fieldModelBuilder = FieldModel.<Integer>builder()
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("id")
-                .fieldModelSerialization(new FieldModelSerializationImpl<Integer>());
+                .fieldSerialization(new FieldModelSerializationImpl<Integer>())
+                .fieldAccessorFactory(new FieldAccessorFactoryImpl<Integer>());
 
         FieldModelBuilder<Integer> fieldModelBuilder2 = FieldModel.<Integer>builder()
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("customId")
                 .documentFieldName("_id")
-                .fieldModelSerialization(new FieldModelSerializationImpl<Integer>());
+                .fieldSerialization(new FieldModelSerializationImpl<Integer>())
+                .fieldAccessorFactory(new FieldAccessorFactoryImpl<Integer>());
 
         ClassModel<SimpleModel> classModel  = builder.idField("customId").addField(fieldModelBuilder).addField(fieldModelBuilder2).build();
 
@@ -112,5 +116,13 @@ public final class ConventionsTest {
 
         FieldModel<?> childFieldModel = classModel.getFieldModel("id");
         assertTrue(childFieldModel.useDiscriminator());
+    }
+
+    private class FieldAccessorFactoryImpl<T> implements FieldAccessorFactory<T> {
+
+        @Override
+        public FieldAccessor<T> create(final FieldModel<T> fieldModel) {
+            return null;
+        }
     }
 }

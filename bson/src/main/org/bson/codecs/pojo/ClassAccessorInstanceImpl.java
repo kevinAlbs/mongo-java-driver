@@ -19,57 +19,28 @@ package org.bson.codecs.pojo;
 import org.bson.codecs.configuration.CodecConfigurationException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.Map;
-
-import static java.lang.String.format;
 
 final class ClassAccessorInstanceImpl<T> implements ClassAccessor<T> {
-    private final String name;
-    private final Map<String, Field> fieldsMap;
     private final Constructor<T> constructor;
     private T newInstance;
 
-    ClassAccessorInstanceImpl(final ClassModel<T> classModel, final Map<String, Field> fieldsMap, final Constructor<T> constructor) {
-        this.name = classModel.getType().getSimpleName();
-        this.fieldsMap = fieldsMap;
+    ClassAccessorInstanceImpl(final Constructor<T> constructor) {
         this.constructor = constructor;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <S> S get(final T instance, final FieldModel<S> fieldModel) {
-        try {
-            return (S) getField(fieldModel.getFieldName()).get(instance);
-        } catch (final IllegalAccessException e) {
-            throw new CodecConfigurationException(format("Unable to get value for field: %s", fieldModel.getFieldName()), e);
-        } catch (final IllegalArgumentException e) {
-            throw new CodecConfigurationException(format("Unable to get value for field: %s", fieldModel.getFieldName()), e);
-        }
+        return fieldModel.getFieldAccessor().get(instance);
     }
 
     @Override
     public <S> void set(final S value, final FieldModel<S> fieldModel) {
-        try {
-            getField(fieldModel.getFieldName()).set(getInstance(), value);
-        } catch (final IllegalAccessException e) {
-            throw new CodecConfigurationException(format("Unable to set value '%s' for field: %s", value, fieldModel.getFieldName()), e);
-        } catch (final IllegalArgumentException e) {
-            throw new CodecConfigurationException(format("Unable to set value '%s' for field: %s", value, fieldModel.getFieldName()), e);
-        }
+        fieldModel.getFieldAccessor().set(getInstance(), value);
     }
 
     @Override
     public T create() {
         return newInstance;
-    }
-
-    private Field getField(final String fieldName) {
-        Field field = fieldsMap.get(fieldName);
-        if (field == null) {
-            throw new CodecConfigurationException(format("ClassModel for: %s does not contain field: %s", name, fieldName));
-        }
-        return field;
     }
 
     private T getInstance() {

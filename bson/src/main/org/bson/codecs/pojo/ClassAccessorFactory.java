@@ -26,7 +26,7 @@ public interface ClassAccessorFactory<T> {
 
     /**
      * @param classModel the classModel
-     * @return a new ClassFactory instance
+     * @return a new ClassAccessor instance
      */
     ClassAccessor<T> create(ClassModel<T> classModel);
 }

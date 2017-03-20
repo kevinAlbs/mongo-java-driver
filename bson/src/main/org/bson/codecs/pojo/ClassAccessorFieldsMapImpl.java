@@ -19,7 +19,6 @@ package org.bson.codecs.pojo;
 import org.bson.codecs.configuration.CodecConfigurationException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,26 +28,19 @@ import static java.lang.String.format;
 
 final class ClassAccessorFieldsMapImpl<T> implements ClassAccessor<T> {
     private final ClassModel<T> classModel;
-    private final Map<String, Field> fieldsMap;
     private final List<Constructor<T>> constructors;
     private final Map<String, Object> fieldNameToValueMap;
 
-    ClassAccessorFieldsMapImpl(final ClassModel<T> classModel, final Map<String, Field> fieldsMap,
+    ClassAccessorFieldsMapImpl(final ClassModel<T> classModel,
                                final List<Constructor<T>> constructors) {
         this.classModel = classModel;
-        this.fieldsMap = fieldsMap;
         this.constructors = constructors;
         this.fieldNameToValueMap = new HashMap<String, Object>();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <S> S get(final T classInstance, final FieldModel<S> fieldModel) {
-        try {
-            return (S) getField(fieldModel.getFieldName()).get(classInstance);
-        } catch (final IllegalAccessException e) {
-            throw new IllegalStateException(e.getMessage(), e);
-        }
+    public <S> S get(final T instance, final FieldModel<S> fieldModel) {
+        return fieldModel.getFieldAccessor().get(instance);
     }
 
     @Override
@@ -85,13 +77,5 @@ final class ClassAccessorFieldsMapImpl<T> implements ClassAccessor<T> {
             throw new CodecConfigurationException(format("Unable to create new instance of '%s' with the following arguments: %s",
                     classModel.getType(), modelArgs));
         }
-    }
-
-    private Field getField(final String fieldName) {
-        Field field = fieldsMap.get(fieldName);
-        if (field == null) {
-            throw new CodecConfigurationException(format("ClassModel: %s does not contain field: %s", classModel, fieldName));
-        }
-        return field;
     }
 }

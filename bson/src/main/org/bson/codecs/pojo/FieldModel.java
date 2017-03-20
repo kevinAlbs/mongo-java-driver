@@ -31,17 +31,22 @@ public final class FieldModel<T> {
     private final String documentFieldName;
     private final TypeData<T> typeData;
     private final Codec<T> codec;
-    private final FieldModelSerialization<T> fieldModelSerialization;
+    private final FieldSerialization<T> fieldSerialization;
     private final boolean useDiscriminator;
+    private final FieldAccessorFactory<T> fieldAccessorFactory;
+    private Codec<T> cachedCodec;
 
     FieldModel(final String fieldName, final String documentFieldName, final TypeData<T> typeData, final Codec<T> codec,
-               final FieldModelSerialization<T> fieldModelSerialization, final boolean useDiscriminator) {
+               final FieldSerialization<T> fieldSerialization, final boolean useDiscriminator,
+               final FieldAccessorFactory<T> fieldAccessorFactory) {
         this.fieldName = fieldName;
         this.documentFieldName = documentFieldName;
         this.typeData = typeData;
         this.codec = codec;
-        this.fieldModelSerialization = fieldModelSerialization;
+        this.cachedCodec = codec;
+        this.fieldSerialization = fieldSerialization;
         this.useDiscriminator = useDiscriminator;
+        this.fieldAccessorFactory = fieldAccessorFactory;
     }
 
     /**
@@ -72,7 +77,14 @@ public final class FieldModel<T> {
      * @return true if the value should be serialized.
      */
     public boolean shouldSerialize(final T value) {
-        return fieldModelSerialization.shouldSerialize(value);
+        return fieldSerialization.shouldSerialize(value);
+    }
+
+    /**
+     * @return the field accessor
+     */
+    public FieldAccessor<T> getFieldAccessor() {
+        return fieldAccessorFactory.create(this);
     }
 
     /**
@@ -146,8 +158,8 @@ public final class FieldModel<T> {
         if (getCodec() != null ? !getCodec().equals(that.getCodec()) : that.getCodec() != null) {
             return false;
         }
-        if (fieldModelSerialization != null ? !fieldModelSerialization.equals(that.fieldModelSerialization) : that
-                .fieldModelSerialization != null) {
+        if (fieldSerialization != null ? !fieldSerialization.equals(that.fieldSerialization) : that
+                .fieldSerialization != null) {
             return false;
         }
 
@@ -160,12 +172,24 @@ public final class FieldModel<T> {
         result = 31 * result + (getDocumentFieldName() != null ? getDocumentFieldName().hashCode() : 0);
         result = 31 * result + (getTypeData() != null ? getTypeData().hashCode() : 0);
         result = 31 * result + (getCodec() != null ? getCodec().hashCode() : 0);
-        result = 31 * result + (fieldModelSerialization != null ? fieldModelSerialization.hashCode() : 0);
+        result = 31 * result + (fieldSerialization != null ? fieldSerialization.hashCode() : 0);
         result = 31 * result + (useDiscriminator ? 1 : 0);
         return result;
     }
 
-    FieldModelSerialization<T> getFieldModelSerialization() {
-        return fieldModelSerialization;
+    FieldSerialization<T> getFieldSerialization() {
+        return fieldSerialization;
+    }
+
+    FieldAccessorFactory<T> getFieldAccessorFactory() {
+        return fieldAccessorFactory;
+    }
+
+    void cachedCodec(final Codec<T> codec) {
+        this.cachedCodec = codec;
+    }
+
+    Codec<T> getCachedCodec() {
+        return cachedCodec;
     }
 }

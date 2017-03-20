@@ -68,7 +68,9 @@ final class PojoCodec<T> implements Codec<T> {
     }
 
     private <S> void addToCache(final FieldModel<S> fieldModel) {
-        codecCache.put(fieldModel.getFieldName(), fieldModel.getTypeData().getType(), getCodecFromFieldModel(fieldModel));
+        Codec<S> codec = getCodecFromFieldModel(fieldModel);
+        fieldModel.cachedCodec(codec);
+        codecCache.put(fieldModel.getFieldName(), fieldModel.getTypeData().getType(), codec);
     }
 
     @Override
@@ -157,7 +159,7 @@ final class PojoCodec<T> implements Codec<T> {
                 if (reader.getCurrentBsonType() == BsonType.NULL) {
                     reader.readNull();
                 } else {
-                    value = decoderContext.decodeWithChildContext(getCachedCodec(fieldModel), reader);
+                    value = decoderContext.decodeWithChildContext(fieldModel.getCachedCodec(), reader);
                 }
                 classAccessor.set(value, fieldModel);
             } catch (BsonInvalidOperationException e) {
@@ -166,25 +168,23 @@ final class PojoCodec<T> implements Codec<T> {
                 throw new CodecConfigurationException(format("Failed to decode '%s'. %s", name, e.getMessage()), e);
             }
         } else {
-            if (LOGGER.isLoggable(Level.INFO)) {
-                LOGGER.info(format("Found field not present in the ClassModel: %s", name));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine(format("Found field not present in the ClassModel: %s", name));
             }
             reader.skipValue();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <S> Codec<S> getCachedCodec(final FieldModel<S> fieldModel) {
-        return codecCache.get(fieldModel.getFieldName(), fieldModel.getTypeData().getType());
-    }
-
-    @SuppressWarnings("unchecked")
     private <S, V> Codec<S> getCachedCodec(final FieldModel<S> fieldModel, final Class<V> instanceType) {
-        Codec<S> codec = getCachedCodec(fieldModel);
+        Codec<S> codec = fieldModel.getCachedCodec();
         Class<S> fieldType = codec.getEncoderClass();
         if (fieldType != instanceType && fieldType.isAssignableFrom(instanceType)) {
-            codec = specializePojoCodec(fieldModel, getCodecFromClass((Class<S>) instanceType));
-            codecCache.put(fieldModel.getFieldName(), instanceType, (Codec<V>) codec);
+            codec = (Codec<S>) codecCache.get(fieldModel.getFieldName(), instanceType);
+            if (codec == null) {
+                codec = specializePojoCodec(fieldModel, getCodecFromClass((Class<S>) instanceType));
+                codecCache.put(fieldModel.getFieldName(), instanceType, (Codec<V>) codec);
+            }
         }
         return codec;
     }
@@ -282,7 +282,7 @@ final class PojoCodec<T> implements Codec<T> {
         }
 
         return new FieldModel<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
-                fieldModel.getFieldModelSerialization(), fieldModel.useDiscriminator());
+                fieldModel.getFieldSerialization(), fieldModel.useDiscriminator(), fieldModel.getFieldAccessorFactory());
     }
 
     @SuppressWarnings("unchecked")

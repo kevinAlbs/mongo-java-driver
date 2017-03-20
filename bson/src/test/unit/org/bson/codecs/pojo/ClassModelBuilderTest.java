@@ -90,7 +90,8 @@ public final class ClassModelBuilderTest {
         ClassModelBuilder<NestedGenericHolderModel> builder =
                 ClassModel.builder(NestedGenericHolderModel.class);
         assertEquals(GenericHolderModel.class, builder.getField("nested").getTypeData().getType());
-        //assertEquals(singletonList(String.class), builder.getField("nested").getTypeParameters());
+        assertEquals(TypeData.builder(GenericHolderModel.class).addTypeParameter(TypeData.builder(String.class).build()).build(),
+                builder.getField("nested").getTypeData());
     }
 
     @Test
@@ -118,7 +119,8 @@ public final class ClassModelBuilderTest {
                 .discriminatorKey("_cls")
                 .discriminator("myColl")
                 .discriminatorEnabled(true)
-                .idField("myIntegerField");
+                .idField("myIntegerField")
+                .classAccessorFactory(TEST_CLASS_ACCESSOR_FACTORY);
 
         assertEquals(TEST_ANNOTATIONS, builder.getAnnotations());
         assertEquals(TEST_CONVENTIONS, builder.getConventions());
@@ -207,4 +209,12 @@ public final class ClassModelBuilderTest {
                 public void apply(final ClassModelBuilder<?> builder) {
                 }
             });
+
+    private static final ClassAccessorFactory<SimpleGenericsModel> TEST_CLASS_ACCESSOR_FACTORY =
+            new ClassAccessorFactory<SimpleGenericsModel>() {
+                @Override
+                public ClassAccessor<SimpleGenericsModel> create(final ClassModel<SimpleGenericsModel> classModel) {
+                    return null;
+                }
+            };
 }

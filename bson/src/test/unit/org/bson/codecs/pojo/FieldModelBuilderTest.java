@@ -41,7 +41,7 @@ public final class FieldModelBuilderTest {
         assertNull(fieldModelBuilder.getDocumentFieldName());
         assertNull(fieldModelBuilder.getFieldName());
         assertTrue(fieldModelBuilder.getAnnotations().isEmpty());
-        assertNull(fieldModelBuilder.getFieldModelSerialization());
+        assertNull(fieldModelBuilder.getFieldSerialization());
         assertNull(fieldModelBuilder.getTypeData());
         assertTrue(fieldModelBuilder.isDiscriminatorEnabled());
     }
@@ -67,7 +67,7 @@ public final class FieldModelBuilderTest {
                 .codec(integerCodec)
                 .documentFieldName("altDocumentFieldName")
                 .annotations(TEST_ANNOTATIONS)
-                .fieldModelSerialization(CUSTOM_SERIALIZATION)
+                .fieldSerialization(CUSTOM_SERIALIZATION)
                 .typeData(TypeData.builder(Integer.class).build())
                 .discriminatorEnabled(false);
 
@@ -76,7 +76,7 @@ public final class FieldModelBuilderTest {
         assertEquals(integerCodec, fieldModelBuilder.getCodec());
         assertEquals(Integer.class, fieldModelBuilder.getTypeData().getType());
         assertEquals(TEST_ANNOTATIONS, fieldModelBuilder.getAnnotations());
-        assertEquals(CUSTOM_SERIALIZATION, fieldModelBuilder.getFieldModelSerialization());
+        assertEquals(CUSTOM_SERIALIZATION, fieldModelBuilder.getFieldSerialization());
         assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
@@ -103,7 +103,7 @@ public final class FieldModelBuilderTest {
                 }
             });
 
-    private static final FieldModelSerialization<Integer> CUSTOM_SERIALIZATION = new FieldModelSerialization<Integer>() {
+    private static final FieldSerialization<Integer> CUSTOM_SERIALIZATION = new FieldSerialization<Integer>() {
         @Override
         public boolean shouldSerialize(final Integer value) {
             return false;

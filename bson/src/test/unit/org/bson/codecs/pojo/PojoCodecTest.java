@@ -261,7 +261,7 @@ public final class PojoCodecTest extends PojoTestCase {
         model.setIntegerField(null);
         ClassModelBuilder<SimpleModel> classModel = ClassModel.builder(SimpleModel.class);
         ((FieldModelBuilder<Integer>) classModel.getField("integerField"))
-                .fieldModelSerialization(new FieldModelSerialization<Integer>() {
+                .fieldSerialization(new FieldSerialization<Integer>() {
                     @Override
                     public boolean shouldSerialize(final Integer value) {
                         return true;
@@ -278,7 +278,7 @@ public final class PojoCodecTest extends PojoTestCase {
         model.setSimple(null);
         ClassModelBuilder<SimpleNestedPojoModel> classModel = ClassModel.builder(SimpleNestedPojoModel.class);
         ((FieldModelBuilder<SimpleModel>) classModel.getField("simple"))
-                .fieldModelSerialization(new FieldModelSerialization<SimpleModel>() {
+                .fieldSerialization(new FieldSerialization<SimpleModel>() {
                     @Override
                     public boolean shouldSerialize(final SimpleModel value) {
                         return true;
@@ -299,14 +299,14 @@ public final class PojoCodecTest extends PojoTestCase {
         ClassModelBuilder<ConcreteCollectionsModel> classModel =
                 ClassModel.builder(ConcreteCollectionsModel.class);
         ((FieldModelBuilder<Collection<Integer>>) classModel.getField("collection"))
-                .fieldModelSerialization(new FieldModelSerialization<Collection<Integer>>() {
+                .fieldSerialization(new FieldSerialization<Collection<Integer>>() {
                     @Override
                     public boolean shouldSerialize(final Collection<Integer> value) {
                         return true;
                     }
                 });
         ((FieldModelBuilder<Map<String, Double>>) classModel.getField("map"))
-                .fieldModelSerialization(new FieldModelSerialization<Map<String, Double>>() {
+                .fieldSerialization(new FieldSerialization<Map<String, Double>>() {
                     @Override
                     public boolean shouldSerialize(final Map<String, Double> value) {
                         return true;

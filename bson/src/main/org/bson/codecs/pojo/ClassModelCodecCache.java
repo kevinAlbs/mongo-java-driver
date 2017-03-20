@@ -17,12 +17,9 @@
 package org.bson.codecs.pojo;
 
 import org.bson.codecs.Codec;
-import org.bson.codecs.configuration.CodecConfigurationException;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.lang.String.format;
 
 final class ClassModelCodecCache {
     private final Map<String, Map<Class<?>, Codec<?>>> codecCache;
@@ -43,9 +40,6 @@ final class ClassModelCodecCache {
 
     @SuppressWarnings("unchecked")
     <T> Codec<T> get(final String fieldName, final Class<T> clazz) {
-        if (!codecCache.containsKey(fieldName)) {
-            throw new CodecConfigurationException(format("Missing codec for field: %s", fieldName));
-        }
         return (Codec<T>) codecCache.get(fieldName).get(clazz);
     }
 

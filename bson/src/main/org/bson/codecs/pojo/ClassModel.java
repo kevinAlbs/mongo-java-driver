@@ -29,6 +29,7 @@ import static java.util.Collections.unmodifiableList;
  * @since 3.5
  */
 public class ClassModel<T> {
+    private final String name;
     private final Class<T> type;
     private final ClassAccessorFactory<T> classAccessorFactory;
     private final boolean discriminatorEnabled;
@@ -40,8 +41,9 @@ public class ClassModel<T> {
     private final Map<String, FieldModel<?>> fieldMap;
 
     ClassModel(final Class<T> clazz, final List<String> genericFieldNames, final ClassAccessorFactory<T> classAccessorFactory,
-                   final Boolean discriminatorEnabled, final String discriminatorKey, final String discriminator,
-                   final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
+               final Boolean discriminatorEnabled, final String discriminatorKey, final String discriminator,
+               final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
+        this.name = clazz.getSimpleName();
         this.type = clazz;
         this.genericFieldNames = genericFieldNames;
         this.classAccessorFactory = classAccessorFactory;
@@ -84,15 +86,8 @@ public class ClassModel<T> {
     /**
      * @return a new ClassAccessor instance for the ClassModel
      */
-    public ClassAccessor<T> getClassAccessor() {
+    ClassAccessor<T> getClassAccessor() {
         return classAccessorFactory.create(this);
-    }
-
-    /**
-     * @return the class model ClassFactoryFactory
-     */
-    public ClassAccessorFactory<T> getClassAccessorFactory() {
-        return classAccessorFactory;
     }
 
     /**
@@ -134,7 +129,7 @@ public class ClassModel<T> {
      * @return the field or null if the field is not found
      */
     public FieldModel<?> getFieldModel(final String documentFieldName) {
-        return idField != null && documentFieldName.equals(idField.getDocumentFieldName()) ? idField : fieldMap.get(documentFieldName);
+        return fieldMap.get(documentFieldName);
     }
 
     /**
@@ -161,12 +156,12 @@ public class ClassModel<T> {
      * @return the name
      */
     public String getName() {
-        return getType().getSimpleName();
+        return name;
     }
 
     @Override
     public String toString() {
-        return "ClassModelImpl{"
+        return "ClassModel{"
                 + "type=" + type
                 + "}";
     }
@@ -228,6 +223,10 @@ public class ClassModel<T> {
         result = 31 * result + (getGenericFieldNames() != null ? getGenericFieldNames().hashCode() : 0);
         result = 31 * result + (fieldMap != null ? fieldMap.hashCode() : 0);
         return result;
+    }
+
+    ClassAccessorFactory<T> getClassAccessorFactory() {
+        return classAccessorFactory;
     }
 
     private static Map<String, FieldModel<?>> generateFieldMap(final List<FieldModel<?>> fieldModels) {

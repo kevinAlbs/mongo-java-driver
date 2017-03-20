@@ -17,20 +17,17 @@
 package org.bson.codecs.pojo;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 final class ClassAccessorFactoryImpl<T> implements ClassAccessorFactory<T> {
-
-    private final Map<String, Field> fieldsMap;
     private final List<Constructor<T>> constructors;
+    private final Constructor<T> headConstructor;
+    private final boolean useClassAccessorInstance;
 
-    ClassAccessorFactoryImpl(final List<Constructor<T>> constructors, final Map<String, Field> fieldsMap) {
-        this.fieldsMap = fieldsMap;
+    ClassAccessorFactoryImpl(final List<Constructor<T>> constructors) {
         List<Constructor<T>> sortedConstructors = new ArrayList<Constructor<T>>(constructors);
         Collections.sort(sortedConstructors, new Comparator<Constructor<?>>() {
             @Override
@@ -41,12 +38,14 @@ final class ClassAccessorFactoryImpl<T> implements ClassAccessorFactory<T> {
             }
         });
         this.constructors = sortedConstructors;
+        this.headConstructor = sortedConstructors.get(0);
+        this.useClassAccessorInstance = headConstructor.getParameterTypes().length == 0;
     }
 
     @Override
     public ClassAccessor<T> create(final ClassModel<T> classModel) {
-        return constructors.get(0).getParameterTypes().length == 0
-                ? new ClassAccessorInstanceImpl<T>(classModel, fieldsMap, constructors.get(0))
-                : new ClassAccessorFieldsMapImpl<T>(classModel, fieldsMap, constructors);
+        return useClassAccessorInstance
+                ? new ClassAccessorInstanceImpl<T>(headConstructor)
+                : new ClassAccessorFieldsMapImpl<T>(classModel, constructors);
     }
 }

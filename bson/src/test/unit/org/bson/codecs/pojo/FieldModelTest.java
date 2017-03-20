@@ -39,8 +39,9 @@ public final class FieldModelTest {
         assertEquals(fieldName, fieldModel.getDocumentFieldName());
         assertEquals(TypeData.builder(Integer.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
-        assertTrue(fieldModel.useDiscriminator());
         assertTrue(fieldModel.shouldSerialize(1));
+        assertTrue(fieldModel.useDiscriminator());
+        assertTrue(fieldModel.getFieldAccessorFactory() instanceof FieldAccessorFactoryImpl);
     }
 
     @Test
@@ -51,6 +52,7 @@ public final class FieldModelTest {
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
         assertTrue(fieldModel.useDiscriminator());
+        assertTrue(fieldModel.getFieldAccessorFactory() instanceof FieldAccessorFactoryImpl);
     }
 
     @Test

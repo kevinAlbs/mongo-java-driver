@@ -34,7 +34,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,8 +69,6 @@ final class PojoBuilderHelper {
             genericTypeNames.add(classTypeVariable.getName());
         }
 
-
-        Map<String, Field> fieldsMap = new HashMap<String, Field>();
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
         List<String> genericFieldOrder = new ArrayList<String>();
         for (int i = 1; i < genericTypeNames.size(); i++) {
@@ -82,8 +79,6 @@ final class PojoBuilderHelper {
                 continue;
             }
             String name = resolvedField.getName();
-            Field field = resolvedField.getRawMember();
-            fieldsMap.put(name, field);
 
             List<Integer> genericTypeIndexes = fieldGenericTypeIndexes(genericTypeNames, resolvedField);
             for (Integer genericTypeIndex : genericTypeIndexes) {
@@ -102,7 +97,7 @@ final class PojoBuilderHelper {
         }
         classModelBuilder
                 .genericFieldNames(genericFieldOrder)
-                .classAccessorFactory(new ClassAccessorFactoryImpl<T>(publicConstructors, fieldsMap));
+                .classAccessorFactory(new ClassAccessorFactoryImpl<T>(publicConstructors));
     }
 
     static List<Integer> fieldGenericTypeIndexes(final List<String> genericTypeNames, final ResolvedField resolvedField) {
@@ -126,7 +121,6 @@ final class PojoBuilderHelper {
         return indexes;
     }
 
-
     @SuppressWarnings("unchecked")
     static <T> FieldModelBuilder<T> configureFieldModelBuilder(final FieldModelBuilder<T> builder, final Field field) {
         return builder
@@ -135,7 +129,8 @@ final class PojoBuilderHelper {
                 .fieldName(field.getName())
                 .typeData((TypeData<T>) getFieldTypeDataFromClass(field.getType()))
                 .annotations(asList(field.getDeclaredAnnotations()))
-                .fieldModelSerialization(new FieldModelSerializationImpl<T>());
+                .fieldSerialization(new FieldModelSerializationImpl<T>())
+                .fieldAccessorFactory(new FieldAccessorFactoryImpl<T>(field, field.getName()));
     }
 
     private static <T> FieldModelBuilder<T> getFieldBuilder(final Field field, final Class<T> clazz, final ResolvedType resolvedType) {
