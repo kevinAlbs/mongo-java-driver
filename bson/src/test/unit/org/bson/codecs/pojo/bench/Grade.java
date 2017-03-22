@@ -16,8 +16,6 @@
 
 package org.bson.codecs.pojo.bench;
 
-import org.bson.codecs.pojo.annotations.Discriminator;
-
 import java.util.Date;
 
 public final class Grade {

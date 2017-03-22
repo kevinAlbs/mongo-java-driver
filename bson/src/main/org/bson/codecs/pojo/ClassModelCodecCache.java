@@ -28,7 +28,7 @@ final class ClassModelCodecCache {
         this.codecCache = new HashMap<String, Map<Class<?>, Codec<?>>>();
     }
 
-    <T> void put(final String fieldName, final Class<T> clazz, final Codec<T> codec) {
+    synchronized <T> void put(final String fieldName, final Class<T> clazz, final Codec<T> codec) {
         if (codecCache.containsKey(fieldName)) {
             codecCache.get(fieldName).put(clazz, codec);
         } else {
@@ -39,7 +39,7 @@ final class ClassModelCodecCache {
     }
 
     @SuppressWarnings("unchecked")
-    <T> Codec<T> get(final String fieldName, final Class<T> clazz) {
+    synchronized <T> Codec<T> get(final String fieldName, final Class<T> clazz) {
         return (Codec<T>) codecCache.get(fieldName).get(clazz);
     }
 

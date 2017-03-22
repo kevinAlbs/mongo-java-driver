@@ -229,9 +229,10 @@ final class PojoCodec<T> implements Codec<T> {
             PojoCodec<S> pojoCodec = (PojoCodec<S>) codec;
             ClassModel<S> specialized = getSpecializedClassModel(pojoCodec.getClassModel(), fieldModel);
             if (!pojoCodec.getClassModel().equals(specialized)) {
-                codec = new PojoCodec<S>(specialized, codecProvider, registry, discriminatorLookup);
+                pojoCodec = new PojoCodec<S>(specialized, codecProvider, registry, discriminatorLookup);
             }
             pojoCodec.populateCodecCache();
+            codec = pojoCodec;
         }
         return codec;
     }
