@@ -45,8 +45,7 @@ import static org.bson.assertions.Assertions.notNull;
  * @mongodb.driver.manual core/document document
  * @since 3.0.0
  */
-public class
-Document implements Map<String, Object>, Serializable, Bson {
+public class Document implements Map<String, Object>, Serializable, Bson {
     private static final long serialVersionUID = 6297731997167536582L;
 
     private final LinkedHashMap<String, Object> documentAsMap;

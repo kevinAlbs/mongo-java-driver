@@ -57,7 +57,7 @@ final class PojoCodec<T> implements Codec<T> {
         this.codecCache = new ClassModelCodecCache();
     }
 
-    PojoCodec<T> populateCodecCache() {
+    synchronized PojoCodec<T> populateCodecCache() {
         if (!setFields) {
             setFields = true;
             for (FieldModel<?> fieldModel : classModel.getFieldModels()) {
@@ -226,18 +226,19 @@ final class PojoCodec<T> implements Codec<T> {
     private <S> Codec<S> specializePojoCodec(final FieldModel<S> fieldModel, final Codec<S> defaultCodec) {
         Codec<S> codec = defaultCodec;
         if (codec != null && codec instanceof PojoCodec) {
-            ClassModel<S> original = ((PojoCodec<S>) codec).getClassModel();
-            ClassModel<S> specialized = getSpecializedClassModel(((PojoCodec<S>) codec).getClassModel(), fieldModel);
-            if (!original.equals(specialized)) {
+            PojoCodec<S> pojoCodec = (PojoCodec<S>) codec;
+            ClassModel<S> specialized = getSpecializedClassModel(pojoCodec.getClassModel(), fieldModel);
+            if (!pojoCodec.getClassModel().equals(specialized)) {
                 codec = new PojoCodec<S>(specialized, codecProvider, registry, discriminatorLookup);
             }
-            ((PojoCodec<S>) codec).populateCodecCache();
+            pojoCodec.populateCodecCache();
         }
         return codec;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private <S, V> ClassModel<S> getSpecializedClassModel(final ClassModel<S> clazzModel, final FieldModel<V> fieldModel) {
+        // Only change the discriminator when turning it off OR if turning it on ensure the class model has a discriminator key and value
         boolean changeDiscriminator = !fieldModel.useDiscriminator() && clazzModel.useDiscriminator()
                 || (fieldModel.useDiscriminator() && !clazzModel.useDiscriminator() && clazzModel.getDiscriminatorKey() != null
                 && clazzModel.getDiscriminator() != null);
@@ -286,11 +287,11 @@ final class PojoCodec<T> implements Codec<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> Codec<T> getCodecFromDocument(final BsonReader reader, final boolean useDiscriminator, final String discriminatorKey,
-                                             final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
-                                             final Codec<T> defaultCodec) {
+    private Codec<T> getCodecFromDocument(final BsonReader reader, final boolean useDiscriminator, final String discriminatorKey,
+                                              final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
+                                              final Codec<T> defaultCodec) {
         Codec<T> codec = defaultCodec;
-        if (useDiscriminator && discriminatorKey != null) {
+        if (useDiscriminator) {
             reader.mark();
             reader.readStartDocument();
             boolean discriminatorKeyFound = false;
