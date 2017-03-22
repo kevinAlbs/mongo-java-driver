@@ -179,7 +179,7 @@ final class PojoCodec<T> implements Codec<T> {
     private <S, V> Codec<S> getCachedCodec(final FieldModel<S> fieldModel, final Class<V> instanceType) {
         Codec<S> codec = fieldModel.getCachedCodec();
         Class<S> fieldType = codec.getEncoderClass();
-        if (fieldType != instanceType && fieldType.isAssignableFrom(instanceType)) {
+        if (!areEquivalentTypes(fieldType, instanceType)) {
             codec = (Codec<S>) codecCache.get(fieldModel.getFieldName(), instanceType);
             if (codec == null) {
                 codec = specializePojoCodec(fieldModel, getCodecFromClass((Class<S>) instanceType));
@@ -187,6 +187,17 @@ final class PojoCodec<T> implements Codec<T> {
             }
         }
         return codec;
+    }
+
+    private <S, V> boolean areEquivalentTypes(final Class<S> t1, final Class<V> t2) {
+        if (t1 == t2) {
+            return true;
+        } else if (Collection.class.isAssignableFrom(t1) && Collection.class.isAssignableFrom(t2)) {
+            return true;
+        } else if (Map.class.isAssignableFrom(t1) && Map.class.isAssignableFrom(t2)) {
+            return true;
+        }
+        return false;
     }
 
     private <S> Codec<S> getCodecFromFieldModel(final FieldModel<S> fieldModel) {
@@ -243,6 +254,7 @@ final class PojoCodec<T> implements Codec<T> {
         boolean changeDiscriminator = !fieldModel.useDiscriminator() && clazzModel.useDiscriminator()
                 || (fieldModel.useDiscriminator() && !clazzModel.useDiscriminator() && clazzModel.getDiscriminatorKey() != null
                 && clazzModel.getDiscriminator() != null);
+
         if (clazzModel.getGenericFieldNames().isEmpty() && !changeDiscriminator){
             return clazzModel;
         }
