@@ -34,7 +34,9 @@ import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
+import org.bson.codecs.pojo.entities.NestedReusedGenericsModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
+import org.bson.codecs.pojo.entities.ReusedGenericsModel;
 import org.bson.codecs.pojo.entities.ShapeModelCircle;
 import org.bson.codecs.pojo.entities.ShapeModelRectangle;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
@@ -243,6 +245,11 @@ abstract class PojoTestCase {
         Map<String, SimpleModel> mapSimple = new HashMap<String, SimpleModel>();
         mapSimple.put("s", getSimpleModel());
         return new NestedGenericHolderMapModel(new GenericHolderModel<Map<String, SimpleModel>>(mapSimple, 1L));
+    }
+
+    NestedReusedGenericsModel getNestedReusedGenericsModel() {
+        return new NestedReusedGenericsModel(new ReusedGenericsModel<Long, List<SimpleModel>, String>(1L,
+                singletonList(getSimpleModel()), "field3", 42, "field5", asList(getSimpleModel(), getSimpleModel()), 2L, "field8"));
     }
 
     static final String SIMPLE_MODEL_JSON = "{'integerField': 42, 'stringField': 'myString'}";

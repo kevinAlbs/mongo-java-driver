@@ -34,7 +34,7 @@ public final class Conventions {
      * The default class and field conventions
      *
      * <ul>
-     *     <li>Enables the discriminator. Sets the discriminator key if not set to {@code _t} and the discriminator value if not set to the
+     *     <li>Sets the discriminator key if not set to {@code _t} and the discriminator value if not set to the
      *     ClassModels simple type name.</li>
      *     <li>Configures the FieldModels. Sets the document field name if not set to the field name.
      *     If the idField isn't set and there is a field named {@code id} or {@code _id} it will be marked as the idField.</li>

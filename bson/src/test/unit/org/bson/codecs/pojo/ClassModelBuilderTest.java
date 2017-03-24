@@ -33,9 +33,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,7 +49,7 @@ public final class ClassModelBuilderTest {
         ClassModelBuilder builder = ClassModel.builder();
 
         assertTrue(builder.getFields().isEmpty());
-        assertTrue(builder.getGenericFieldNames().isEmpty());
+        assertTrue(builder.getFieldNameToTypeParameterIndexMap().isEmpty());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertNull(builder.getType());
@@ -68,7 +68,13 @@ public final class ClassModelBuilderTest {
         for (Field field : clazz.getDeclaredFields()) {
             assertEquals(field.getName(), builder.getField(field.getName()).getDocumentFieldName());
         }
-        assertEquals(asList("myGenericField", "myListField", "myMapField"), builder.getGenericFieldNames());
+
+        Map<String, Integer> fieldNameToTypeParameterIndexMap = new HashMap<String, Integer>();
+        fieldNameToTypeParameterIndexMap.put("myGenericField", 0);
+        fieldNameToTypeParameterIndexMap.put("myListField", 1);
+        fieldNameToTypeParameterIndexMap.put("myMapField", 2);
+
+        assertEquals(fieldNameToTypeParameterIndexMap, builder.getFieldNameToTypeParameterIndexMap());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertEquals(clazz, builder.getType());
@@ -121,7 +127,7 @@ public final class ClassModelBuilderTest {
                 .discriminator("myColl")
                 .discriminatorEnabled(true)
                 .idField("myIntegerField")
-                .classAccessorFactory(TEST_CLASS_ACCESSOR_FACTORY);
+                .instanceCreatorFactory(TEST_INSTANCE_CREATOR_FACTORY);
 
         assertEquals(TEST_ANNOTATIONS, builder.getAnnotations());
         assertEquals(TEST_CONVENTIONS, builder.getConventions());
@@ -130,6 +136,7 @@ public final class ClassModelBuilderTest {
         assertTrue(builder.isDiscriminatorEnabled());
         assertEquals("_cls", builder.getDiscriminatorKey());
         assertEquals("myColl", builder.getDiscriminator());
+        assertEquals(TEST_INSTANCE_CREATOR_FACTORY, builder.getInstanceCreatorFactory());
     }
 
     @Test
@@ -211,10 +218,10 @@ public final class ClassModelBuilderTest {
                 }
             });
 
-    private static final ClassAccessorFactory<SimpleGenericsModel> TEST_CLASS_ACCESSOR_FACTORY =
-            new ClassAccessorFactory<SimpleGenericsModel>() {
+    private static final InstanceCreatorFactory<SimpleGenericsModel> TEST_INSTANCE_CREATOR_FACTORY =
+            new InstanceCreatorFactory<SimpleGenericsModel>() {
                 @Override
-                public ClassAccessor<SimpleGenericsModel> create(final ClassModel<SimpleGenericsModel> classModel) {
+                public InstanceCreator<SimpleGenericsModel> create() {
                     return null;
                 }
             };

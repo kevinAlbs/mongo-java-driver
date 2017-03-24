@@ -17,16 +17,15 @@
 package org.bson.codecs.pojo;
 
 /**
- * The factory for creating {@link ClassAccessor} instances
+ * The factory for creating {@link InstanceCreator} instances
  *
  * @param <T> the type of the ClassAccessor
  * @since 3.5
  */
-public interface ClassAccessorFactory<T> {
+public interface InstanceCreatorFactory<T> {
 
     /**
-     * @param classModel the classModel
      * @return a new ClassAccessor instance
      */
-    ClassAccessor<T> create(ClassModel<T> classModel);
+    InstanceCreator<T> create();
 }

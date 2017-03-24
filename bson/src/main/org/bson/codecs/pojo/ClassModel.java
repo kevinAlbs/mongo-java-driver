@@ -20,38 +20,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.unmodifiableList;
-
 /**
  * This model represents the metadata for a class and all its fields.
  *
  * @param <T> The type of the class the ClassModel represents
  * @since 3.5
  */
-public class ClassModel<T> {
+public final class ClassModel<T> {
     private final String name;
     private final Class<T> type;
-    private final ClassAccessorFactory<T> classAccessorFactory;
+    private final InstanceCreatorFactory<T> instanceCreatorFactory;
     private final boolean discriminatorEnabled;
     private final String discriminatorKey;
     private final String discriminator;
     private final FieldModel<?> idField;
     private final List<FieldModel<?>> fieldModels;
-    private final List<String> genericFieldNames;
+    private final Map<String, Integer> fieldNameToTypeParameterIndexMap;
     private final Map<String, FieldModel<?>> fieldMap;
 
-    ClassModel(final Class<T> clazz, final List<String> genericFieldNames, final ClassAccessorFactory<T> classAccessorFactory,
-               final Boolean discriminatorEnabled, final String discriminatorKey, final String discriminator,
-               final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
+    ClassModel(final Class<T> clazz, final Map<String, Integer> fieldNameToTypeParameterIndexMap,
+               final InstanceCreatorFactory<T> instanceCreatorFactory, final Boolean discriminatorEnabled, final String discriminatorKey,
+               final String discriminator, final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
         this.name = clazz.getSimpleName();
         this.type = clazz;
-        this.genericFieldNames = genericFieldNames;
-        this.classAccessorFactory = classAccessorFactory;
+        this.fieldNameToTypeParameterIndexMap = fieldNameToTypeParameterIndexMap;
+        this.instanceCreatorFactory = instanceCreatorFactory;
         this.discriminatorEnabled = discriminatorEnabled;
         this.discriminatorKey = discriminatorKey;
         this.discriminator = discriminator;
         this.idField = idField;
-        this.fieldModels = unmodifiableList(fieldModels);
+        this.fieldModels = fieldModels;
         this.fieldMap = generateFieldMap(fieldModels);
     }
 
@@ -68,26 +66,26 @@ public class ClassModel<T> {
     /**
      * Creates a new Class Model builder instance using reflection.
      *
-     * @param clazz the POJO clazz to reflect and configure the builder with.
+     * @param type the POJO class to reflect and configure the builder with.
      * @param <S> the type of the class
      * @return a new Class Model builder instance using reflection on the {@code clazz}.
      */
-    public static <S> ClassModelBuilder<S> builder(final Class<S> clazz) {
-        return new ClassModelBuilder<S>(clazz);
+    public static <S> ClassModelBuilder<S> builder(final Class<S> type) {
+        return new ClassModelBuilder<S>(type);
     }
 
     /**
-     * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     * @return the fieldNameToTypeParameterIndexMap
      */
-    public List<String> getGenericFieldNames() {
-        return genericFieldNames;
+    public Map<String, Integer> getFieldNameToTypeParameterIndexMap() {
+        return fieldNameToTypeParameterIndexMap;
     }
 
     /**
-     * @return a new ClassAccessor instance for the ClassModel
+     * @return a new InstanceCreator instance for the ClassModel
      */
-    ClassAccessor<T> getClassAccessor() {
-        return classAccessorFactory.create(this);
+    InstanceCreator<T> getInstanceCreator() {
+        return instanceCreatorFactory.create();
     }
 
     /**
@@ -171,7 +169,7 @@ public class ClassModel<T> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ClassModel)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
@@ -180,11 +178,10 @@ public class ClassModel<T> {
         if (discriminatorEnabled != that.discriminatorEnabled) {
             return false;
         }
-        if (getType() != null ? !getType().equals(that.getType()) : that.getType() != null) {
+        if (!getType().equals(that.getType())) {
             return false;
         }
-        if (getClassAccessorFactory() != null ? !getClassAccessorFactory().equals(that.getClassAccessorFactory())
-                : that.getClassAccessorFactory() != null) {
+        if (!getInstanceCreatorFactory().equals(that.getInstanceCreatorFactory())) {
             return false;
         }
         if (getDiscriminatorKey() != null ? !getDiscriminatorKey().equals(that.getDiscriminatorKey())
@@ -200,11 +197,7 @@ public class ClassModel<T> {
         if (!getFieldModels().equals(that.getFieldModels())) {
             return false;
         }
-        if (getGenericFieldNames() != null ? !getGenericFieldNames().equals(that.getGenericFieldNames()) : that.getGenericFieldNames()
-                != null) {
-            return false;
-        }
-        if (fieldMap != null ? !fieldMap.equals(that.fieldMap) : that.fieldMap != null) {
+        if (!getFieldNameToTypeParameterIndexMap().equals(that.getFieldNameToTypeParameterIndexMap())) {
             return false;
         }
 
@@ -213,20 +206,19 @@ public class ClassModel<T> {
 
     @Override
     public int hashCode() {
-        int result = getType() != null ? getType().hashCode() : 0;
-        result = 31 * result + (getClassAccessorFactory() != null ? getClassAccessorFactory().hashCode() : 0);
+        int result = getType().hashCode();
+        result = 31 * result + getInstanceCreatorFactory().hashCode();
         result = 31 * result + (discriminatorEnabled ? 1 : 0);
         result = 31 * result + (getDiscriminatorKey() != null ? getDiscriminatorKey().hashCode() : 0);
         result = 31 * result + (getDiscriminator() != null ? getDiscriminator().hashCode() : 0);
         result = 31 * result + (idField != null ? idField.hashCode() : 0);
         result = 31 * result + getFieldModels().hashCode();
-        result = 31 * result + (getGenericFieldNames() != null ? getGenericFieldNames().hashCode() : 0);
-        result = 31 * result + (fieldMap != null ? fieldMap.hashCode() : 0);
+        result = 31 * result + getFieldNameToTypeParameterIndexMap().hashCode();
         return result;
     }
 
-    ClassAccessorFactory<T> getClassAccessorFactory() {
-        return classAccessorFactory;
+    InstanceCreatorFactory<T> getInstanceCreatorFactory() {
+        return instanceCreatorFactory;
     }
 
     private static Map<String, FieldModel<?>> generateFieldMap(final List<FieldModel<?>> fieldModels) {

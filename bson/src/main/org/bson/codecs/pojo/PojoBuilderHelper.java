@@ -34,13 +34,12 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.bson.assertions.Assertions.notNull;
 
 final class PojoBuilderHelper {
@@ -70,10 +69,7 @@ final class PojoBuilderHelper {
         }
 
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
-        List<String> genericFieldOrder = new ArrayList<String>();
-        for (int i = 1; i < genericTypeNames.size(); i++) {
-            genericFieldOrder.add(null);
-        }
+        Map<String, Integer> genericFieldMap = new HashMap<String, Integer>();
         for (final ResolvedField resolvedField : resolvedFields) {
             if (resolvedField.isTransient()) {
                 continue;
@@ -82,22 +78,22 @@ final class PojoBuilderHelper {
 
             List<Integer> genericTypeIndexes = fieldGenericTypeIndexes(genericTypeNames, resolvedField);
             for (Integer genericTypeIndex : genericTypeIndexes) {
-                genericFieldOrder.add(genericTypeIndex, name);
+                if (genericFieldMap.containsKey(name)) {
+                    throw new CodecConfigurationException(
+                            format("Multiple generic types for a single field are not supported via reflection. "
+                                    + "'%s' already has a generic type", name));
+                }
+                genericFieldMap.put(name, genericTypeIndex);
             }
 
             classModelBuilder.addField(getFieldBuilder(resolvedField.getRawMember(), resolvedField.getType().getErasedType(),
                     resolvedField.getType()));
-
             resolvedField.getRawMember().setAccessible(true);
         }
 
-        genericFieldOrder.removeAll(singletonList(null));
-        if (genericFieldOrder.size() != new HashSet<String>(genericFieldOrder).size()) {
-            throw new CodecConfigurationException("Multiple generic types for a single field are not supported via reflection.");
-        }
         classModelBuilder
-                .genericFieldNames(genericFieldOrder)
-                .classAccessorFactory(new ClassAccessorFactoryImpl<T>(publicConstructors));
+                .fieldNameToTypeParameterIndexMap(genericFieldMap)
+                .instanceCreatorFactory(new InstanceCreatorFactoryImpl<T>(clazz.getSimpleName(), publicConstructors));
     }
 
     static List<Integer> fieldGenericTypeIndexes(final List<String> genericTypeNames, final ResolvedField resolvedField) {
@@ -130,7 +126,7 @@ final class PojoBuilderHelper {
                 .typeData((TypeData<T>) getFieldTypeDataFromClass(field.getType()))
                 .annotations(asList(field.getDeclaredAnnotations()))
                 .fieldSerialization(new FieldModelSerializationImpl<T>())
-                .fieldAccessorFactory(new FieldAccessorFactoryImpl<T>(field, field.getName()));
+                .fieldAccessor(new FieldAccessorImpl<T>(field, field.getName()));
     }
 
     private static <T> FieldModelBuilder<T> getFieldBuilder(final Field field, final Class<T> clazz, final ResolvedType resolvedType) {

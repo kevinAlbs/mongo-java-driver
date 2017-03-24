@@ -17,16 +17,28 @@
 package org.bson.codecs.pojo;
 
 /**
- * The factory for creating {@link FieldAccessor} instances
+ * Provides access for setting data and the creation of a class instances.
  *
- * @param <T> the type of the FieldAccessor
+ * @param <T> the type of the class
  * @since 3.5
  */
-public interface FieldAccessorFactory<T> {
+public interface InstanceCreator<T> {
 
     /**
-     * @param fieldModel the fieldModel
-     * @return a new FieldAccessor instance
+     * Sets a value for the given FieldModel
+     *
+     * @param value      the new value for the field
+     * @param fieldModel the FieldModel representing the field to set the value for.
+     * @param <S>        the FieldModel's type
      */
-    FieldAccessor<T> create(FieldModel<T> fieldModel);
+    <S> void set(S value, FieldModel<S> fieldModel);
+
+    /**
+     * Returns the new instance of the class.
+     * <p>Note: This will be called after all the values have been set.</p>
+     *
+     * @return the new class instance.
+     */
+    T getInstance();
+
 }

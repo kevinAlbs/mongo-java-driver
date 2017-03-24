@@ -25,6 +25,9 @@ import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static org.bson.assertions.Assertions.notNull;
 import static org.bson.codecs.pojo.Conventions.DEFAULT_CONVENTIONS;
 import static org.bson.codecs.pojo.PojoBuilderHelper.configureClassModelBuilder;
@@ -40,9 +43,9 @@ import static org.bson.codecs.pojo.PojoBuilderHelper.stateNotNull;
 public class ClassModelBuilder<T> {
     private static final String ID_FIELD_NAME = "_id";
     private final List<FieldModelBuilder<?>> fields = new ArrayList<FieldModelBuilder<?>>();
-    private ClassAccessorFactory<T> classAccessorFactory;
+    private InstanceCreatorFactory<T> instanceCreatorFactory;
     private Class<T> type;
-    private List<String> genericFieldNames = emptyList();
+    private Map<String, Integer> fieldNameToTypeParameterIndexMap = emptyMap();
     private List<Convention> conventions = DEFAULT_CONVENTIONS;
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled;
@@ -54,26 +57,26 @@ public class ClassModelBuilder<T> {
     ClassModelBuilder() {
     }
 
-    ClassModelBuilder(final Class<T> clazz) {
-        configureClassModelBuilder(this, clazz);
+    ClassModelBuilder(final Class<T> type) {
+        configureClassModelBuilder(this, type);
     }
 
     /**
-     * Sets the ClassAccessorFactory for the ClassModel
+     * Sets the InstanceCreatorFactory for the ClassModel
      *
-     * @param classAccessorFactory the ClassAccessorFactory
+     * @param instanceCreatorFactory the InstanceCreatorFactory
      * @return this
      */
-    public ClassModelBuilder<T> classAccessorFactory(final ClassAccessorFactory<T> classAccessorFactory) {
-        this.classAccessorFactory = notNull("classFactoryFactory", classAccessorFactory);
+    public ClassModelBuilder<T> instanceCreatorFactory(final InstanceCreatorFactory<T> instanceCreatorFactory) {
+        this.instanceCreatorFactory = notNull("instanceCreatorFactory", instanceCreatorFactory);
         return this;
     }
 
     /**
-     * @return the ClassAccessorFactory for the ClassModel
+     * @return the InstanceCreatorFactory for the ClassModel
      */
-    public ClassAccessorFactory<T> getClassAccessorFactory() {
-        return classAccessorFactory;
+    public InstanceCreatorFactory<T> getInstanceCreatorFactory() {
+        return instanceCreatorFactory;
     }
 
     /**
@@ -97,18 +100,18 @@ public class ClassModelBuilder<T> {
     /**
      * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
      */
-    public List<String> getGenericFieldNames() {
-        return genericFieldNames;
+    public Map<String, Integer> getFieldNameToTypeParameterIndexMap() {
+        return fieldNameToTypeParameterIndexMap;
     }
 
     /**
      * Sets a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
      *
-     * @param genericFieldNames the generic field names
+     * @param fieldNameToTypeParameterIndexMap the generic field names
      * @return this
      */
-    public ClassModelBuilder<T> genericFieldNames(final List<String> genericFieldNames) {
-        this.genericFieldNames = genericFieldNames;
+    public ClassModelBuilder<T> fieldNameToTypeParameterIndexMap(final Map<String, Integer> fieldNameToTypeParameterIndexMap) {
+        this.fieldNameToTypeParameterIndexMap = unmodifiableMap(new HashMap<String, Integer>(fieldNameToTypeParameterIndexMap));
         return this;
     }
 
@@ -286,7 +289,7 @@ public class ClassModelBuilder<T> {
             convention.apply(this);
         }
 
-        stateNotNull("classAccessorFactory", classAccessorFactory);
+        stateNotNull("instanceCreatorFactory", instanceCreatorFactory);
         if (discriminatorEnabled) {
             stateNotNull("discriminatorKey", discriminatorKey);
             stateNotNull("discriminator", discriminator);
@@ -305,8 +308,10 @@ public class ClassModelBuilder<T> {
             }
         }
         validateFieldModels(fieldModels);
-        return new ClassModel<T>(type, genericFieldNames, classAccessorFactory, discriminatorEnabled, discriminatorKey, discriminator,
-                idFieldModel, fieldModels);
+
+
+        return new ClassModel<T>(type, fieldNameToTypeParameterIndexMap, instanceCreatorFactory,
+                discriminatorEnabled, discriminatorKey, discriminator, idFieldModel, unmodifiableList(fieldModels));
     }
 
     @Override

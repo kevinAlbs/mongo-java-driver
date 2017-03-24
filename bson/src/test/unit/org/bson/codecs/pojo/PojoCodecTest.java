@@ -30,7 +30,9 @@ import org.bson.codecs.pojo.entities.GenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderSimpleGenericsModel;
+import org.bson.codecs.pojo.entities.NestedReusedGenericsModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
+import org.bson.codecs.pojo.entities.ReusedGenericsModel;
 import org.bson.codecs.pojo.entities.ShapeHolderModel;
 import org.bson.codecs.pojo.entities.ShapeModelAbstract;
 import org.bson.codecs.pojo.entities.ShapeModelCircle;
@@ -140,6 +142,15 @@ public final class PojoCodecTest extends PojoTestCase {
                 "{ 'nested': { 'myGenericField': {'s': " + SIMPLE_MODEL_JSON + "}, 'myLongField': {'$numberLong': '1'}}}");
     }
 
+    @Test
+    public void testNestedReusedGenericsModel() {
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedReusedGenericsModel.class, ReusedGenericsModel.class,
+                SimpleModel.class);
+        roundTrip(builder, getNestedReusedGenericsModel(),
+                "{ 'nested':{ 'field1':{ '$numberLong':'1' }, 'field2':[" + SIMPLE_MODEL_JSON + "], "
+                        + "'field3':'field3', 'field4':42, 'field5':'field5', 'field6':[" + SIMPLE_MODEL_JSON + ", "
+                        + SIMPLE_MODEL_JSON + "], 'field7':{ '$numberLong':'2' }, 'field8':'field8' } }");
+    }
 
     @Test
     public void testGenericsRoundTrip() {
@@ -166,15 +177,11 @@ public final class PojoCodecTest extends PojoTestCase {
                         + "         'myLongField': {'$numberLong': '42' }}}");
     }
 
-    @Test
+    @Test(expected = CodecConfigurationException.class)
     public void testConstructorModel() {
         ConstructorModel model = new ConstructorModel(99);
         roundTrip(getPojoCodecProviderBuilder(ConstructorModel.class), model,
                 "{'integerField': 99}");
-
-        model = new ConstructorModel(99, "myString");
-        roundTrip(getPojoCodecProviderBuilder(ConstructorModel.class), model,
-                "{'integerField': 99, 'stringField': 'myString'}");
     }
 
     @Test
@@ -312,17 +319,6 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testCanHandleExtraData() {
         decodesTo(getCodec(SimpleModel.class), "{'integerField': 42,  'stringField': 'myString', 'extraFieldA': 1, 'extraFieldB': 2}",
                 getSimpleModel());
-    }
-
-    @Test
-    public void testConstructorModelCanHandleExtraData() {
-        ConstructorModel model = new ConstructorModel(99);
-        decodesTo(getCodec(ConstructorModel.class), "{'_t': 'ConstructorModel', 'integerField': 99, "
-                + "'extraFieldA': 1, 'extraFieldB': 2}", model);
-
-        model = new ConstructorModel(99, "myString");
-        decodesTo(getCodec(ConstructorModel.class), "{'_t': 'ConstructorModel', 'integerField': 99, "
-                + "'stringField': 'myString', 'extraFieldA': 1, 'extraFieldB': 2}", model);
     }
 
     @Test

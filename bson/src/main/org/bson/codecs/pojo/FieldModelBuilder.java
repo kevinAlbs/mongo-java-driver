@@ -42,7 +42,7 @@ public final class FieldModelBuilder<T> {
     private TypeData<T> typeData;
     private FieldSerialization<T> fieldSerialization;
     private Codec<T> codec;
-    private FieldAccessorFactory<T> fieldAccessorFactory;
+    private FieldAccessor<T> fieldAccessor;
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled;
 
@@ -182,22 +182,22 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * Returns the fieldAccessorFactory
+     * Returns the fieldAccessor
      *
-     * @return the fieldAccessorFactory
+     * @return the fieldAccessor
      */
-    public FieldAccessorFactory<T> getFieldAccessorFactory() {
-        return fieldAccessorFactory;
+    public FieldAccessor<T> getFieldAccessor() {
+        return fieldAccessor;
     }
 
     /**
-     * Sets the fieldAccessorFactory
+     * Sets the fieldAccessor
      *
-     * @param fieldAccessorFactory the fieldAccessorFactory
+     * @param fieldAccessor the fieldAccessor
      * @return this
      */
-    public FieldModelBuilder<T> fieldAccessorFactory(final FieldAccessorFactory<T> fieldAccessorFactory) {
-        this.fieldAccessorFactory = fieldAccessorFactory;
+    public FieldModelBuilder<T> fieldAccessor(final FieldAccessor<T> fieldAccessor) {
+        this.fieldAccessor = fieldAccessor;
         return this;
     }
 
@@ -214,7 +214,7 @@ public final class FieldModelBuilder<T> {
                 codec,
                 stateNotNull("fieldModelSerialization", fieldSerialization),
                 discriminatorEnabled,
-                stateNotNull("fieldAccessorFactory", fieldAccessorFactory));
+                stateNotNull("fieldAccessor", fieldAccessor));
     }
 
     @Override

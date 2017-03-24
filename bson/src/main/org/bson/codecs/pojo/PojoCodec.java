@@ -76,11 +76,9 @@ final class PojoCodec<T> implements Codec<T> {
     @Override
     public void encode(final BsonWriter writer, final T value, final EncoderContext encoderContext) {
         writer.writeStartDocument();
-        ClassAccessor<T> classAccessor = classModel.getClassAccessor();
-
         FieldModel<?> idFieldModel = classModel.getIdFieldModel();
         if (idFieldModel != null) {
-            encodeField(writer, value, encoderContext, classAccessor, idFieldModel);
+            encodeField(writer, value, encoderContext, idFieldModel);
         }
 
         if (classModel.useDiscriminator()) {
@@ -91,7 +89,7 @@ final class PojoCodec<T> implements Codec<T> {
             if (fieldModel == classModel.getIdFieldModel()) {
                 continue;
             }
-            encodeField(writer, value, encoderContext, classAccessor, fieldModel);
+            encodeField(writer, value, encoderContext, fieldModel);
         }
         writer.writeEndDocument();
     }
@@ -99,9 +97,9 @@ final class PojoCodec<T> implements Codec<T> {
     @Override
     public T decode(final BsonReader reader, final DecoderContext decoderContext) {
         if (decoderContext.hasCheckedDiscriminator()) {
-            ClassAccessor<T> classAccessor = classModel.getClassAccessor();
-            decodeFields(reader, decoderContext, classAccessor);
-            return classAccessor.create();
+            InstanceCreator<T> instanceCreator = classModel.getInstanceCreator();
+            decodeFields(reader, decoderContext, instanceCreator);
+            return instanceCreator.getInstance();
         } else {
             return getCodecFromDocument(reader, classModel.useDiscriminator(), classModel.getDiscriminatorKey(), registry,
                     discriminatorLookup, this).decode(reader, DecoderContext.builder().checkedDiscriminator(true).build());
@@ -124,8 +122,8 @@ final class PojoCodec<T> implements Codec<T> {
 
     @SuppressWarnings("unchecked")
     private <S> void encodeField(final BsonWriter writer, final T instance, final EncoderContext encoderContext,
-                                 final ClassAccessor<T> classAccessor, final FieldModel<S> fieldModel) {
-        S fieldValue = classAccessor.get(instance, fieldModel);
+                                 final FieldModel<S> fieldModel) {
+        S fieldValue = fieldModel.getFieldAccessor().get(instance);
         if (fieldModel.shouldSerialize(fieldValue)) {
             writer.writeName(fieldModel.getDocumentFieldName());
             if (fieldValue == null) {
@@ -137,22 +135,22 @@ final class PojoCodec<T> implements Codec<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private void decodeFields(final BsonReader reader, final DecoderContext decoderContext, final ClassAccessor<T> classAccessor) {
+    private void decodeFields(final BsonReader reader, final DecoderContext decoderContext, final InstanceCreator<T> instanceCreator) {
         reader.readStartDocument();
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
             String name = reader.readName();
             if (classModel.useDiscriminator() && classModel.getDiscriminatorKey().equals(name)) {
                 reader.readString();
             } else {
-                decodeFieldModel(reader, decoderContext, classAccessor, name, classModel.getFieldModel(name));
+                decodeFieldModel(reader, decoderContext, instanceCreator, name, classModel.getFieldModel(name));
             }
         }
         reader.readEndDocument();
     }
 
     @SuppressWarnings("unchecked")
-    private <S> void decodeFieldModel(final BsonReader reader, final DecoderContext decoderContext, final ClassAccessor<T> classAccessor,
-                                      final String name, final FieldModel<S> fieldModel) {
+    private <S> void decodeFieldModel(final BsonReader reader, final DecoderContext decoderContext,
+                                      final InstanceCreator<T> instanceCreator, final String name, final FieldModel<S> fieldModel) {
         if (fieldModel != null) {
             try {
                 S value = null;
@@ -161,7 +159,7 @@ final class PojoCodec<T> implements Codec<T> {
                 } else {
                     value = decoderContext.decodeWithChildContext(fieldModel.getCachedCodec(), reader);
                 }
-                classAccessor.set(value, fieldModel);
+                instanceCreator.set(value, fieldModel);
             } catch (BsonInvalidOperationException e) {
                 throw new CodecConfigurationException(format("Failed to decode '%s'. %s", name, e.getMessage()), e);
             } catch (CodecConfigurationException e) {
@@ -255,7 +253,7 @@ final class PojoCodec<T> implements Codec<T> {
                 || (fieldModel.useDiscriminator() && !clazzModel.useDiscriminator() && clazzModel.getDiscriminatorKey() != null
                 && clazzModel.getDiscriminator() != null);
 
-        if (clazzModel.getGenericFieldNames().isEmpty() && !changeDiscriminator){
+        if (clazzModel.getFieldNameToTypeParameterIndexMap().isEmpty() && !changeDiscriminator){
             return clazzModel;
         }
 
@@ -267,8 +265,8 @@ final class PojoCodec<T> implements Codec<T> {
         for (int i = 0; i < concreteFieldModels.size(); i++) {
             FieldModel<?> model = concreteFieldModels.get(i);
             String fieldName = model.getFieldName();
-            int index = clazzModel.getGenericFieldNames().indexOf(fieldName);
-            if (index > -1 && index < fieldTypeParameters.size()) {
+            Integer index = clazzModel.getFieldNameToTypeParameterIndexMap().get(fieldName);
+            if (index != null && index < fieldTypeParameters.size()) {
                 FieldModel<?> concreteFieldModel = createFieldModelWithTypes(model, fieldTypeParameters.get(index));
                 concreteFieldModels.set(i, concreteFieldModel);
                 if (concreteIdField != null && concreteIdField.getFieldName().equals(fieldName)) {
@@ -278,8 +276,9 @@ final class PojoCodec<T> implements Codec<T> {
         }
 
         boolean useDiscriminator = changeDiscriminator ? fieldModel.useDiscriminator() : clazzModel.useDiscriminator();
-        return new ClassModel<S>(clazzModel.getType(), clazzModel.getGenericFieldNames(), clazzModel.getClassAccessorFactory(),
-                useDiscriminator, clazzModel.getDiscriminatorKey(), clazzModel.getDiscriminator(), concreteIdField, concreteFieldModels);
+        return new ClassModel<S>(clazzModel.getType(), clazzModel.getFieldNameToTypeParameterIndexMap(),
+                clazzModel.getInstanceCreatorFactory(), useDiscriminator, clazzModel.getDiscriminatorKey(), clazzModel.getDiscriminator(),
+                concreteIdField, concreteFieldModels);
     }
 
     private <V> FieldModel<V> createFieldModelWithTypes(final FieldModel<V> fieldModel, final TypeData<V> typeData) {
@@ -296,7 +295,7 @@ final class PojoCodec<T> implements Codec<T> {
         }
 
         return new FieldModel<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), fieldTypeData, null,
-                fieldModel.getFieldSerialization(), fieldModel.useDiscriminator(), fieldModel.getFieldAccessorFactory());
+                fieldModel.getFieldSerialization(), fieldModel.useDiscriminator(), fieldModel.getFieldAccessor());
     }
 
     @SuppressWarnings("unchecked")

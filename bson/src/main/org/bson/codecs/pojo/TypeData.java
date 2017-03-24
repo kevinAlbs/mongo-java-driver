@@ -29,7 +29,7 @@ import static java.lang.String.format;
 import static org.bson.assertions.Assertions.notNull;
 
 /**
- * Represents a class and it's type parameters.
+ * Represents a class and its type parameters.
  * <p>
  *  Provides a mechanism for working around type erasure for classes containing generic types.
  * </p>
@@ -72,7 +72,7 @@ public final class TypeData<T> {
      */
     public static final class Builder<T> {
         private final Class<T> type;
-        private List<TypeData<?>> typeParameters = new ArrayList<TypeData<?>>();
+        private final List<TypeData<?>> typeParameters = new ArrayList<TypeData<?>>();
 
         private Builder(final Class<T> type) {
             this.type = type;

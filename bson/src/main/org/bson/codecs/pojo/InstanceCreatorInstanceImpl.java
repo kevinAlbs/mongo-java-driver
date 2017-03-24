@@ -20,38 +20,23 @@ import org.bson.codecs.configuration.CodecConfigurationException;
 
 import java.lang.reflect.Constructor;
 
-final class ClassAccessorInstanceImpl<T> implements ClassAccessor<T> {
-    private final Constructor<T> constructor;
+final class InstanceCreatorInstanceImpl<T> implements InstanceCreator<T> {
     private T newInstance;
 
-    ClassAccessorInstanceImpl(final Constructor<T> constructor) {
-        this.constructor = constructor;
+    InstanceCreatorInstanceImpl(final Constructor<T> constructor) {
+        try {
+            this.newInstance = constructor.newInstance();
+        } catch (Exception e) {
+            throw new CodecConfigurationException(e.getMessage(), e);
+        }
     }
-
-    @Override
-    public <S> S get(final T instance, final FieldModel<S> fieldModel) {
-        return fieldModel.getFieldAccessor().get(instance);
-    }
-
     @Override
     public <S> void set(final S value, final FieldModel<S> fieldModel) {
-        fieldModel.getFieldAccessor().set(getInstance(), value);
+        fieldModel.getFieldAccessor().set(newInstance, value);
     }
 
     @Override
-    public T create() {
+    public T getInstance() {
         return newInstance;
-    }
-
-    private T getInstance() {
-        if (this.newInstance == null) {
-            this.constructor.setAccessible(true);
-            try {
-                this.newInstance = constructor.newInstance();
-            } catch (Exception e) {
-                throw new CodecConfigurationException(e.getMessage(), e);
-            }
-        }
-        return this.newInstance;
     }
 }

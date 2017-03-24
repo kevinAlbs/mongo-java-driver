@@ -16,18 +16,23 @@
 
 package org.bson.codecs.pojo;
 
+import org.bson.codecs.configuration.CodecConfigurationException;
+
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-final class ClassAccessorFactoryImpl<T> implements ClassAccessorFactory<T> {
-    private final List<Constructor<T>> constructors;
-    private final Constructor<T> headConstructor;
-    private final boolean useClassAccessorInstance;
+import static java.lang.String.format;
 
-    ClassAccessorFactoryImpl(final List<Constructor<T>> constructors) {
+final class InstanceCreatorFactoryImpl<T> implements InstanceCreatorFactory<T> {
+    private final String className;
+    private final Constructor<T> headConstructor;
+    private final boolean hasNoArgsConstructor;
+
+    InstanceCreatorFactoryImpl(final String className, final List<Constructor<T>> constructors) {
+        this.className = className;
         List<Constructor<T>> sortedConstructors = new ArrayList<Constructor<T>>(constructors);
         Collections.sort(sortedConstructors, new Comparator<Constructor<?>>() {
             @Override
@@ -37,15 +42,19 @@ final class ClassAccessorFactoryImpl<T> implements ClassAccessorFactory<T> {
                 return (o1l < o2l) ? -1 : ((o1l == o2l) ? 0 : 1);
             }
         });
-        this.constructors = sortedConstructors;
-        this.headConstructor = sortedConstructors.get(0);
-        this.useClassAccessorInstance = headConstructor.getParameterTypes().length == 0;
+        this.headConstructor = sortedConstructors.size() > 0 ? sortedConstructors.get(0) : null;
+        if (headConstructor != null) {
+            headConstructor.setAccessible(true);
+        }
+        this.hasNoArgsConstructor = headConstructor != null && headConstructor.getParameterTypes().length == 0;
     }
 
     @Override
-    public ClassAccessor<T> create(final ClassModel<T> classModel) {
-        return useClassAccessorInstance
-                ? new ClassAccessorInstanceImpl<T>(headConstructor)
-                : new ClassAccessorFieldsMapImpl<T>(classModel, constructors);
+    public InstanceCreator<T> create() {
+        if (!hasNoArgsConstructor) {
+            throw new CodecConfigurationException(format("Cannot find a no-arg constructor for '%s'. Either create one or "
+                    + "provide your own InstanceCreatorFactory.", className));
+        }
+        return new InstanceCreatorInstanceImpl<T>(headConstructor);
     }
 }

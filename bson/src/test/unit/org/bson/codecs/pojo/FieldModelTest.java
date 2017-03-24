@@ -42,7 +42,7 @@ public final class FieldModelTest {
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
         assertFalse(fieldModel.useDiscriminator());
-        assertTrue(fieldModel.getFieldAccessorFactory() instanceof FieldAccessorFactoryImpl);
+        assertTrue(fieldModel.getFieldAccessor() instanceof FieldAccessorImpl);
     }
 
     @Test
@@ -53,7 +53,7 @@ public final class FieldModelTest {
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
         assertFalse(fieldModel.useDiscriminator());
-        assertTrue(fieldModel.getFieldAccessorFactory() instanceof FieldAccessorFactoryImpl);
+        assertTrue(fieldModel.getFieldAccessor() instanceof FieldAccessorImpl);
     }
 
     @Test

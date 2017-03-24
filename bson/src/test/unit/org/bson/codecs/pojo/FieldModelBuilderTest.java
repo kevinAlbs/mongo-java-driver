@@ -43,6 +43,7 @@ public final class FieldModelBuilderTest {
         assertTrue(fieldModelBuilder.getAnnotations().isEmpty());
         assertNull(fieldModelBuilder.getFieldSerialization());
         assertNull(fieldModelBuilder.getTypeData());
+        assertNull(fieldModelBuilder.getFieldAccessor());
         assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
@@ -66,17 +67,19 @@ public final class FieldModelBuilderTest {
                 .fieldName("fieldName")
                 .codec(integerCodec)
                 .documentFieldName("altDocumentFieldName")
-                .annotations(TEST_ANNOTATIONS)
+                .annotations(ANNOTATIONS)
                 .fieldSerialization(CUSTOM_SERIALIZATION)
                 .typeData(TypeData.builder(Integer.class).build())
+                .fieldAccessor(FIELD_ACCESSOR)
                 .discriminatorEnabled(false);
 
         assertEquals("fieldName", fieldModelBuilder.getFieldName());
         assertEquals("altDocumentFieldName", fieldModelBuilder.getDocumentFieldName());
         assertEquals(integerCodec, fieldModelBuilder.getCodec());
         assertEquals(Integer.class, fieldModelBuilder.getTypeData().getType());
-        assertEquals(TEST_ANNOTATIONS, fieldModelBuilder.getAnnotations());
+        assertEquals(ANNOTATIONS, fieldModelBuilder.getAnnotations());
         assertEquals(CUSTOM_SERIALIZATION, fieldModelBuilder.getFieldSerialization());
+        assertEquals(FIELD_ACCESSOR, fieldModelBuilder.getFieldAccessor());
         assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
@@ -85,7 +88,7 @@ public final class FieldModelBuilderTest {
         FieldModel.<Object>builder().build();
     }
 
-    private static final List<Annotation> TEST_ANNOTATIONS = Collections.<Annotation>singletonList(
+    private static final List<Annotation> ANNOTATIONS = Collections.<Annotation>singletonList(
             new Property() {
                 @Override
                 public Class<? extends Annotation> annotationType() {
@@ -107,6 +110,16 @@ public final class FieldModelBuilderTest {
         @Override
         public boolean shouldSerialize(final Integer value) {
             return false;
+        }
+    };
+
+    private static final FieldAccessor<Integer> FIELD_ACCESSOR = new FieldAccessor<Integer>() {
+        @Override
+        public <S> Integer get(final S instance) {
+            return null;
+        }
+        @Override
+        public <S> void set(final S instance, final Integer value) {
         }
     };
 }

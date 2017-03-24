@@ -83,9 +83,9 @@ public final class ConventionsTest {
                 .discriminatorKey("_cls")
                 .discriminator("Simples")
                 .conventions(singletonList(CLASS_AND_FIELD_CONVENTION))
-                .classAccessorFactory(new ClassAccessorFactory<SimpleModel>() {
+                .instanceCreatorFactory(new InstanceCreatorFactory<SimpleModel>() {
                     @Override
-                    public ClassAccessor<SimpleModel> create(final ClassModel<SimpleModel> classModel) {
+                    public InstanceCreator<SimpleModel> create() {
                         return null;
                     }
                 });
@@ -94,14 +94,14 @@ public final class ConventionsTest {
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("id")
                 .fieldSerialization(new FieldModelSerializationImpl<Integer>())
-                .fieldAccessorFactory(new FieldAccessorFactoryImpl<Integer>());
+                .fieldAccessor(new FieldAccessorTest<Integer>());
 
         FieldModelBuilder<Integer> fieldModelBuilder2 = FieldModel.<Integer>builder()
                 .typeData(TypeData.builder(Integer.class).build())
                 .fieldName("customId")
                 .documentFieldName("_id")
                 .fieldSerialization(new FieldModelSerializationImpl<Integer>())
-                .fieldAccessorFactory(new FieldAccessorFactoryImpl<Integer>());
+                .fieldAccessor(new FieldAccessorTest<Integer>());
 
         ClassModel<SimpleModel> classModel  = builder.idField("customId").addField(fieldModelBuilder).addField(fieldModelBuilder2).build();
 
@@ -118,11 +118,16 @@ public final class ConventionsTest {
         assertFalse(childFieldModel.useDiscriminator());
     }
 
-    private class FieldAccessorFactoryImpl<T> implements FieldAccessorFactory<T> {
+    private class FieldAccessorTest<T> implements FieldAccessor<T> {
 
         @Override
-        public FieldAccessor<T> create(final FieldModel<T> fieldModel) {
+        public <S> T get(final S instance) {
             return null;
+        }
+
+        @Override
+        public <S> void set(final S instance, final T value) {
+
         }
     }
 }

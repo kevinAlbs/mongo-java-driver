@@ -49,7 +49,7 @@ public final class ClassModelTest {
         assertNull(classModel.getIdFieldModel());
         assertEquals(4, classModel.getFieldModels().size());
         assertEquals(fieldModel, classModel.getFieldModel(fieldModel.getDocumentFieldName()));
-        assertTrue(classModel.getClassAccessorFactory() instanceof ClassAccessorFactoryImpl);
+        assertTrue(classModel.getInstanceCreatorFactory() instanceof InstanceCreatorFactoryImpl);
     }
 
     @Test
@@ -131,7 +131,7 @@ public final class ClassModelTest {
         assertEquals(fieldModel, classModel.getIdFieldModel());
         assertEquals(3, classModel.getFieldModels().size());
         assertEquals(fieldModel, classModel.getFieldModel(fieldModel.getDocumentFieldName()));
-        assertTrue(classModel.getClassAccessorFactory() instanceof ClassAccessorFactoryImpl);
+        assertTrue(classModel.getInstanceCreatorFactory() instanceof InstanceCreatorFactoryImpl);
     }
 
 }
