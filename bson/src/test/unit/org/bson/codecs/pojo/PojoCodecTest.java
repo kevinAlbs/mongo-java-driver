@@ -27,9 +27,14 @@ import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.ConverterModel;
 import org.bson.codecs.pojo.entities.FieldWithMultipleTypeParamsModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
+import org.bson.codecs.pojo.entities.GenericTreeModel;
+import org.bson.codecs.pojo.entities.MultipleLevelGenericModel;
+import org.bson.codecs.pojo.entities.NestedGenericHolderFieldWithMultipleTypeParamsModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderSimpleGenericsModel;
+import org.bson.codecs.pojo.entities.NestedGenericTreeModel;
+import org.bson.codecs.pojo.entities.NestedMultipleLevelGenericModel;
 import org.bson.codecs.pojo.entities.NestedReusedGenericsModel;
 import org.bson.codecs.pojo.entities.PrimitivesModel;
 import org.bson.codecs.pojo.entities.ReusedGenericsModel;
@@ -74,11 +79,8 @@ public final class PojoCodecTest extends PojoTestCase {
     public void testRoundTripSimpleGenericsModelWithObjectCodec() {
         CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(SimpleGenericsModel.class).build(),
                 new ValueCodecProvider(), new ObjectCodecProvider());
-        SimpleGenericsModel<String, String, Integer> model = getSimpleGenericsModel();
-        String json = "{'myIntegerField': 42, 'myGenericField': 'A' 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}";
-
-        encodesTo(registry, model, json);
-        decodesTo(registry, json, model);
+        roundTrip(registry, getSimpleGenericsModel(),
+                "{'myIntegerField': 42, 'myGenericField': 'A' 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}");
     }
 
     @Test
@@ -128,6 +130,17 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test
+    public void testInheritedDiscriminatorAnnotation() {
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(ShapeModelCircle.class, ShapeModelRectangle.class);
+
+        roundTrip(builder, getShapeModelCirce(),
+                "{'_t': 'ShapeModelCircle', 'color': 'orange', 'radius': 4.2}");
+
+        roundTrip(builder, getShapeModelRectangle(),
+                "{'_t': 'ShapeModelRectangle', 'color': 'green', 'width': 22.1, 'height': 105.0}");
+    }
+
+    @Test
     public void testNestedGenericHolderModel() {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderModel.class, GenericHolderModel.class);
         roundTrip(builder, getNestedGenericHolderModel(),
@@ -153,6 +166,74 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test
+    public void testFieldWithMultipleGenericParameters() {
+        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(FieldWithMultipleTypeParamsModel.class,
+                SimpleGenericsModel.class).build(), new ValueCodecProvider(), new ObjectCodecProvider());
+        roundTrip(registry, new FieldWithMultipleTypeParamsModel<Integer, Long, String>(getSimpleGenericsModelAlt()),
+                "{ '_t': 'FieldWithMultipleTypeParamsModel', 'simpleGenericsModel': "
+                        + "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': {'$numberLong': '101'}, "
+                        + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}}");
+    }
+
+    @Test
+    public void testNestedGenericHolderFieldWithMultipleTypeParamsModel() {
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderFieldWithMultipleTypeParamsModel.class,
+                FieldWithMultipleTypeParamsModel.class, SimpleGenericsModel.class, GenericHolderModel.class).conventions(NO_CONVENTIONS);
+
+        SimpleGenericsModel<Long, String, Integer> simple = getSimpleGenericsModelAlt();
+        FieldWithMultipleTypeParamsModel<Integer, Long, String> field = new FieldWithMultipleTypeParamsModel<Integer, Long, String>(simple);
+        GenericHolderModel<FieldWithMultipleTypeParamsModel<Integer, Long, String>> nested = new
+                GenericHolderModel<FieldWithMultipleTypeParamsModel<Integer, Long, String>>(field, 42L);
+        roundTrip(builder, new NestedGenericHolderFieldWithMultipleTypeParamsModel(nested),
+                "{'nested': {'myGenericField': "
+                        + "{'simpleGenericsModel': {'myIntegerField': 42, 'myGenericField': {'$numberLong': '101'}, "
+                        + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4 }}}, 'myLongField': {'$numberLong': '42'}}}");
+    }
+
+    @Test
+    public void testGenericTreeModel() {
+        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(GenericTreeModel.class).build(),
+                new ValueCodecProvider(), new ObjectCodecProvider());
+        roundTrip(registry, getGenericTreeModel(),
+                "{'field1': 'top', 'field2': 1, "
+                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
+                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}");
+    }
+
+    @Test
+    public void testNestedGenericTreeModel(){
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericTreeModel.class, GenericTreeModel.class);
+        roundTrip(builder, new NestedGenericTreeModel(42, getGenericTreeModel()),
+                "{'intField': 42, 'nested': {'field1': 'top', 'field2': 1, "
+                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
+                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}}");
+    }
+
+    @Test
+    public void testMultipleLevelGenericModel() {
+        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(MultipleLevelGenericModel.class, GenericTreeModel.class).build(),
+                new ValueCodecProvider(), new ObjectCodecProvider());
+        roundTrip(registry, new MultipleLevelGenericModel<String>("string", getGenericTreeModel()),
+                "{'stringField': 'string', 'nested': {'field1': 'top', 'field2': 1, "
+                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
+                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}}");
+    }
+
+    @Test
+    public void testNestedMultipleLevelGenericModel() {
+        PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedMultipleLevelGenericModel.class,
+                MultipleLevelGenericModel.class, GenericTreeModel.class);
+
+        String json = "{'intField': 42, 'nested': {'stringField': 'string', 'nested': {'field1': 'top', 'field2': 1, "
+                + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
+                + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}}}";
+
+        roundTrip(builder,
+                new NestedMultipleLevelGenericModel(42, new MultipleLevelGenericModel<String>("string", getGenericTreeModel())),
+                json);
+    }
+
+    @Test
     public void testGenericsRoundTrip() {
         // Multiple levels of nesting
         SimpleModel simpleModel = getSimpleModel();
@@ -171,7 +252,7 @@ public final class PojoCodecTest extends PojoTestCase {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderSimpleGenericsModel.class,
                 GenericHolderModel.class, SimpleGenericsModel.class, SimpleModel.class);
         roundTrip(builder, model,
-                "{ 'nested': {'myGenericField': {'myIntegerField': 42, 'myGenericField': 42,"
+                "{'nested': {'myGenericField': {'myIntegerField': 42, 'myGenericField': 42,"
                         + "                           'myListField': [[" + SIMPLE_MODEL_JSON + "]], "
                         + "                           'myMapField': {'A': {'A': " + SIMPLE_MODEL_JSON + "}}},"
                         + "         'myLongField': {'$numberLong': '42' }}}");
@@ -215,6 +296,7 @@ public final class PojoCodecTest extends PojoTestCase {
                     @Override
                     public void apply(final ClassModelBuilder<?> classModelBuilder) {
                         for (FieldModelBuilder<?> fieldModelBuilder : classModelBuilder.getFields()) {
+                            fieldModelBuilder.discriminatorEnabled(false);
                             fieldModelBuilder.documentFieldName(fieldModelBuilder.getFieldName().replaceAll("([^_A-Z])([A-Z])", "$1_$2")
                                     .toLowerCase());
                         }

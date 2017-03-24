@@ -21,6 +21,7 @@ import org.bson.codecs.pojo.entities.GenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
+import org.bson.codecs.pojo.entities.conventions.AnnotationInheritedModel;
 import org.bson.codecs.pojo.entities.conventions.AnnotationModel;
 import org.junit.Test;
 
@@ -132,6 +133,20 @@ public final class ClassModelTest {
         assertEquals(3, classModel.getFieldModels().size());
         assertEquals(fieldModel, classModel.getFieldModel(fieldModel.getDocumentFieldName()));
         assertTrue(classModel.getInstanceCreatorFactory() instanceof InstanceCreatorFactoryImpl);
+    }
+
+    @Test
+    public void testInheritedClassAnnotations() {
+        ClassModel<?> classModel = ClassModel.builder(AnnotationInheritedModel.class).build();
+        assertTrue(classModel.useDiscriminator());
+        assertEquals("_cls", classModel.getDiscriminatorKey());
+        assertEquals("AnnotationInheritedModel", classModel.getDiscriminator());
+
+        assertEquals(2, classModel.getFieldModels().size());
+
+        FieldModel<?> fieldModel = classModel.getFieldModels().get(1);
+        assertEquals(fieldModel, classModel.getIdFieldModel());
+        assertEquals(fieldModel, classModel.getFieldModel(fieldModel.getDocumentFieldName()));
     }
 
 }

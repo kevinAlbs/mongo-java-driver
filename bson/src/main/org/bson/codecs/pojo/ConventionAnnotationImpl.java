@@ -42,14 +42,15 @@ final class ConventionAnnotationImpl implements Convention {
         if (annotation instanceof Discriminator) {
             Discriminator discriminator = (Discriminator) annotation;
             String key = discriminator.key();
+            if (!key.equals("")) {
+                classModelBuilder.discriminatorKey(key);
+            }
+
             String name = discriminator.value();
             if (!name.equals("")) {
                 classModelBuilder.discriminator(name);
-                if (!key.equals("")) {
-                    classModelBuilder.discriminatorKey(key);
-                }
-                classModelBuilder.discriminatorEnabled(true);
             }
+            classModelBuilder.discriminatorEnabled(true);
         }
     }
 

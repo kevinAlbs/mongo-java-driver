@@ -45,7 +45,7 @@ public class ClassModelBuilder<T> {
     private final List<FieldModelBuilder<?>> fields = new ArrayList<FieldModelBuilder<?>>();
     private InstanceCreatorFactory<T> instanceCreatorFactory;
     private Class<T> type;
-    private Map<String, Integer> fieldNameToTypeParameterIndexMap = emptyMap();
+    private Map<String, List<Integer>> fieldNameToTypeParameterIndexMap = emptyMap();
     private List<Convention> conventions = DEFAULT_CONVENTIONS;
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled;
@@ -100,7 +100,7 @@ public class ClassModelBuilder<T> {
     /**
      * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
      */
-    public Map<String, Integer> getFieldNameToTypeParameterIndexMap() {
+    public Map<String, List<Integer>> getFieldNameToTypeParameterIndexMap() {
         return fieldNameToTypeParameterIndexMap;
     }
 
@@ -110,8 +110,8 @@ public class ClassModelBuilder<T> {
      * @param fieldNameToTypeParameterIndexMap the generic field names
      * @return this
      */
-    public ClassModelBuilder<T> fieldNameToTypeParameterIndexMap(final Map<String, Integer> fieldNameToTypeParameterIndexMap) {
-        this.fieldNameToTypeParameterIndexMap = unmodifiableMap(new HashMap<String, Integer>(fieldNameToTypeParameterIndexMap));
+    public ClassModelBuilder<T> fieldNameToTypeParameterIndexMap(final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap) {
+        this.fieldNameToTypeParameterIndexMap = unmodifiableMap(new HashMap<String, List<Integer>>(fieldNameToTypeParameterIndexMap));
         return this;
     }
 

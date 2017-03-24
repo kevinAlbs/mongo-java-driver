@@ -23,7 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An annotation that configures the discriminator key and value.
+ * An annotation that configures the discriminator key and value for a class.
  *
  * <p>Note: Requires the {@link org.bson.codecs.pojo.Conventions#ANNOTATION_CONVENTION}</p>
  *
@@ -34,10 +34,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Discriminator {
+
     /**
      * @return the discriminator value to use for this type.
      */
-    String value();
+    String value() default "";
 
     /**
      * @return the discriminator key to use for this type.

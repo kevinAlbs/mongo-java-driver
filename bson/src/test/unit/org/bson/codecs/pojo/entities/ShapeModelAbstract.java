@@ -17,6 +17,9 @@
 package org.bson.codecs.pojo.entities;
 
 
+import org.bson.codecs.pojo.annotations.Discriminator;
+
+@Discriminator()
 public abstract class ShapeModelAbstract {
 
     private String color;

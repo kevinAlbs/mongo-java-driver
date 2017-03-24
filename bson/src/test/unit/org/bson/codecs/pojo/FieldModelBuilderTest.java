@@ -44,7 +44,7 @@ public final class FieldModelBuilderTest {
         assertNull(fieldModelBuilder.getFieldSerialization());
         assertNull(fieldModelBuilder.getTypeData());
         assertNull(fieldModelBuilder.getFieldAccessor());
-        assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
+        assertNull(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
     @Test
@@ -56,7 +56,7 @@ public final class FieldModelBuilderTest {
         assertEquals(field.getName(), fieldModelBuilder.getFieldName());
         assertEquals(field.getName(), fieldModelBuilder.getDocumentFieldName());
         assertTrue(fieldModelBuilder.getAnnotations().isEmpty());
-        assertFalse(fieldModelBuilder.isDiscriminatorEnabled());
+        assertNull(fieldModelBuilder.isDiscriminatorEnabled());
     }
 
     @Test

@@ -32,12 +32,12 @@ public final class FieldModel<T> {
     private final TypeData<T> typeData;
     private final Codec<T> codec;
     private final FieldSerialization<T> fieldSerialization;
-    private final boolean useDiscriminator;
+    private final Boolean useDiscriminator;
     private final FieldAccessor<T> fieldAccessor;
     private volatile Codec<T> cachedCodec;
 
     FieldModel(final String fieldName, final String documentFieldName, final TypeData<T> typeData, final Codec<T> codec,
-               final FieldSerialization<T> fieldSerialization, final boolean useDiscriminator,
+               final FieldSerialization<T> fieldSerialization, final Boolean useDiscriminator,
                final FieldAccessor<T> fieldAccessor) {
         this.fieldName = fieldName;
         this.documentFieldName = documentFieldName;
@@ -116,9 +116,9 @@ public final class FieldModel<T> {
     }
 
     /**
-     * @return true if a discriminator should be used when serializing, otherwise false
+     * @return true or false if a discriminator should be used when serializing or null if not set
      */
-    public boolean useDiscriminator() {
+    public Boolean useDiscriminator() {
         return useDiscriminator;
     }
 
@@ -142,9 +142,10 @@ public final class FieldModel<T> {
 
         FieldModel<?> that = (FieldModel<?>) o;
 
-        if (useDiscriminator != that.useDiscriminator) {
+        if (useDiscriminator() != null ? !useDiscriminator().equals(that.useDiscriminator()) : that.useDiscriminator() != null) {
             return false;
         }
+
         if (getFieldName() != null ? !getFieldName().equals(that.getFieldName()) : that.getFieldName() != null) {
             return false;
         }
@@ -169,6 +170,8 @@ public final class FieldModel<T> {
         return true;
     }
 
+
+
     @Override
     public int hashCode() {
         int result = getFieldName() != null ? getFieldName().hashCode() : 0;
@@ -176,7 +179,7 @@ public final class FieldModel<T> {
         result = 31 * result + (getTypeData() != null ? getTypeData().hashCode() : 0);
         result = 31 * result + (getCodec() != null ? getCodec().hashCode() : 0);
         result = 31 * result + (getFieldSerialization() != null ? getFieldSerialization().hashCode() : 0);
-        result = 31 * result + (useDiscriminator ? 1 : 0);
+        result = 31 * result + (useDiscriminator != null ? useDiscriminator.hashCode() : 0);
         result = 31 * result + (getFieldAccessor() != null ? getFieldAccessor().hashCode() : 0);
         return result;
     }

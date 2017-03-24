@@ -35,10 +35,10 @@ public final class ClassModel<T> {
     private final String discriminator;
     private final FieldModel<?> idField;
     private final List<FieldModel<?>> fieldModels;
-    private final Map<String, Integer> fieldNameToTypeParameterIndexMap;
+    private final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap;
     private final Map<String, FieldModel<?>> fieldMap;
 
-    ClassModel(final Class<T> clazz, final Map<String, Integer> fieldNameToTypeParameterIndexMap,
+    ClassModel(final Class<T> clazz, final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap,
                final InstanceCreatorFactory<T> instanceCreatorFactory, final Boolean discriminatorEnabled, final String discriminatorKey,
                final String discriminator, final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
         this.name = clazz.getSimpleName();
@@ -77,7 +77,7 @@ public final class ClassModel<T> {
     /**
      * @return the fieldNameToTypeParameterIndexMap
      */
-    public Map<String, Integer> getFieldNameToTypeParameterIndexMap() {
+    public Map<String, List<Integer>> getFieldNameToTypeParameterIndexMap() {
         return fieldNameToTypeParameterIndexMap;
     }
 

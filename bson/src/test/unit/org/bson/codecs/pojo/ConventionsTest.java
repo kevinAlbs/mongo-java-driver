@@ -29,6 +29,7 @@ import static org.bson.codecs.pojo.Conventions.CLASS_AND_FIELD_CONVENTION;
 import static org.bson.codecs.pojo.Conventions.DEFAULT_CONVENTIONS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public final class ConventionsTest {
 
@@ -115,7 +116,7 @@ public final class ConventionsTest {
         assertEquals("_id", idFieldModel.getDocumentFieldName());
 
         FieldModel<?> childFieldModel = classModel.getFieldModel("id");
-        assertFalse(childFieldModel.useDiscriminator());
+        assertNull(childFieldModel.useDiscriminator());
     }
 
     private class FieldAccessorTest<T> implements FieldAccessor<T> {

@@ -32,6 +32,7 @@ import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.GenericHolderModel;
+import org.bson.codecs.pojo.entities.GenericTreeModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderMapModel;
 import org.bson.codecs.pojo.entities.NestedGenericHolderModel;
 import org.bson.codecs.pojo.entities.NestedReusedGenericsModel;
@@ -170,6 +171,15 @@ abstract class PojoTestCase {
         return new SimpleGenericsModel<String, String, Integer>(42, "A", asList("B", "C"), map);
     }
 
+    SimpleGenericsModel<Long, String, Integer> getSimpleGenericsModelAlt() {
+        HashMap<String, Integer> map = new HashMap<String, Integer>();
+        map.put("D", 2);
+        map.put("E", 3);
+        map.put("F", 4);
+
+        return new SimpleGenericsModel<Long, String, Integer>(42, 101L, asList("B", "C"), map);
+    }
+
     ConcreteCollectionsModel getConcreteCollectionsModel() {
         Collection<Integer> collection = asList(1, 2, 3);
         List<Integer> list = asList(4, 5, 6);
@@ -250,6 +260,14 @@ abstract class PojoTestCase {
     NestedReusedGenericsModel getNestedReusedGenericsModel() {
         return new NestedReusedGenericsModel(new ReusedGenericsModel<Long, List<SimpleModel>, String>(1L,
                 singletonList(getSimpleModel()), "field3", 42, "field5", asList(getSimpleModel(), getSimpleModel()), 2L, "field8"));
+    }
+
+    GenericTreeModel<String, Integer> getGenericTreeModel() {
+        return new GenericTreeModel<String, Integer>("top", 1,
+                new GenericTreeModel<String, Integer>("left", 2,
+                        new GenericTreeModel<String, Integer>("left", 3, null, null), null),
+                new GenericTreeModel<String, Integer>("right", 4,
+                        new GenericTreeModel<String, Integer>("left", 5, null, null), null));
     }
 
     static final String SIMPLE_MODEL_JSON = "{'integerField': 42, 'stringField': 'myString'}";

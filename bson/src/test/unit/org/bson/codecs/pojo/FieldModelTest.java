@@ -26,7 +26,6 @@ import java.util.List;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public final class FieldModelTest {
@@ -41,7 +40,7 @@ public final class FieldModelTest {
         assertEquals(TypeData.builder(Integer.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
-        assertFalse(fieldModel.useDiscriminator());
+        assertNull(fieldModel.useDiscriminator());
         assertTrue(fieldModel.getFieldAccessor() instanceof FieldAccessorImpl);
     }
 
@@ -52,7 +51,7 @@ public final class FieldModelTest {
         assertEquals(TypeData.builder(Object.class).build(), fieldModel.getTypeData());
         assertNull(fieldModel.getCodec());
         assertTrue(fieldModel.shouldSerialize(1));
-        assertFalse(fieldModel.useDiscriminator());
+        assertNull(fieldModel.useDiscriminator());
         assertTrue(fieldModel.getFieldAccessor() instanceof FieldAccessorImpl);
     }
 

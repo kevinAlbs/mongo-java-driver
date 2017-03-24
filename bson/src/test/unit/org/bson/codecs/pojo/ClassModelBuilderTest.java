@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -69,10 +70,10 @@ public final class ClassModelBuilderTest {
             assertEquals(field.getName(), builder.getField(field.getName()).getDocumentFieldName());
         }
 
-        Map<String, Integer> fieldNameToTypeParameterIndexMap = new HashMap<String, Integer>();
-        fieldNameToTypeParameterIndexMap.put("myGenericField", 0);
-        fieldNameToTypeParameterIndexMap.put("myListField", 1);
-        fieldNameToTypeParameterIndexMap.put("myMapField", 2);
+        Map<String, List<Integer>> fieldNameToTypeParameterIndexMap = new HashMap<String, List<Integer>>();
+        fieldNameToTypeParameterIndexMap.put("myGenericField", singletonList(0));
+        fieldNameToTypeParameterIndexMap.put("myListField", singletonList(1));
+        fieldNameToTypeParameterIndexMap.put("myMapField", singletonList(2));
 
         assertEquals(fieldNameToTypeParameterIndexMap, builder.getFieldNameToTypeParameterIndexMap());
         assertEquals(2, builder.getConventions().size());

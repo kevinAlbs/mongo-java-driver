@@ -16,8 +16,13 @@
 
 package org.bson.codecs.pojo.entities;
 
-public final class FieldWithMultipleTypeParamsModel<C, B, A> {
+import org.bson.codecs.pojo.annotations.Discriminator;
+import org.bson.codecs.pojo.annotations.Property;
 
+@Discriminator("FieldWithMultipleTypeParamsModel")
+public final class FieldWithMultipleTypeParamsModel<C, A, B> {
+
+    @Property(useDiscriminator = true)
     private SimpleGenericsModel<A, B, C> simpleGenericsModel;
 
     public FieldWithMultipleTypeParamsModel() {
@@ -42,7 +47,7 @@ public final class FieldWithMultipleTypeParamsModel<C, B, A> {
      * @param simpleGenericsModel the simpleGenericsModel
      * @return this
      */
-    public FieldWithMultipleTypeParamsModel<C, B, A> simpleGenericsModel(final SimpleGenericsModel<A, B, C> simpleGenericsModel) {
+    public FieldWithMultipleTypeParamsModel<C, A, B> simpleGenericsModel(final SimpleGenericsModel<A, B, C> simpleGenericsModel) {
         this.simpleGenericsModel = simpleGenericsModel;
         return this;
     }

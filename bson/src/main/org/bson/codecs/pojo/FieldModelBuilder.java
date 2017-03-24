@@ -44,7 +44,7 @@ public final class FieldModelBuilder<T> {
     private Codec<T> codec;
     private FieldAccessor<T> fieldAccessor;
     private List<Annotation> annotations = emptyList();
-    private boolean discriminatorEnabled;
+    private Boolean discriminatorEnabled;
 
     FieldModelBuilder() {
     }
@@ -164,9 +164,9 @@ public final class FieldModelBuilder<T> {
     }
 
     /**
-     * @return true if a discriminator should be used when serializing, otherwise false
+     * @return true or false if a discriminator should be used when serializing or null if not set
      */
-    public boolean isDiscriminatorEnabled() {
+    public Boolean isDiscriminatorEnabled() {
         return discriminatorEnabled;
     }
 

@@ -25,8 +25,8 @@ import com.fasterxml.classmate.TypeBindings;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.classmate.members.RawConstructor;
 import com.fasterxml.classmate.members.ResolvedField;
-import org.bson.codecs.configuration.CodecConfigurationException;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -46,7 +46,17 @@ final class PojoBuilderHelper {
 
     @SuppressWarnings("unchecked")
     static <T> void configureClassModelBuilder(final ClassModelBuilder<T> classModelBuilder, final Class<T> clazz) {
-        classModelBuilder.type(notNull("clazz", clazz)).annotations(asList(clazz.getAnnotations()));
+        classModelBuilder.type(notNull("clazz", clazz));
+
+        ArrayList<Annotation> annotations = new ArrayList<Annotation>();
+        Class<?> type = clazz;
+        while (type != null) {
+            for (Annotation annotation : type.getDeclaredAnnotations()) {
+                annotations.add(annotation);
+            }
+            type = type.getSuperclass();
+        }
+        classModelBuilder.annotations(annotations);
 
         TypeResolver resolver = new TypeResolver();
         MemberResolver memberResolver = new MemberResolver(resolver);
@@ -69,7 +79,7 @@ final class PojoBuilderHelper {
         }
 
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
-        Map<String, Integer> genericFieldMap = new HashMap<String, Integer>();
+        Map<String, List<Integer>> genericFieldMap = new HashMap<String, List<Integer>>();
         for (final ResolvedField resolvedField : resolvedFields) {
             if (resolvedField.isTransient()) {
                 continue;
@@ -78,12 +88,12 @@ final class PojoBuilderHelper {
 
             List<Integer> genericTypeIndexes = fieldGenericTypeIndexes(genericTypeNames, resolvedField);
             for (Integer genericTypeIndex : genericTypeIndexes) {
-                if (genericFieldMap.containsKey(name)) {
-                    throw new CodecConfigurationException(
-                            format("Multiple generic types for a single field are not supported via reflection. "
-                                    + "'%s' already has a generic type", name));
+                List<Integer> parameterIndices = genericFieldMap.get(name);
+                if (parameterIndices == null) {
+                    parameterIndices = new ArrayList<Integer>();
                 }
-                genericFieldMap.put(name, genericTypeIndex);
+                parameterIndices.add(genericTypeIndex);
+                genericFieldMap.put(name, parameterIndices);
             }
 
             classModelBuilder.addField(getFieldBuilder(resolvedField.getRawMember(), resolvedField.getType().getErasedType(),
