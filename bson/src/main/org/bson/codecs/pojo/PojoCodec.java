@@ -286,7 +286,7 @@ final class PojoCodec<T> implements Codec<T> {
         TypeData<V> specializedFieldType = fieldModel.getTypeData();
         if (indices.size() == 1) {
             TypeData<?> fieldTypeData = fieldTypeParameters.get(indices.get(0));
-            if (fieldTypeData == fieldModel.getTypeData()) {
+            if (fieldTypeData.equals(fieldModel.getTypeData())) {
                 return fieldModel;
             } else if (fieldModel.getTypeData().getTypeParameters().contains(OBJECT_TYPE_DATA)) {
                 // Special case nested erased type data across models

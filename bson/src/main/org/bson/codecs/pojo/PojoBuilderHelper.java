@@ -66,13 +66,6 @@ final class PojoBuilderHelper {
                 memberResolver.resolve(resolved, new AnnotationConfiguration.StdConfiguration(AnnotationInclusion
                         .INCLUDE_AND_INHERIT_IF_INHERITED), null);
 
-        List<Constructor<T>> publicConstructors = new ArrayList<Constructor<T>>();
-        for (RawConstructor rawConstructor : resolved.getConstructors()) {
-            if (rawConstructor.isPublic()) {
-                publicConstructors.add((Constructor<T>) rawConstructor.getRawMember());
-            }
-        }
-
         List<String> genericTypeNames = new ArrayList<String>();
         for (TypeVariable<Class<T>> classTypeVariable : clazz.getTypeParameters()) {
             genericTypeNames.add(classTypeVariable.getName());
@@ -101,9 +94,18 @@ final class PojoBuilderHelper {
             resolvedField.getRawMember().setAccessible(true);
         }
 
+        Constructor<T> noArgsConstructor = null;
+        for (RawConstructor rawConstructor : resolved.getConstructors()) {
+            Constructor<T> constructor = (Constructor<T>) rawConstructor.getRawMember();
+            if (constructor.getParameterTypes().length == 0) {
+                noArgsConstructor = constructor;
+                noArgsConstructor.setAccessible(true);
+            }
+        }
+
         classModelBuilder
                 .fieldNameToTypeParameterIndexMap(genericFieldMap)
-                .instanceCreatorFactory(new InstanceCreatorFactoryImpl<T>(clazz.getSimpleName(), publicConstructors));
+                .instanceCreatorFactory(new InstanceCreatorFactoryImpl<T>(clazz.getSimpleName(), noArgsConstructor));
     }
 
     static List<Integer> fieldGenericTypeIndexes(final List<String> genericTypeNames, final ResolvedField resolvedField) {

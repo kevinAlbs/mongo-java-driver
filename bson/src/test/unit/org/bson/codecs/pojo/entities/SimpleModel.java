@@ -25,7 +25,7 @@ public final class SimpleModel {
         this.integerField = integerField;
         this.stringField = stringField;
     }
-    public SimpleModel() {
+    private SimpleModel() {
     }
 
 

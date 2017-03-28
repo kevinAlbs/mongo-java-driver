@@ -18,7 +18,6 @@ package org.bson.codecs.pojo.entities;
 
 public final class ShapeHolderModel {
 
-    //@Property(useDiscriminator = true)
     private ShapeModelAbstract shape;
 
     public ShapeHolderModel() {
