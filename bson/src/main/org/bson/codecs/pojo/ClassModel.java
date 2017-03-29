@@ -35,15 +35,15 @@ public final class ClassModel<T> {
     private final String discriminator;
     private final FieldModel<?> idField;
     private final List<FieldModel<?>> fieldModels;
-    private final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap;
+    private final Map<String, TypeParameterMap> fieldNameToTypeParameterMap;
     private final Map<String, FieldModel<?>> fieldMap;
 
-    ClassModel(final Class<T> clazz, final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap,
+    ClassModel(final Class<T> clazz, final Map<String, TypeParameterMap> fieldNameToTypeParameterMap,
                final InstanceCreatorFactory<T> instanceCreatorFactory, final Boolean discriminatorEnabled, final String discriminatorKey,
                final String discriminator, final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
         this.name = clazz.getSimpleName();
         this.type = clazz;
-        this.fieldNameToTypeParameterIndexMap = fieldNameToTypeParameterIndexMap;
+        this.fieldNameToTypeParameterMap = fieldNameToTypeParameterMap;
         this.instanceCreatorFactory = instanceCreatorFactory;
         this.discriminatorEnabled = discriminatorEnabled;
         this.discriminatorKey = discriminatorKey;
@@ -75,10 +75,10 @@ public final class ClassModel<T> {
     }
 
     /**
-     * @return the fieldNameToTypeParameterIndexMap
+     * @return the fieldNameToFieldGenericDataMap
      */
-    public Map<String, List<Integer>> getFieldNameToTypeParameterIndexMap() {
-        return fieldNameToTypeParameterIndexMap;
+    public Map<String, TypeParameterMap> getFieldNameToTypeParameterMap() {
+        return fieldNameToTypeParameterMap;
     }
 
     /**
@@ -197,7 +197,7 @@ public final class ClassModel<T> {
         if (!getFieldModels().equals(that.getFieldModels())) {
             return false;
         }
-        if (!getFieldNameToTypeParameterIndexMap().equals(that.getFieldNameToTypeParameterIndexMap())) {
+        if (!getFieldNameToTypeParameterMap().equals(that.getFieldNameToTypeParameterMap())) {
             return false;
         }
 
@@ -213,7 +213,7 @@ public final class ClassModel<T> {
         result = 31 * result + (getDiscriminator() != null ? getDiscriminator().hashCode() : 0);
         result = 31 * result + (idField != null ? idField.hashCode() : 0);
         result = 31 * result + getFieldModels().hashCode();
-        result = 31 * result + getFieldNameToTypeParameterIndexMap().hashCode();
+        result = 31 * result + getFieldNameToTypeParameterMap().hashCode();
         return result;
     }
 

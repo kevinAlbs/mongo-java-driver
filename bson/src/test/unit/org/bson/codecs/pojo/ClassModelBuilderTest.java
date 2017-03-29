@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,7 +49,7 @@ public final class ClassModelBuilderTest {
         ClassModelBuilder builder = ClassModel.builder();
 
         assertTrue(builder.getFields().isEmpty());
-        assertTrue(builder.getFieldNameToTypeParameterIndexMap().isEmpty());
+        assertTrue(builder.getFieldNameToTypeParameterMap().isEmpty());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertNull(builder.getType());
@@ -70,12 +69,12 @@ public final class ClassModelBuilderTest {
             assertEquals(field.getName(), builder.getField(field.getName()).getDocumentFieldName());
         }
 
-        Map<String, List<Integer>> fieldNameToTypeParameterIndexMap = new HashMap<String, List<Integer>>();
-        fieldNameToTypeParameterIndexMap.put("myGenericField", singletonList(0));
-        fieldNameToTypeParameterIndexMap.put("myListField", singletonList(1));
-        fieldNameToTypeParameterIndexMap.put("myMapField", singletonList(2));
+        Map<String, TypeParameterMap> fieldNameToTypeParameterMap = new HashMap<String, TypeParameterMap>();
+        fieldNameToTypeParameterMap.put("myGenericField", TypeParameterMap.builder().addIndex(0).build());
+        fieldNameToTypeParameterMap.put("myListField", TypeParameterMap.builder().addIndex(0, 1).build());
+        fieldNameToTypeParameterMap.put("myMapField", TypeParameterMap.builder().addIndex(1, 2).build());
 
-        assertEquals(fieldNameToTypeParameterIndexMap, builder.getFieldNameToTypeParameterIndexMap());
+        assertEquals(fieldNameToTypeParameterMap, builder.getFieldNameToTypeParameterMap());
         assertEquals(2, builder.getConventions().size());
         assertTrue(builder.getAnnotations().isEmpty());
         assertEquals(clazz, builder.getType());

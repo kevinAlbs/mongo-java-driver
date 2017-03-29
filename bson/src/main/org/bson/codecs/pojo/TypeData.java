@@ -91,6 +91,20 @@ public final class TypeData<T> {
         }
 
         /**
+         * Adds multiple type parameters
+         *
+         * @param typeParameters the type parameters
+         * @return this
+         */
+        public Builder<T> addTypeParameters(final List<TypeData<?>> typeParameters) {
+            notNull("typeParameters", typeParameters);
+            for (TypeData<?> typeParameter : typeParameters) {
+                addTypeParameter(typeParameter);
+            }
+            return this;
+        }
+
+        /**
          * @return the class type data
          */
         public TypeData<T> build() {

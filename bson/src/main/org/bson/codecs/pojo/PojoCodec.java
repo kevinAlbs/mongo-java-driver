@@ -252,21 +252,20 @@ final class PojoCodec<T> implements Codec<T> {
         boolean validDiscriminator = clazzModel.getDiscriminatorKey() != null && clazzModel.getDiscriminator() != null;
         boolean changeTheDiscriminator = (useDiscriminator != clazzModel.useDiscriminator()) && validDiscriminator;
 
-        if (clazzModel.getFieldNameToTypeParameterIndexMap().isEmpty() && !changeTheDiscriminator){
+        if (clazzModel.getFieldNameToTypeParameterMap().isEmpty() && !changeTheDiscriminator){
             return clazzModel;
         }
 
-        TypeData fieldTypeData = fieldModel.getTypeData();
         ArrayList<FieldModel<?>> concreteFieldModels = new ArrayList<FieldModel<?>>(clazzModel.getFieldModels());
         FieldModel<?> concreteIdField = clazzModel.getIdFieldModel();
 
-        List<TypeData<?>> fieldTypeParameters = fieldTypeData.getTypeParameters();
+        List<TypeData<?>> fieldTypeParameters = fieldModel.getTypeData().getTypeParameters();
         for (int i = 0; i < concreteFieldModels.size(); i++) {
             FieldModel<?> model = concreteFieldModels.get(i);
             String fieldName = model.getFieldName();
-            List<Integer> indices = clazzModel.getFieldNameToTypeParameterIndexMap().get(fieldName);
-            if (indices != null) {
-                FieldModel<?> concreteFieldModel = getSpecializedFieldModel(model, indices, fieldTypeParameters);
+            TypeParameterMap typeParameterMap = clazzModel.getFieldNameToTypeParameterMap().get(fieldName);
+            if (typeParameterMap != null) {
+                FieldModel<?> concreteFieldModel = getSpecializedFieldModel(model, typeParameterMap, fieldTypeParameters);
                 concreteFieldModels.set(i, concreteFieldModel);
                 if (concreteIdField != null && concreteIdField.getFieldName().equals(fieldName)) {
                     concreteIdField = concreteFieldModel;
@@ -275,54 +274,32 @@ final class PojoCodec<T> implements Codec<T> {
         }
 
         boolean discriminatorEnabled = changeTheDiscriminator ? fieldModel.useDiscriminator() : clazzModel.useDiscriminator();
-        return new ClassModel<S>(clazzModel.getType(), clazzModel.getFieldNameToTypeParameterIndexMap(),
+        return new ClassModel<S>(clazzModel.getType(), clazzModel.getFieldNameToTypeParameterMap(),
                 clazzModel.getInstanceCreatorFactory(), discriminatorEnabled, clazzModel.getDiscriminatorKey(),
                 clazzModel.getDiscriminator(), concreteIdField, concreteFieldModels);
     }
 
     @SuppressWarnings("unchecked")
-    private <V> FieldModel<V> getSpecializedFieldModel(final FieldModel<V> fieldModel, final List<Integer> indices,
+    private <V> FieldModel<V> getSpecializedFieldModel(final FieldModel<V> fieldModel, final TypeParameterMap typeParameterMap,
                                                        final List<TypeData<?>> fieldTypeParameters) {
         TypeData<V> specializedFieldType = fieldModel.getTypeData();
-        if (indices.size() == 1) {
-            TypeData<?> fieldTypeData = fieldTypeParameters.get(indices.get(0));
-            if (fieldTypeData.equals(fieldModel.getTypeData())) {
-                return fieldModel;
-            } else if (fieldModel.getTypeData().getTypeParameters().contains(OBJECT_TYPE_DATA)) {
-                // Special case nested erased type data across models
-                TypeData.Builder<V> builder = TypeData.builder(fieldModel.getTypeData().getType());
-                boolean replacedTheGenericParameter = false;
-                for (TypeData<?> fieldTypeParameter : fieldModel.getTypeData().getTypeParameters()) {
-                    if (fieldTypeParameter.equals(OBJECT_TYPE_DATA)) {
-                        if (!replacedTheGenericParameter) {
-                            builder.addTypeParameter(fieldTypeData);
-                            replacedTheGenericParameter = true;
-                        } else {
-                            throw new CodecConfigurationException(format("Invalid FieldModel typeData for '%s'. "
-                                            + "The ClassModel has %s type parameters but the fieldModel's typeData has %s.",
-                                    fieldModel.getFieldName(), indices.size(), fieldTypeParameters.size()));
-                        }
-                    } else {
-                        builder.addTypeParameter(fieldTypeParameter);
+        Map<Integer, Integer> fieldToClassParamIndexMap = typeParameterMap.getFieldToClassParamIndexMap();
+        Integer classTypeParamRepresentsWholeField = fieldToClassParamIndexMap.get(-1);
+        if (classTypeParamRepresentsWholeField != null) {
+            specializedFieldType = (TypeData<V>) fieldTypeParameters.get(classTypeParamRepresentsWholeField);
+        } else {
+            TypeData.Builder<V> builder = TypeData.builder(fieldModel.getTypeData().getType());
+            List<TypeData<?>> typeParameters = new ArrayList<TypeData<?>>(fieldModel.getTypeData().getTypeParameters());
+            for (int i = 0; i < typeParameters.size(); i++) {
+                for (Map.Entry<Integer, Integer> mapping : fieldToClassParamIndexMap.entrySet()) {
+                    if (mapping.getKey() == i) {
+                        typeParameters.set(i, fieldTypeParameters.get(mapping.getValue()));
                     }
                 }
-                specializedFieldType = builder.build();
-            } else {
-                specializedFieldType = (TypeData<V>) fieldTypeData;
             }
-        } else if (indices.size() > 1) {
-            if (indices.size() != fieldTypeParameters.size()) {
-                throw new CodecConfigurationException(format("Invalid FieldModel typeData for '%s'. "
-                                + "The ClassModel has %s type parameters but the fieldModel's typeData has %s.",
-                        fieldModel.getFieldName(), indices.size(), fieldTypeParameters.size()));
-            }
-            TypeData.Builder<V> builder = TypeData.builder(fieldModel.getTypeData().getType());
-            for (Integer index : indices) {
-                builder.addTypeParameter(fieldTypeParameters.get(index));
-            }
+            builder.addTypeParameters(typeParameters);
             specializedFieldType = builder.build();
         }
-
         if (fieldModel.getTypeData().equals(specializedFieldType)) {
             return fieldModel;
         }
@@ -330,9 +307,6 @@ final class PojoCodec<T> implements Codec<T> {
         return new FieldModel<V>(fieldModel.getFieldName(), fieldModel.getDocumentFieldName(), specializedFieldType, null,
                 fieldModel.getFieldSerialization(), fieldModel.useDiscriminator(), fieldModel.getFieldAccessor());
     }
-
-    private static final TypeData<Object> OBJECT_TYPE_DATA = TypeData.builder(Object.class).build();
-
 
     @SuppressWarnings("unchecked")
     private Codec<T> getCodecFromDocument(final BsonReader reader, final boolean useDiscriminator, final String discriminatorKey,

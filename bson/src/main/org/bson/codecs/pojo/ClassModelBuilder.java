@@ -45,7 +45,7 @@ public class ClassModelBuilder<T> {
     private final List<FieldModelBuilder<?>> fields = new ArrayList<FieldModelBuilder<?>>();
     private InstanceCreatorFactory<T> instanceCreatorFactory;
     private Class<T> type;
-    private Map<String, List<Integer>> fieldNameToTypeParameterIndexMap = emptyMap();
+    private Map<String, TypeParameterMap> fieldNameToTypeParameterMap = emptyMap();
     private List<Convention> conventions = DEFAULT_CONVENTIONS;
     private List<Annotation> annotations = emptyList();
     private boolean discriminatorEnabled;
@@ -98,20 +98,20 @@ public class ClassModelBuilder<T> {
     }
 
     /**
-     * @return a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     * @return the mapping of fields that contain generic parameters to the {@link TypeParameterMap}.
      */
-    public Map<String, List<Integer>> getFieldNameToTypeParameterIndexMap() {
-        return fieldNameToTypeParameterIndexMap;
+    public Map<String, TypeParameterMap> getFieldNameToTypeParameterMap() {
+        return fieldNameToTypeParameterMap;
     }
 
     /**
-     * Sets a list of field names that contain generic parameters. Ordered by the definition of generic parameters in the class.
+     * Sets the mapping of fields that contain generic parameters to the {@link TypeParameterMap}.
      *
-     * @param fieldNameToTypeParameterIndexMap the generic field names
+     * @param fieldNameToTypeParameterMap the generic field names
      * @return this
      */
-    public ClassModelBuilder<T> fieldNameToTypeParameterIndexMap(final Map<String, List<Integer>> fieldNameToTypeParameterIndexMap) {
-        this.fieldNameToTypeParameterIndexMap = unmodifiableMap(new HashMap<String, List<Integer>>(fieldNameToTypeParameterIndexMap));
+    public ClassModelBuilder<T> fieldNameToTypeParameterMap(final Map<String, TypeParameterMap> fieldNameToTypeParameterMap) {
+        this.fieldNameToTypeParameterMap = unmodifiableMap(new HashMap<String, TypeParameterMap>(fieldNameToTypeParameterMap));
         return this;
     }
 
@@ -310,8 +310,8 @@ public class ClassModelBuilder<T> {
         validateFieldModels(fieldModels);
 
 
-        return new ClassModel<T>(type, fieldNameToTypeParameterIndexMap, instanceCreatorFactory,
-                discriminatorEnabled, discriminatorKey, discriminator, idFieldModel, unmodifiableList(fieldModels));
+        return new ClassModel<T>(type, fieldNameToTypeParameterMap, instanceCreatorFactory, discriminatorEnabled, discriminatorKey,
+                discriminator, idFieldModel, unmodifiableList(fieldModels));
     }
 
     @Override

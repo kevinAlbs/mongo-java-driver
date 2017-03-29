@@ -72,27 +72,22 @@ final class PojoBuilderHelper {
         }
 
         List<ResolvedField> resolvedFields = new ArrayList<ResolvedField>(asList(resolvedType.getMemberFields()));
-        Map<String, List<Integer>> genericFieldMap = new HashMap<String, List<Integer>>();
+
+        Map<String, TypeParameterMap> fieldTypeParameterMap = new HashMap<String, TypeParameterMap>();
         for (final ResolvedField resolvedField : resolvedFields) {
             if (resolvedField.isTransient()) {
                 continue;
             }
             String name = resolvedField.getName();
-
-            List<Integer> genericTypeIndexes = fieldGenericTypeIndexes(genericTypeNames, resolvedField);
-            for (Integer genericTypeIndex : genericTypeIndexes) {
-                List<Integer> parameterIndices = genericFieldMap.get(name);
-                if (parameterIndices == null) {
-                    parameterIndices = new ArrayList<Integer>();
-                }
-                parameterIndices.add(genericTypeIndex);
-                genericFieldMap.put(name, parameterIndices);
+            TypeParameterMap typeParameterMap = getTypeParameterMap(genericTypeNames, resolvedField);
+            if (typeParameterMap != null) {
+                fieldTypeParameterMap.put(name, typeParameterMap);
             }
-
             classModelBuilder.addField(getFieldBuilder(resolvedField.getRawMember(), resolvedField.getType().getErasedType(),
                     resolvedField.getType()));
             resolvedField.getRawMember().setAccessible(true);
         }
+
 
         Constructor<T> noArgsConstructor = null;
         for (RawConstructor rawConstructor : resolved.getConstructors()) {
@@ -104,29 +99,32 @@ final class PojoBuilderHelper {
         }
 
         classModelBuilder
-                .fieldNameToTypeParameterIndexMap(genericFieldMap)
+                .fieldNameToTypeParameterMap(fieldTypeParameterMap)
                 .instanceCreatorFactory(new InstanceCreatorFactoryImpl<T>(clazz.getSimpleName(), noArgsConstructor));
     }
 
-    static List<Integer> fieldGenericTypeIndexes(final List<String> genericTypeNames, final ResolvedField resolvedField) {
-        Type fieldGenericType = resolvedField.getRawMember().getGenericType();
-        List<Integer> indexes = new ArrayList<Integer>();
-        int index = genericTypeNames.indexOf(fieldGenericType.toString());
-        if (index != -1) {
-            indexes.add(index);
-        } else if (index == -1 && !resolvedField.getType().getTypeBindings().getTypeParameters().isEmpty()) {
+    static TypeParameterMap getTypeParameterMap(final List<String> genericTypeNames, final ResolvedField resolvedField) {
+        int classParamIndex = genericTypeNames.indexOf(resolvedField.getRawMember().getGenericType().toString());
+        TypeParameterMap.Builder builder = TypeParameterMap.builder();
+        boolean hasTypeParameter = false;
+        if (classParamIndex != -1) {
+            hasTypeParameter = true;
+            builder.addIndex(classParamIndex);
+        } else if (classParamIndex == -1 && !resolvedField.getType().getTypeBindings().getTypeParameters().isEmpty()) {
             Type type = resolvedField.getRawMember().getGenericType();
             if (type instanceof ParameterizedType) {
                 ParameterizedType pt = (ParameterizedType) type;
-                for (Type tp : pt.getActualTypeArguments()) {
-                    index = genericTypeNames.indexOf(tp.toString());
-                    if (index != -1) {
-                        indexes.add(index);
+                for (int i = 0; i < pt.getActualTypeArguments().length; i++) {
+                    classParamIndex = genericTypeNames.indexOf(pt.getActualTypeArguments()[i].toString());
+                    if (classParamIndex != -1) {
+                        hasTypeParameter = true;
+                        builder.addIndex(i, classParamIndex);
                     }
                 }
             }
+            return builder.build();
         }
-        return indexes;
+        return hasTypeParameter ? builder.build() : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -145,13 +143,13 @@ final class PojoBuilderHelper {
         return FieldModel.<T>builder(field).typeData(getFieldTypeData(TypeData.builder(clazz), resolvedType));
     }
 
-    private static <T> TypeData<T> getFieldTypeData(final TypeData.Builder<T> type, final ResolvedType resolvedType) {
+    private static <T> TypeData<T> getFieldTypeData(final TypeData.Builder<T> builder, final ResolvedType resolvedType) {
         TypeBindings bindings = resolvedType.getTypeBindings();
         for (int i = 0; i < bindings.getTypeParameters().size(); i++) {
             ResolvedType boundType = bindings.getBoundType(i);
-            type.addTypeParameter(getFieldTypeData(TypeData.builder(boundType.getErasedType()), boundType));
+            builder.addTypeParameter(getFieldTypeData(TypeData.builder(boundType.getErasedType()), boundType));
         }
-        return type.build();
+        return builder.build();
     }
 
     @SuppressWarnings("unchecked")
@@ -172,7 +170,6 @@ final class PojoBuilderHelper {
         }
         return value;
     }
-
 
     private PojoBuilderHelper() {
     }
