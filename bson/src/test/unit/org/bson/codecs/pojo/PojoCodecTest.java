@@ -20,6 +20,7 @@ import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
+import org.bson.codecs.pojo.entities.EvenSimplerGeneric;
 import org.bson.codecs.pojo.entities.FieldReusingClassTypeParameter;
 import org.bson.codecs.pojo.entities.NestedFieldReusingClassTypeParameter;
 import org.bson.codecs.pojo.entities.NoConstructorModel;
@@ -42,6 +43,8 @@ import org.bson.codecs.pojo.entities.ShapeHolderModel;
 import org.bson.codecs.pojo.entities.ShapeModelAbstract;
 import org.bson.codecs.pojo.entities.ShapeModelCircle;
 import org.bson.codecs.pojo.entities.ShapeModelRectangle;
+import org.bson.codecs.pojo.entities.SimpleGeneric;
+import org.bson.codecs.pojo.entities.SimpleGenericHolder;
 import org.bson.codecs.pojo.entities.SimpleGenericsModel;
 import org.bson.codecs.pojo.entities.SimpleModel;
 import org.bson.codecs.pojo.entities.SimpleNestedPojoModel;
@@ -297,6 +300,18 @@ public final class PojoCodecTest extends PojoTestCase {
 
         roundTrip(getPojoCodecProviderBuilder(classModel), model,
                 format("{'_id': {'$oid': '%s'}, 'name': 'myName'}", id.toHexString()));
+    }
+
+    @Test
+    public void testSelfReferentialGenerics() {
+        EvenSimplerGeneric<Boolean, Long> simplerOne = new EvenSimplerGeneric<Boolean, Long>(true, 33L, new EvenSimplerGeneric<Long, Boolean>(44L, false, null));
+        EvenSimplerGeneric<Boolean, Double> simplerTwo = new EvenSimplerGeneric<Boolean, Double>(true, 3.14, new EvenSimplerGeneric<Double, Boolean>(3.42, true, null));
+        SimpleGeneric<Boolean, Long, Double> simplerGeneric = new SimpleGeneric<Boolean, Long, Double>(true, 42L, 44.0, simplerOne, simplerTwo);
+        SimpleGenericHolder genericHolder = new SimpleGenericHolder(simplerGeneric);
+
+        roundTrip(getPojoCodecProviderBuilder(SimpleGenericHolder.class, SimpleGeneric.class, EvenSimplerGeneric.class),
+                genericHolder, "");
+
     }
 
     @Test
