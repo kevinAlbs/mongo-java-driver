@@ -35,9 +35,6 @@ class MapCodec<T> implements Codec<Map<String, T>> {
     MapCodec(final Class<Map<String, T>> encoderClass, final Codec<T> codec) {
         this.encoderClass = encoderClass;
         this.codec = codec;
-        if (codec instanceof PojoCodec) {
-            ((PojoCodec<T>) codec).populateCodecCache();
-        }
     }
 
     @Override

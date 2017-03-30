@@ -16,13 +16,13 @@
 
 package org.bson.codecs.pojo;
 
-import org.bson.codecs.ObjectCodecProvider;
-import org.bson.codecs.ValueCodecProvider;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.entities.CollectionNestedPojoModel;
 import org.bson.codecs.pojo.entities.ConcreteCollectionsModel;
-import org.bson.codecs.pojo.entities.ConstructorModel;
+import org.bson.codecs.pojo.entities.FieldReusingClassTypeParameter;
+import org.bson.codecs.pojo.entities.NestedFieldReusingClassTypeParameter;
+import org.bson.codecs.pojo.entities.NoConstructorModel;
 import org.bson.codecs.pojo.entities.ConventionModel;
 import org.bson.codecs.pojo.entities.ConverterModel;
 import org.bson.codecs.pojo.entities.FieldWithMultipleTypeParamsModel;
@@ -73,14 +73,6 @@ public final class PojoCodecTest extends PojoTestCase {
         roundTrip(getPojoCodecProviderBuilder(PrimitivesModel.class), model,
                 "{ 'myBoolean': true, 'myByte': 1, 'myCharacter': '1', 'myDouble': 1.0, 'myFloat': 2.0, 'myInteger': 3, "
                         + "'myLong': { '$numberLong': '5' }, 'myShort': 6}");
-    }
-
-    @Test
-    public void testRoundTripSimpleGenericsModelWithObjectCodec() {
-        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(SimpleGenericsModel.class).build(),
-                new ValueCodecProvider(), new ObjectCodecProvider());
-        roundTrip(registry, getSimpleGenericsModel(),
-                "{'myIntegerField': 42, 'myGenericField': 'A' 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}");
     }
 
     @Test
@@ -166,16 +158,6 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test
-    public void testFieldWithMultipleGenericParameters() {
-        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(FieldWithMultipleTypeParamsModel.class,
-                SimpleGenericsModel.class).build(), new ValueCodecProvider(), new ObjectCodecProvider());
-        roundTrip(registry, new FieldWithMultipleTypeParamsModel<Integer, Long, String>(getSimpleGenericsModelAlt()),
-                "{ '_t': 'FieldWithMultipleTypeParamsModel', 'simpleGenericsModel': "
-                        + "{'_t': 'SimpleGenericsModel', 'myIntegerField': 42, 'myGenericField': {'$numberLong': '101'}, "
-                        + " 'myListField': ['B', 'C'], 'myMapField': {'D': 2, 'E': 3, 'F': 4}}}");
-    }
-
-    @Test
     public void testNestedGenericHolderFieldWithMultipleTypeParamsModel() {
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericHolderFieldWithMultipleTypeParamsModel.class,
                 FieldWithMultipleTypeParamsModel.class, SimpleGenericsModel.class, GenericHolderModel.class).conventions(NO_CONVENTIONS);
@@ -191,30 +173,10 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test
-    public void testGenericTreeModel() {
-        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(GenericTreeModel.class).build(),
-                new ValueCodecProvider(), new ObjectCodecProvider());
-        roundTrip(registry, getGenericTreeModel(),
-                "{'field1': 'top', 'field2': 1, "
-                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
-                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}");
-    }
-
-    @Test
     public void testNestedGenericTreeModel(){
         PojoCodecProvider.Builder builder = getPojoCodecProviderBuilder(NestedGenericTreeModel.class, GenericTreeModel.class);
         roundTrip(builder, new NestedGenericTreeModel(42, getGenericTreeModel()),
                 "{'intField': 42, 'nested': {'field1': 'top', 'field2': 1, "
-                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
-                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}}");
-    }
-
-    @Test
-    public void testMultipleLevelGenericModel() {
-        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(MultipleLevelGenericModel.class, GenericTreeModel.class).build(),
-                new ValueCodecProvider(), new ObjectCodecProvider());
-        roundTrip(registry, new MultipleLevelGenericModel<String>("string", getGenericTreeModel()),
-                "{'stringField': 'string', 'nested': {'field1': 'top', 'field2': 1, "
                         + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
                         + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}}");
     }
@@ -258,11 +220,15 @@ public final class PojoCodecTest extends PojoTestCase {
                         + "         'myLongField': {'$numberLong': '42' }}}");
     }
 
-    @Test(expected = CodecConfigurationException.class)
-    public void testConstructorModel() {
-        ConstructorModel model = new ConstructorModel(99);
-        roundTrip(getPojoCodecProviderBuilder(ConstructorModel.class), model,
-                "{'integerField': 99}");
+    @Test
+    public void testNestedFieldReusingClassTypeParameter() {
+        NestedFieldReusingClassTypeParameter model = new NestedFieldReusingClassTypeParameter(
+                new FieldReusingClassTypeParameter<String>(getGenericTreeModelStrings()));
+        roundTrip(getPojoCodecProviderBuilder(NestedFieldReusingClassTypeParameter.class, FieldReusingClassTypeParameter.class,
+                GenericTreeModel.class), model,
+                "{'nested': {'tree': {'field1': 'top', 'field2': '1', "
+                        + "'left': {'field1': 'left', 'field2': '2', 'left': {'field1': 'left', 'field2': '3'}}, "
+                        + "'right': {'field1': 'right', 'field2': '4', 'left': {'field1': 'left', 'field2': '5'}}}}}");
     }
 
     @Test
@@ -412,8 +378,8 @@ public final class PojoCodecTest extends PojoTestCase {
     }
 
     @Test(expected = CodecConfigurationException.class)
-    public void testDoesNotSupportReflectingMultipleGenericParameters() {
-        getCodec(FieldWithMultipleTypeParamsModel.class);
+    public void testNoConstructor() {
+        decodingShouldFail(getCodec(NoConstructorModel.class), "{'integerField': 99}");
     }
 
     @Test(expected = CodecConfigurationException.class)
@@ -443,4 +409,17 @@ public final class PojoCodecTest extends PojoTestCase {
                 + "'simple': {'_t': 'FakeModel', 'integerField': 42, 'stringField': 'myString'}}");
     }
 
+    @Test(expected = CodecConfigurationException.class)
+    public void testCannotEncodeUnspecializedClasses() {
+        CodecRegistry registry = fromProviders(getPojoCodecProviderBuilder(GenericTreeModel.class).build());
+        encode(registry.get(GenericTreeModel.class), getGenericTreeModel());
+    }
+
+    @Test(expected = CodecConfigurationException.class)
+    public void testCannotDecodeUnspecializedClasses() {
+        decodingShouldFail(getCodec(GenericTreeModel.class),
+                "{'field1': 'top', 'field2': 1, "
+                        + "'left': {'field1': 'left', 'field2': 2, 'left': {'field1': 'left', 'field2': 3}}, "
+                        + "'right': {'field1': 'right', 'field2': 4, 'left': {'field1': 'left', 'field2': 5}}}");
+    }
 }

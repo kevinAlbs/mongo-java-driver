@@ -16,26 +16,15 @@
 
 package org.bson.codecs.pojo.entities;
 
-public final class ConstructorModel {
-
+public final class NoConstructorModel {
     private final Integer integerField;
-    private final String stringField;
 
-    public ConstructorModel(final Integer integerField) {
-        this(integerField, null);
-    }
-
-    public ConstructorModel(final Integer integerField, final String stringField) {
+    public NoConstructorModel(final Integer integerField) {
         this.integerField = integerField;
-        this.stringField = stringField;
     }
 
     public Integer getIntegerField() {
         return integerField;
-    }
-
-    public String getStringField() {
-        return stringField;
     }
 
     @Override
@@ -47,12 +36,9 @@ public final class ConstructorModel {
             return false;
         }
 
-        ConstructorModel that = (ConstructorModel) o;
+        NoConstructorModel that = (NoConstructorModel) o;
 
         if (getIntegerField() != null ? !getIntegerField().equals(that.getIntegerField()) : that.getIntegerField() != null) {
-            return false;
-        }
-        if (getStringField() != null ? !getStringField().equals(that.getStringField()) : that.getStringField() != null) {
             return false;
         }
 
@@ -62,7 +48,6 @@ public final class ConstructorModel {
     @Override
     public int hashCode() {
         int result = getIntegerField() != null ? getIntegerField().hashCode() : 0;
-        result = 31 * result + (getStringField() != null ? getStringField().hashCode() : 0);
         return result;
     }
 
@@ -70,7 +55,6 @@ public final class ConstructorModel {
     public String toString() {
         return "ConstructorBasedModel{"
                 + "integerField=" + integerField
-                + ", stringField='" + stringField + "'"
                 + "}";
     }
 }

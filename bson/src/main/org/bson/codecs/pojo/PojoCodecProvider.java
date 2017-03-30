@@ -61,11 +61,7 @@ public final class PojoCodecProvider implements CodecProvider {
 
     @Override
     public <T> Codec<T> get(final Class<T> clazz, final CodecRegistry registry) {
-        PojoCodec<T> codec = getPojoCodec(clazz, registry);
-        if (codec != null) {
-            codec.populateCodecCache();
-        }
-        return codec;
+        return getPojoCodec(clazz, registry);
     }
 
     @SuppressWarnings("unchecked")

@@ -30,9 +30,10 @@ import static org.bson.assertions.Assertions.notNull;
 
 /**
  * Represents a class and its type parameters.
- * <p>
- *  Provides a mechanism for working around type erasure for classes containing generic types.
- * </p>
+ *
+ * <p>Combined with the {@link TypeParameterMap} allows for the reification of generic types.</p>
+ *
+ * @see TypeParameterMap
  * @param <T> the type of the class
  * @since 3.5
  */

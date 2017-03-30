@@ -45,36 +45,33 @@ final class PojoCodec<T> implements Codec<T> {
     private final CodecRegistry registry;
     private final DiscriminatorLookup discriminatorLookup;
     private final ClassModelCodecCache codecCache;
-    private boolean setFields;
+    private final boolean specialized;
 
-    @SuppressWarnings("unchecked")
     PojoCodec(final ClassModel<T> classModel, final PojoCodecProvider codecProvider, final CodecRegistry registry,
               final DiscriminatorLookup discriminatorLookup) {
+        this(classModel, codecProvider, registry, discriminatorLookup, !classModel.hasTypeParameters());
+    }
+
+    PojoCodec(final ClassModel<T> classModel, final PojoCodecProvider codecProvider, final CodecRegistry registry,
+              final DiscriminatorLookup discriminatorLookup, final boolean specialized) {
         this.classModel = classModel;
         this.codecProvider = codecProvider;
         this.registry = fromRegistries(fromCodecs(this), registry);
         this.discriminatorLookup = discriminatorLookup;
         this.codecCache = new ClassModelCodecCache();
-    }
-
-    synchronized PojoCodec<T> populateCodecCache() {
-        if (!setFields) {
-            setFields = true;
+        this.specialized = specialized;
+        if (specialized) {
             for (FieldModel<?> fieldModel : classModel.getFieldModels()) {
                 addToCache(fieldModel);
             }
         }
-        return this;
-    }
-
-    private <S> void addToCache(final FieldModel<S> fieldModel) {
-        Codec<S> codec = getCodecFromFieldModel(fieldModel);
-        fieldModel.cachedCodec(codec);
-        codecCache.put(fieldModel.getFieldName(), fieldModel.getTypeData().getType(), codec);
     }
 
     @Override
     public void encode(final BsonWriter writer, final T value, final EncoderContext encoderContext) {
+        if (!specialized) {
+            throw new CodecConfigurationException("Cannot encode an unspecialized generic ClassModel");
+        }
         writer.writeStartDocument();
         FieldModel<?> idFieldModel = classModel.getIdFieldModel();
         if (idFieldModel != null) {
@@ -97,6 +94,9 @@ final class PojoCodec<T> implements Codec<T> {
     @Override
     public T decode(final BsonReader reader, final DecoderContext decoderContext) {
         if (decoderContext.hasCheckedDiscriminator()) {
+            if (!specialized) {
+                throw new CodecConfigurationException("Cannot decode using an unspecialized generic ClassModel");
+            }
             InstanceCreator<T> instanceCreator = classModel.getInstanceCreator();
             decodeFields(reader, decoderContext, instanceCreator);
             return instanceCreator.getInstance();
@@ -198,9 +198,11 @@ final class PojoCodec<T> implements Codec<T> {
         return false;
     }
 
-    private <S> Codec<S> getCodecFromFieldModel(final FieldModel<S> fieldModel) {
-        return fieldModel.getCodec() != null ? fieldModel.getCodec()
+    private <S> void addToCache(final FieldModel<S> fieldModel) {
+        Codec<S> codec = fieldModel.getCodec() != null ? fieldModel.getCodec()
                 : specializePojoCodec(fieldModel, getCodecFromTypeData(fieldModel.getTypeData()));
+        fieldModel.cachedCodec(codec);
+        codecCache.put(fieldModel.getFieldName(), fieldModel.getTypeData().getType(), codec);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -238,9 +240,8 @@ final class PojoCodec<T> implements Codec<T> {
             PojoCodec<S> pojoCodec = (PojoCodec<S>) codec;
             ClassModel<S> specialized = getSpecializedClassModel(pojoCodec.getClassModel(), fieldModel);
             if (!pojoCodec.getClassModel().equals(specialized)) {
-                pojoCodec = new PojoCodec<S>(specialized, codecProvider, registry, discriminatorLookup);
+                pojoCodec = new PojoCodec<S>(specialized, codecProvider, registry, discriminatorLookup, true);
             }
-            pojoCodec.populateCodecCache();
             codec = pojoCodec;
         }
         return codec;
@@ -310,8 +311,8 @@ final class PojoCodec<T> implements Codec<T> {
 
     @SuppressWarnings("unchecked")
     private Codec<T> getCodecFromDocument(final BsonReader reader, final boolean useDiscriminator, final String discriminatorKey,
-                                              final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
-                                              final Codec<T> defaultCodec) {
+                                          final CodecRegistry registry, final DiscriminatorLookup discriminatorLookup,
+                                          final Codec<T> defaultCodec) {
         Codec<T> codec = defaultCodec;
         if (useDiscriminator) {
             reader.mark();

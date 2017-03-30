@@ -29,6 +29,7 @@ import java.util.Map;
 public final class ClassModel<T> {
     private final String name;
     private final Class<T> type;
+    private final boolean hasTypeParameters;
     private final InstanceCreatorFactory<T> instanceCreatorFactory;
     private final boolean discriminatorEnabled;
     private final String discriminatorKey;
@@ -43,6 +44,7 @@ public final class ClassModel<T> {
                final String discriminator, final FieldModel<?> idField, final List<FieldModel<?>> fieldModels) {
         this.name = clazz.getSimpleName();
         this.type = clazz;
+        this.hasTypeParameters = clazz.getTypeParameters().length > 0;
         this.fieldNameToTypeParameterMap = fieldNameToTypeParameterMap;
         this.instanceCreatorFactory = instanceCreatorFactory;
         this.discriminatorEnabled = discriminatorEnabled;
@@ -93,6 +95,13 @@ public final class ClassModel<T> {
      */
     public Class<T> getType() {
         return type;
+    }
+
+    /**
+     * @return true if the underlying type has type parameters.
+     */
+    public boolean hasTypeParameters() {
+        return hasTypeParameters;
     }
 
     /**

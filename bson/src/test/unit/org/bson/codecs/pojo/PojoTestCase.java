@@ -47,7 +47,6 @@ import org.bson.io.BasicOutputBuffer;
 import org.bson.io.ByteBufferBsonInput;
 import org.bson.io.OutputBuffer;
 import org.bson.types.ObjectId;
-import org.junit.Assert;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -63,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.junit.Assert.assertEquals;
 
 abstract class PojoTestCase {
 
@@ -91,7 +91,7 @@ abstract class PojoTestCase {
         OutputBuffer encoded = encode(codec, value);
 
         BsonDocument asBsonDocument = decode(DOCUMENT_CODEC, encoded);
-        Assert.assertEquals("Encoded value", BsonDocument.parse(json), asBsonDocument);
+        assertEquals("Encoded value", BsonDocument.parse(json), asBsonDocument);
     }
 
     @SuppressWarnings("unchecked")
@@ -103,7 +103,7 @@ abstract class PojoTestCase {
     <T> void decodesTo(final Codec<T> codec, final String json, final T expected) {
         OutputBuffer encoded = encode(DOCUMENT_CODEC, BsonDocument.parse(json));
         T result = decode(codec, encoded);
-        Assert.assertEquals("Decoded value", expected, result);
+        assertEquals("Decoded value", expected, result);
     }
 
     <T> void decodingShouldFail(final Codec<T> codec, final String json) {
@@ -268,6 +268,14 @@ abstract class PojoTestCase {
                         new GenericTreeModel<String, Integer>("left", 3, null, null), null),
                 new GenericTreeModel<String, Integer>("right", 4,
                         new GenericTreeModel<String, Integer>("left", 5, null, null), null));
+    }
+
+    GenericTreeModel<String, String> getGenericTreeModelStrings() {
+        return new GenericTreeModel<String, String>("top", "1",
+                new GenericTreeModel<String, String>("left", "2",
+                        new GenericTreeModel<String, String>("left", "3", null, null), null),
+                new GenericTreeModel<String, String>("right", "4",
+                        new GenericTreeModel<String, String>("left", "5", null, null), null));
     }
 
     static final String SIMPLE_MODEL_JSON = "{'integerField': 42, 'stringField': 'myString'}";

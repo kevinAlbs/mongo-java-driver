@@ -25,6 +25,9 @@ import static java.util.Collections.unmodifiableMap;
 /**
  * Maps the index of a class's generic parameter type index to a field's.
  *
+ * <p>Combined with {@link TypeData} allows for the reification of generic types.</p>
+ *
+ * @see TypeData
  * @since 3.5
  */
 public final class TypeParameterMap {
@@ -40,7 +43,11 @@ public final class TypeParameterMap {
     }
 
     /**
-     * @return a mapping of field type parameter index to the class type parameter index
+     * Returns a mapping of field type parameter index to the class type parameter index.
+     *
+     * <p>Note: A field index of -1, means the class's parameter type represents the whole field</p>
+     *
+     * @return a mapping of field type parameter index to the class type parameter index.
      */
     public Map<Integer, Integer> getFieldToClassParamIndexMap() {
         return fieldToClassParamIndexMap;
