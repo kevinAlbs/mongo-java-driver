@@ -20,6 +20,7 @@ import com.mongodb.client.ListDatabasesIterable;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoDriverInformation;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.client.MongoSession;
 import com.mongodb.client.gridfs.codecs.GridFSFileCodecProvider;
 import com.mongodb.client.model.geojson.codecs.GeoJsonCodecProvider;
 import org.bson.BsonDocument;
@@ -80,7 +81,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
  * @see MongoClientURI
  * @since 2.10.0
  */
-public class MongoClient extends Mongo implements Closeable {
+public class MongoClient extends Mongo implements MongoSession {
 
     private static final CodecRegistry DEFAULT_CODEC_REGISTRY =
             fromProviders(asList(new ValueCodecProvider(),
@@ -351,6 +352,13 @@ public class MongoClient extends Mongo implements Closeable {
      */
     public List<MongoCredential> getCredentialsList() {
         return super.getCredentialsList();
+    }
+
+    /**
+     * Create a new session
+     */
+    public MongoSession createSession() {
+        return new MongoSessionImpl(this);
     }
 
     /**
