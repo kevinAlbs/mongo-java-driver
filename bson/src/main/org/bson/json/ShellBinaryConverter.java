@@ -20,12 +20,11 @@ package org.bson.json;
 import org.bson.BsonBinary;
 
 import static java.lang.String.format;
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 class ShellBinaryConverter implements Converter<BsonBinary> {
     @Override
     public void convert(final BsonBinary value, final StrictJsonWriter writer) {
         writer.writeRaw(format("new BinData(%s, \"%s\")", Integer.toString(value.getType() & 0xFF),
-                printBase64Binary(value.getData())));
+                Base64.encode(value.getData())));
     }
 }
