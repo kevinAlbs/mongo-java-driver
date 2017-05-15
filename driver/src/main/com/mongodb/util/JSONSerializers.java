@@ -21,7 +21,7 @@ import com.mongodb.Bytes;
 import com.mongodb.DBObject;
 import com.mongodb.DBRef;
 import org.bson.BsonUndefined;
-import org.bson.json.Base64;
+import org.bson.internal.Base64;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.Binary;
 import org.bson.types.Code;

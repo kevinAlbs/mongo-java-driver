@@ -16,7 +16,7 @@
  *
  */
 
-package org.bson.json;
+package org.bson.internal;
 
 /**
  * <p>Provides Base64 encoding and decoding.</p>

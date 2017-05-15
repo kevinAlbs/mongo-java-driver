@@ -18,6 +18,7 @@
 package org.bson.json;
 
 import org.bson.BsonBinary;
+import org.bson.internal.Base64;
 
 class ExtendedJsonBinaryConverter implements Converter<BsonBinary> {
 

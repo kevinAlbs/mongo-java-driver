@@ -19,7 +19,7 @@ package com.mongodb.util;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBRef;
 import org.bson.BsonUndefined;
-import org.bson.json.Base64;
+import org.bson.internal.Base64;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.BasicBSONList;
 import org.bson.types.Binary;

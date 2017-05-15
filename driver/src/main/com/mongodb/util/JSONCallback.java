@@ -26,7 +26,7 @@ import org.bson.BSON;
 import org.bson.BSONObject;
 import org.bson.BasicBSONCallback;
 import org.bson.BsonUndefined;
-import org.bson.json.Base64;
+import org.bson.internal.Base64;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.Binary;
 import org.bson.types.Code;

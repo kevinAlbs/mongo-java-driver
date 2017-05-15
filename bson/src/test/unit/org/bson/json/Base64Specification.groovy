@@ -16,6 +16,7 @@
 
 package org.bson.json
 
+import org.bson.internal.Base64
 import spock.lang.Specification
 import spock.lang.Unroll
 

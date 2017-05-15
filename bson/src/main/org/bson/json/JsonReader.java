@@ -29,6 +29,7 @@ import org.bson.BsonRegularExpression;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
 import org.bson.BsonUndefined;
+import org.bson.internal.Base64;
 import org.bson.internal.UnsignedLongs;
 import org.bson.types.Decimal128;
 import org.bson.types.MaxKey;

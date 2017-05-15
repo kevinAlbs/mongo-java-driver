@@ -19,7 +19,7 @@ package com.mongodb.connection;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.internal.authentication.NativeAuthenticationHelper;
-import org.bson.json.Base64;
+import org.bson.internal.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKeyFactory;
