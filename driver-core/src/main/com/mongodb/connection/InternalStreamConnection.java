@@ -321,10 +321,10 @@ class InternalStreamConnection implements InternalConnection {
                 bsonOutput.close();
                 sendCommandMessageAsync(message.getId(), decoder, callback, compressedBsonOutput, commandEventSender);
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable t) {
             bsonOutput.close();
             compressedBsonOutput.close();
-            callback.onResult(null, e);
+            callback.onResult(null, t);
         }
     }
 
@@ -450,9 +450,9 @@ class InternalStreamConnection implements InternalConnection {
                 if (t != null) {
                     close();
                     callback.onResult(null, t);
-                    return;
+                } else {
+                    callback.onResult(result, null);
                 }
-                callback.onResult(result, null);
             }
         }));
     }
@@ -577,10 +577,11 @@ class InternalStreamConnection implements InternalConnection {
 
         @Override
         public void onResult(final ByteBuf result, final Throwable t) {
+            if (t != null) {
+                callback.onResult(null, t);
+                return;
+            }
             try {
-                if (t != null) {
-                    throw t;
-                }
                 MessageHeader messageHeader = new MessageHeader(result, description.getMaxMessageSize());
                 readAsync(messageHeader.getMessageLength() - MESSAGE_HEADER_LENGTH, new MessageCallback(messageHeader));
             } catch (Throwable localThrowable) {
@@ -601,10 +602,11 @@ class InternalStreamConnection implements InternalConnection {
 
             @Override
             public void onResult(final ByteBuf result, final Throwable t) {
+                if (t != null) {
+                    callback.onResult(null, t);
+                    return;
+                }
                 try {
-                    if (t != null) {
-                        throw t;
-                    }
                     ReplyHeader replyHeader;
                     ByteBuf responseBuffer;
                     if (messageHeader.getOpCode() == OP_COMPRESSED.getValue()) {
