@@ -72,7 +72,6 @@ class SimpleCommandMessage extends CommandMessage {
             bsonOutput.writeCString(getCollectionName());
             bsonOutput.writeInt32(0);
             bsonOutput.writeInt32(-1);
-            // TODO: only do this when sending to mongos?
             if (!isDefaultReadPreference()) {
                 commandToEncode = new BsonDocument("$query", command).append("$readPreference", readPreference.toDocument());
             } else {
