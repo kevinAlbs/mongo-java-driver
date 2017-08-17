@@ -57,7 +57,7 @@ class SimpleCommandMessage extends CommandMessage {
     protected EncodingMetadata encodeMessageBodyWithMetadata(final BsonOutput bsonOutput, final int messageStartPosition) {
         BsonDocument commandToEncode;
         List<BsonElement> extraElements = null;
-        if (useNewOpCode()) {
+        if (useOpMsg()) {
             bsonOutput.writeInt32(0);  // flag bits
             bsonOutput.writeByte(0);   // payload type
 

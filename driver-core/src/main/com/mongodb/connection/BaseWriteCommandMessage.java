@@ -108,7 +108,7 @@ abstract class BaseWriteCommandMessage extends CommandMessage {
             writer.writeStartDocument();
             writeCommandPrologue(writer);
             nextMessage = writeTheWrites(outputStream, commandStartPosition, writer);
-            if (useNewOpCode()) {
+            if (useOpMsg()) {
                 writer.writeString("$db", getWriteNamespace().getDatabaseName());
             }
             writer.writeEndDocument();
@@ -126,7 +126,7 @@ abstract class BaseWriteCommandMessage extends CommandMessage {
     protected abstract FieldNameValidator getFieldNameValidator();
 
     private void writeCommandHeader(final BsonOutput outputStream) {
-        if (useNewOpCode()) {
+        if (useOpMsg()) {
             outputStream.writeInt32(0);  // flag bits
             outputStream.writeByte(0);   // payload type
         } else {

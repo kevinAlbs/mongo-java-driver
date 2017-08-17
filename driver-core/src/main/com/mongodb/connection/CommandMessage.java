@@ -23,14 +23,14 @@ abstract class CommandMessage extends RequestMessage {
     }
 
     protected static OpCode getOpCode(final MessageSettings settings) {
-        return useNewOpCode(settings) ? OpCode.OP_MSG : OpCode.OP_QUERY;
+        return useOpMsg(settings) ? OpCode.OP_MSG : OpCode.OP_QUERY;
     }
 
-    protected static boolean useNewOpCode(final MessageSettings settings) {
+    protected static boolean useOpMsg(final MessageSettings settings) {
         return settings.getServerVersion().compareTo(new ServerVersion(3, 5)) >= 0;
     }
 
-    protected boolean useNewOpCode() {
-        return useNewOpCode(getSettings());
+    protected boolean useOpMsg() {
+        return useOpMsg(getSettings());
     }
 }
