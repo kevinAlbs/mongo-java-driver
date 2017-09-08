@@ -128,7 +128,8 @@ class AggregateIterableImpl<TDocument, TResult> extends MongoIterableImpl<TResul
         if (outCollection != null) {
             getExecutor().execute(createAggregateToCollectionOperation(aggregateList));
             FindOperation<TResult> findOperation =
-                    new FindOperation<TResult>(new MongoNamespace(namespace.getDatabaseName(), outCollection.asString().getValue()),
+                    new FindOperation<TResult>(
+                    new MongoNamespace(namespace.getDatabaseName(), outCollection.asString().getValue()),
                                                       codecRegistry.get(resultClass))
                             .readConcern(getReadConcern())
                             .collation(collation);
