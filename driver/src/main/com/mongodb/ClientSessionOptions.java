@@ -97,6 +97,7 @@ public final class ClientSessionOptions {
          * Sets the initial cluster time to apply to the client session
          *
          * @param initialClusterTime the initial cluster time, which may be null
+         * @return this
          */
         public Builder initialClusterTime(final BsonDocument initialClusterTime) {
             this.initialClusterTime = initialClusterTime;
@@ -107,6 +108,7 @@ public final class ClientSessionOptions {
          * Gets the initial operation time to apply to the client session
          *
          * @param initialOperationTime the initial operation time, which may be null
+         * @return this
          */
         public Builder initialOperationTime(final BsonTimestamp initialOperationTime) {
             this.initialOperationTime = initialOperationTime;
