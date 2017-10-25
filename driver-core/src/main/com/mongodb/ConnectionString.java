@@ -836,6 +836,10 @@ public class ConnectionString {
             }
             hosts.add(host);
         }
+        if (requiresDirectoryResolution && hosts.size() > 1) {
+            throw new IllegalArgumentException("The mongodb+srv protocol requires a single host name but this connection string has more "
+                    + "than one: " + connectionString);
+        }
         Collections.sort(hosts);
         return hosts;
     }
