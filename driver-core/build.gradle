@@ -34,6 +34,8 @@ dependencies {
     compile "io.netty:netty-handler:$nettyVersion", optional
     compile "org.xerial.snappy:snappy-java:$snappyVersion", optional
 
+    compile "net.java.dev.jna:jna:4.5.0"
+    
     testCompile project(':bson').sourceSets.test.output
 }
 
