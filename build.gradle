@@ -66,12 +66,13 @@ configure(subprojects.findAll { it.name != 'util' }) {
 
     /* Compiling */
     tasks.withType(AbstractCompile) {
-        options.encoding = 'ISO-8859-1'
-        options.fork = true
-        options.debug = true
-        options.compilerArgs = ['-Xlint:all', '-Xlint:-options']
-
-        onlyIf { JavaVersion.current().isJava7Compatible() }
+// TODO: Don't know why this makes Kotlin build fail
+//        options.encoding = 'ISO-8859-1'
+//        options.fork = true
+//        options.debug = true
+//        options.compilerArgs = ['-Xlint:all', '-Xlint:-options']
+//
+//        onlyIf { JavaVersion.current().isJava7Compatible() }
     }
 
     project.ext.buildingWith = { propertyName ->
