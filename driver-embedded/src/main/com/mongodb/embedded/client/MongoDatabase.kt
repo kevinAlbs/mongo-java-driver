@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2008-2014 MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver-sync', 'driver-async', 'driver-legacy', 'driver-embedded', 'mongodb-driver',
-        'mongo-java-driver'
+package com.mongodb.embedded.client
 
+import org.bson.Document
+import org.bson.conversions.Bson
+
+interface MongoDatabase {
+
+    fun <TDocument> getCollection(collectionName : String, documentClass: Class<TDocument>) : MongoCollection<TDocument>
+
+    fun runCommand(command : Bson) : Document
+
+    fun drop() : Unit
+}
