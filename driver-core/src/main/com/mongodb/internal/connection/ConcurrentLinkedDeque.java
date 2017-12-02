@@ -71,7 +71,13 @@ public class ConcurrentLinkedDeque<E>
 extends AbstractCollection<E>
 implements Deque<E>, java.io.Serializable {
 
-    // CHECKSTYLE:OFF
+    // CHECKSTYLE.OFF: VisibilityModifier
+    // CHECKSTYLE.OFF: FinalParameters
+    // CHECKSTYLE.OFF: NeedBraces
+    // CHECKSTYLE.OFF: OperatorWrap
+    // CHECKSTYLE.OFF: EmptyStatement
+    // CHECKSTYLE.OFF: InnerAssignment
+    // CHECKSTYLE.OFF: LeftCurly
 
     /*
      * This is an adaptation of an algorithm described in Paul
