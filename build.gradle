@@ -167,7 +167,7 @@ def getGitVersion() {
     return outputAsString
 }
 
-configure(subprojects.findAll { it.name != 'util' && it.name != 'mongo-java-driver' }) {
+configure(subprojects.findAll { it.name != 'util'}) {
     apply plugin: 'checkstyle'
     apply plugin: "com.github.spotbugs"
     apply plugin: 'jacoco'
