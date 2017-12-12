@@ -18,28 +18,30 @@ apply plugin: 'idea'
 apply plugin: 'osgi'
 
 archivesBaseName = 'mongo-java-driver'
+def configDir = new File(rootDir, 'config')
 
-idea {
-    module {
-        sourceDirs = [] // Ignore in idea (prevents intellij crashing due to sources outside project dir)
-    }
+sourceSets {
+    test.groovy.srcDirs += ['src/examples']
+}
+
+test {
+    exclude 'tour/**'
 }
 
 // dependencies copied from driver-core
 dependencies {
+    compile project(':bson')
+    compile project(':driver-core')
+    compile project(':driver')
+
+    testCompile project(':bson').sourceSets.test.output
+    testCompile project(':driver-core').sourceSets.test.output
+    testCompile project(':driver').sourceSets.test.output
+
     compile "io.netty:netty-buffer:$nettyVersion", optional
     compile "io.netty:netty-transport:$nettyVersion", optional
     compile "io.netty:netty-handler:$nettyVersion", optional
     compile "org.xerial.snappy:snappy-java:$snappyVersion", optional
-}
-
-// srcDirs copied as well, so everything is compiled twice
-sourceSets {
-    main {
-        java {
-            srcDirs = ["$rootDir/driver/src/main", "$rootDir/driver-core/src/main", "$rootDir/bson/src/main"]
-        }
-    }
 }
 
 // copied from driver-core
