@@ -19,6 +19,7 @@ package com.mongodb.client
 import com.mongodb.ReadConcern
 import com.mongodb.WriteConcern
 import com.mongodb.client.internal.ListDatabasesIterableImpl
+import com.mongodb.client.internal.MongoClientImpl
 import com.mongodb.client.internal.MongoDatabaseImpl
 import com.mongodb.client.internal.TestOperationExecutor
 import com.mongodb.connection.Cluster

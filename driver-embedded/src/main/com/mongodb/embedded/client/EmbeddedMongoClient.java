@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2008-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.mongodb.embedded.client
+package com.mongodb.embedded.client;
 
-import org.bson.Document
-import org.bson.conversions.Bson
+import com.mongodb.client.MongoClient;
 
-interface MongoDatabase {
+public interface EmbeddedMongoClient extends MongoClient {
 
-    fun <TDocument> getCollection(collectionName : String, documentClass: Class<TDocument>) : MongoCollection<TDocument>
-
-    fun runCommand(command : Bson) : Document
-
-    fun drop() : Unit
+    // add methods here
 }

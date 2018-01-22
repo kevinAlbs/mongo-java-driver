@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2018 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.mongodb.embedded.client
-
-import java.io.Closeable
-
-interface MongoClient : Closeable{
-
-    companion object Factory {
-        fun create(argv : List<String>) : MongoClient = MongoClientImpl(argv)
-    }
-
-    fun getDatabase(name : String) : MongoDatabase
-
-    fun pump()
-}
-
+/**
+ * This packages contains internal implementation details that are not considered part of the public API
+ */
+package com.mongodb.client.internal;

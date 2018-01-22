@@ -33,7 +33,6 @@ dependencies {
     compile "io.netty:netty-transport:$nettyVersion", optional
     compile "io.netty:netty-handler:$nettyVersion", optional
     compile "org.xerial.snappy:snappy-java:$snappyVersion", optional
-    compile "net.java.dev.jna:jna:$jnaVersion", optional
     
     testCompile project(':bson').sourceSets.test.output
 }
@@ -54,8 +53,7 @@ jar {
                     'org.ietf.jgss.*',
                     'io.netty.*;resolution:=optional',
                     'org.xerial.snappy.*;resolution:=optional',
-                    'org.slf4j;resolution:=optional',
-                    'net.java.dev.jna.*;resolution=optional'
+                    'org.slf4j;resolution:=optional'
     }
 }
 

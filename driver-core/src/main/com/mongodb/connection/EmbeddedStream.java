@@ -26,16 +26,11 @@ import java.util.List;
 
 class EmbeddedStream implements Stream {
 
-    private final MongoDBEmbeddedConnection embeddedConnection;
+    private final EmbeddedConnection embeddedConnection;
     private volatile boolean isClosed;
     private volatile ByteBuffer curResponse;
 
-    /**
-     * Construct an instance.
-     *
-     * @param embeddedConnection the embedded connection to wrap
-     */
-    EmbeddedStream(final MongoDBEmbeddedConnection embeddedConnection) {
+    EmbeddedStream(final EmbeddedConnection embeddedConnection) {
         this.embeddedConnection = embeddedConnection;
     }
 

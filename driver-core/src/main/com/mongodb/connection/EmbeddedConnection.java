@@ -17,28 +17,23 @@
 package com.mongodb.connection;
 
 import java.io.Closeable;
+import java.nio.ByteBuffer;
 import java.util.List;
 
-interface MongoDBEmbeddedServer extends Closeable {
-    /**
-     * Initialize the server.
-     *
-     * @param argc the arguments
-     * @param envp the environment variables
-     */
-    void init(List<String> argc, List<String> envp);
+/**
+ *
+ * @since 3.8
+ * @mongo
+ */
+public interface EmbeddedConnection extends Closeable {
 
     /**
-     * Create a connection to the server.
+     * Send a message and return the response message
      *
-     * @return the connection
+     * @param message the message
+     * @return the response message
      */
-    MongoDBEmbeddedConnection createConnection();
-
-    /**
-     * Pump the message queue.
-     */
-    void pump();
+    ByteBuffer sendAndReceive(List<ByteBuffer> message);
 
     @Override
     void close();

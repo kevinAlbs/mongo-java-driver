@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.mongodb.connection;
+package com.mongodb.embedded.client;
 
+import com.mongodb.connection.EmbeddedCluster;
+
+import java.util.Collections;
 import java.util.List;
 
-/**
- * An Embedded Server Factory
- *
- * @since 3.8
- * @mongodb.server.release 3.8
- */
-public interface EmbeddedServerFactory {
+public class MongoClients {
 
-    /**
-     * Create an instance of EmbeddedServer.
-     *
-     * @param argv the arguments to mongod
-     * @param envp the environment for mongod
-     * @return the embedded server
-     */
-    EmbeddedServer create(final List<String> argv, final List<String> envp);
+    // TODO: figure out how to configure
+    public static EmbeddedMongoClient create(final List<String> embeddedClusterArguments) {
+        return new EmbeddedMongoClientImpl(new EmbeddedCluster(embeddedClusterArguments, Collections.<String>emptyList(),
+                new EmbeddedServerFactoryImpl()));
+    }
+
+    // static methods here...
+
+    public static void lowBatteryWarning() {
+        // do something...
+    }
+
+    private MongoClients() {
+    }
 }

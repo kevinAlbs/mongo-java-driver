@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package com.mongodb.connection;
+package com.mongodb.embedded.client;
+
+import com.mongodb.connection.EmbeddedServer;
+import com.mongodb.connection.EmbeddedServerFactory;
+import com.sun.jna.Native;
 
 import java.util.List;
 
-/**
- * An Embedded Server Factory
- *
- * @since 3.8
- * @mongodb.server.release 3.8
- */
-public interface EmbeddedServerFactory {
+final class EmbeddedServerFactoryImpl implements EmbeddedServerFactory {
 
-    /**
-     * Create an instance of EmbeddedServer.
-     *
-     * @param argv the arguments to mongod
-     * @param envp the environment for mongod
-     * @return the embedded server
-     */
-    EmbeddedServer create(final List<String> argv, final List<String> envp);
+    static {
+        // TODO: this should be removed for production
+        Native.setProtected(true);
+    }
+
+    @Override
+    public EmbeddedServer create(final List<String> argv, final List<String> envp) {
+        EmbeddedServerImpl embeddedServer = new EmbeddedServerImpl(MongoDBCAPI.INSTANCE);
+        embeddedServer.init(argv, envp);
+        return embeddedServer;
+    }
+
 }

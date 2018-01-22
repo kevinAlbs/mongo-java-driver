@@ -16,126 +16,29 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.MongoCompressor;
-import com.mongodb.ServerAddress;
-import com.mongodb.async.SingleResultCallback;
-import com.mongodb.session.SessionContext;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-
 import java.io.Closeable;
-import java.util.Collections;
-
-import static com.mongodb.connection.ClientMetadataHelper.createClientMetadataDocument;
-import static com.mongodb.connection.CommandHelper.executeCommand;
+import java.util.List;
 
 /**
- * An embedded server.
+ * An Embedded Server
  *
  * @since 3.8
+ * @mongodb.server.release 3.8
  */
-public class EmbeddedServer implements Closeable {
-
-    private final ClusterId clusterId = new ClusterId();
-    private final ClusterClock clusterClock = new ClusterClock();
-    private final ServerAddress serverAddress = new ServerAddress();
-    private final MongoDBEmbeddedServer embeddedServer;
-    private final ServerDescription serverDescription;
+public interface EmbeddedServer extends Closeable {
 
     /**
-     * Construct an instance.
-     *
-     * @param embeddedServer the wrapped server
-     */
-    public EmbeddedServer(final MongoDBEmbeddedServer embeddedServer) {
-        this.embeddedServer = embeddedServer;
-        this.serverDescription = createServerDescription();
-    }
-
-    private ServerDescription createServerDescription() {
-        InternalConnection connection = getInternalConnection();
-        try {
-            connection.open();
-            long start = System.nanoTime();
-            BsonDocument isMasterResult = executeCommand("admin", new BsonDocument("ismaster", new BsonInt32(1)),
-                    clusterClock, connection);
-
-            return DescriptionHelper.createServerDescription(serverAddress, isMasterResult, connection.getDescription().getServerVersion(),
-                    System.nanoTime() - start);
-        } finally {
-            connection.close();
-        }
-
-    }
-
-    /**
-     * Gets the description of this server
-     *
-     * @return the server description
-     */
-    public ServerDescription getDescription() {
-        return serverDescription;
-    }
-
-    /**
-     * Gets a connection to this server.
+     * Create a connection to the server.
      *
      * @return the connection
      */
-    public Connection getConnection() {
-        InternalConnection internalConnection = getInternalConnection();
-        internalConnection.open();
-        return new DefaultServerConnection(internalConnection, new DefaultServerProtocolExecutor(), ClusterConnectionMode.SINGLE);
-    }
+    EmbeddedConnection createConnection();
 
     /**
      * Pump the message queue.
      */
-    public void pump() {
-        embeddedServer.pump();
-    }
+    void pump();
 
     @Override
-    public void close() {
-        embeddedServer.close();
-    }
-
-    private InternalConnection getInternalConnection() {
-        return new InternalStreamConnection(new ServerId(clusterId, new ServerAddress()),
-                new StreamFactory() {
-                    @Override
-                    public Stream create(final ServerAddress serverAddress) {
-                        return new EmbeddedStream(embeddedServer.createConnection());
-                    }
-                }, Collections.<MongoCompressor>emptyList(), null,
-                new InternalStreamConnectionInitializer(Collections.<Authenticator>emptyList(), createClientMetadataDocument(null),
-                        Collections.<MongoCompressor>emptyList()));
-    }
-
-    private static class DefaultServerProtocolExecutor implements ProtocolExecutor {
-        @Override
-        public <T> T execute(final LegacyProtocol<T> protocol, final InternalConnection connection) {
-            return protocol.execute(connection);
-        }
-
-        @Override
-        public <T> void executeAsync(final LegacyProtocol<T> protocol, final InternalConnection connection,
-                                     final SingleResultCallback<T> callback) {
-            protocol.executeAsync(connection, callback);
-        }
-
-        @Override
-        public <T> T execute(final CommandProtocol<T> protocol, final InternalConnection connection,
-                             final SessionContext sessionContext) {
-            protocol.sessionContext(sessionContext);
-            return protocol.execute(connection);
-        }
-
-        @Override
-        public <T> void executeAsync(final CommandProtocol<T> protocol, final InternalConnection connection,
-                                     final SessionContext sessionContext, final SingleResultCallback<T> callback) {
-            protocol.sessionContext(sessionContext);
-            protocol.executeAsync(connection, callback);
-        }
-    }
+    void close();
 }

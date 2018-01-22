@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.mongodb.client;
+package com.mongodb.client.internal;
 
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.Function;
@@ -23,6 +23,11 @@ import com.mongodb.MongoCredential;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.ListDatabasesIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
 import com.mongodb.client.internal.ListDatabasesIterableImpl;
 import com.mongodb.client.internal.MongoClientDelegate;
 import com.mongodb.client.internal.MongoDatabaseImpl;
@@ -37,7 +42,8 @@ import java.util.List;
 
 import static com.mongodb.assertions.Assertions.notNull;
 
-final class MongoClientImpl implements MongoClient {
+// Not part of public API: yada yada yada
+public class MongoClientImpl implements MongoClient {
 
     private final ReadPreference readPreference;
     private final boolean retryWrites;
@@ -46,12 +52,12 @@ final class MongoClientImpl implements MongoClient {
     private final CodecRegistry codecRegistry = MongoClients.getDefaultCodecRegistry();
     private final MongoClientDelegate delegate;
 
-    MongoClientImpl(final Cluster cluster, final List<MongoCredential> credentialList, final ReadPreference readPreference,
+    public MongoClientImpl(final Cluster cluster, final List<MongoCredential> credentialList, final ReadPreference readPreference,
                     final WriteConcern writeConcern, final boolean retryWrites, final ReadConcern readConcern) {
         this(cluster, credentialList, readPreference, writeConcern, retryWrites, readConcern, null);
     }
 
-    MongoClientImpl(final Cluster cluster, final List<MongoCredential> credentialList, final ReadPreference readPreference,
+    public MongoClientImpl(final Cluster cluster, final List<MongoCredential> credentialList, final ReadPreference readPreference,
                     final WriteConcern writeConcern, final boolean retryWrites, final ReadConcern readConcern,
                     final OperationExecutor operationExecutor) {
         this.readPreference = readPreference;

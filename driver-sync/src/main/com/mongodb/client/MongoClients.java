@@ -24,6 +24,7 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.gridfs.codecs.GridFSFileCodecProvider;
+import com.mongodb.client.internal.MongoClientImpl;
 import com.mongodb.client.model.geojson.codecs.GeoJsonCodecProvider;
 import com.mongodb.connection.Cluster;
 import com.mongodb.connection.ClusterSettings;

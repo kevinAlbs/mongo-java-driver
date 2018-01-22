@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2018 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,31 +14,28 @@
  * limitations under the License.
  */
 
-package com.mongodb.connection;
+package com.mongodb.embedded.client;
 
 import com.mongodb.MongoException;
+import com.mongodb.connection.EmbeddedConnection;
+import com.mongodb.connection.EmbeddedServer;
 import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class MongoDBEmbeddedServerImpl implements MongoDBEmbeddedServer {
+final class EmbeddedServerImpl implements EmbeddedServer {
 
     private final MongoDBCAPI mongoDBCAPI;
     private volatile Pointer databasePointer;
+    private volatile boolean closed;
 
-    /**
-     * Construct an instance.
-     *
-     * @param mongoDBCAPI The implementation of the native API for embedded MongoDB
-     */
-    MongoDBEmbeddedServerImpl(final MongoDBCAPI mongoDBCAPI) {
+
+    EmbeddedServerImpl(final MongoDBCAPI mongoDBCAPI) {
         this.mongoDBCAPI = mongoDBCAPI;
     }
 
-
-    @Override
-    public void init(final List<String> argc, final List<String> envp) {
+    void init(final List<String> argc, final List<String> envp) {
         List<String> allArgc = new ArrayList<String>(argc.size() + 1);
         allArgc.add("mongod");
         allArgc.addAll(argc);
@@ -47,8 +44,8 @@ class MongoDBEmbeddedServerImpl implements MongoDBEmbeddedServer {
     }
 
     @Override
-    public MongoDBEmbeddedConnection createConnection() {
-        return new MongoDBEmbeddedConnectionImpl(mongoDBCAPI, databasePointer);
+    public EmbeddedConnection createConnection() {
+        return new EmbeddedConnectionImpl(mongoDBCAPI, databasePointer);
     }
 
     @Override
