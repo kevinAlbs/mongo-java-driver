@@ -32,6 +32,7 @@ import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.mongodb.client.model.Accumulators.sum;
@@ -61,7 +62,7 @@ public class EmbeddedServerTest {
      */
     public static void main(final String[] args) {
 
-        MongoClient mongoClient = MongoClients.create();
+        MongoClient mongoClient = MongoClients.create(Collections.<String>emptyList());
 
         // get handle to "mydb" database
         MongoDatabase database = mongoClient.getDatabase("mydb");

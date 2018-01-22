@@ -18,14 +18,16 @@ package com.mongodb.embedded.client;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import util.JsonPoweredTestHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,12 +44,15 @@ import static org.junit.Assume.assumeTrue;
 // See https://github.com/mongodb/specifications/tree/master/source/crud/tests
 @RunWith(Parameterized.class)
 public class EmbeddedCrudTest {
+
+    private static final String DEFAULT_DATABASE_NAME = "JavaDriverTest";
     private final static String EMBEDDED_OPTION_PREFIX = "org.mongodb.test.embedded";
     private final String filename;
     private final String description;
     private final BsonArray data;
     private final BsonDocument definition;
     private MongoClient mongoClient;
+    private MongoDatabase database;
     private MongoCollection<BsonDocument> collection;
     private JsonPoweredCrudTestHelper helper;
 
@@ -57,18 +62,31 @@ public class EmbeddedCrudTest {
         this.data = data;
         this.definition = definition;
     }
+//
+//    @BeforeClass
+//    public static void classSetUp() {
+//        System.setProperty("java.class.path", format("%s%s%s", System.getProperty("jna.library.path"), File.pathSeparatorChar,
+//                System.getProperty("java.class.path")));
+//        System.setProperty("java.library.path", format("%s%s%s", System.getProperty("jna.library.path"), File.pathSeparatorChar,
+//                System.getProperty("java.library.path")));
+//
+//        for (Map.Entry<Object, Object> objectObjectEntry : System.getProperties().entrySet()) {
+//            System.out.println(format("> %s : %s", objectObjectEntry.getKey(), objectObjectEntry.getValue()));
+//        }
+//    }
 
     @Before
     public void setUp() {
         List<String> embeddedServerOptions = getEmbeddedServerOptions();
-        assumeTrue(!embeddedServerOptions.isEmpty());
-        MongoClient mongoclient = MongoClients.create(embeddedServerOptions);
+        assumeTrue("Requires `org.mongodb.test.embedded.` settings to be configured.", !embeddedServerOptions.isEmpty());
+        mongoClient = MongoClients.create(embeddedServerOptions);
+        database = mongoClient.getDatabase(DEFAULT_DATABASE_NAME);
+        collection = database.getCollection(getClass().getName(), BsonDocument.class);
         List<BsonDocument> documents = new ArrayList<BsonDocument>();
         for (BsonValue document: data) {
             documents.add(document.asDocument());
         }
-        getCollectionHelper().insertDocuments(documents);
-        collection = database.getCollection(getClass().getName(), BsonDocument.class);
+        collection.insertMany(documents);
         helper = new JsonPoweredCrudTestHelper(description, collection);
     }
 
@@ -83,8 +101,7 @@ public class EmbeddedCrudTest {
             }
 
         }
-
-        return List<String>
+        return embeddedServerOptions;
     }
 
     @Test
@@ -96,9 +113,9 @@ public class EmbeddedCrudTest {
         BsonValue expectedResult = expectedOutcome.get("result");
         BsonValue actualResult = outcome.get("result");
         if (actualResult.isDocument()
-                    && actualResult.asDocument().containsKey("upsertedCount")
-                    && actualResult.asDocument().getNumber("upsertedCount").intValue() == 0
-                    && !expectedResult.asDocument().containsKey("upsertedCount")) {
+                && actualResult.asDocument().containsKey("upsertedCount")
+                && actualResult.asDocument().getNumber("upsertedCount").intValue() == 0
+                && !expectedResult.asDocument().containsKey("upsertedCount")) {
             expectedResult.asDocument().append("upsertedCount", actualResult.asDocument().get("upsertedCount"));
         }
 
@@ -118,15 +135,15 @@ public class EmbeddedCrudTest {
     public static Collection<Object[]> data() throws URISyntaxException, IOException {
         List<Object[]> data = new ArrayList<Object[]>();
         for (File file : JsonPoweredTestHelper.getTestFiles("/crud")) {
-            BsonDocument testDocument = util.JsonPoweredTestHelper.getTestDocument(file);
-            if (testDocument.containsKey("minServerVersion")
-                    && serverVersionLessThan(testDocument.getString("minServerVersion").getValue())) {
-                continue;
-            }
-            if (testDocument.containsKey("maxServerVersion")
-                        && serverVersionGreaterThan(testDocument.getString("maxServerVersion").getValue())) {
-                continue;
-            }
+            BsonDocument testDocument = JsonPoweredTestHelper.getTestDocument(file);
+//            if (testDocument.containsKey("minServerVersion")
+//                    && serverVersionLessThan(testDocument.getString("minServerVersion").getValue())) {
+//                continue;
+//            }
+//            if (testDocument.containsKey("maxServerVersion")
+//                        && serverVersionGreaterThan(testDocument.getString("maxServerVersion").getValue())) {
+//                continue;
+//            }
             for (BsonValue test: testDocument.getArray("tests")) {
                 data.add(new Object[]{file.getName(), test.asDocument().getString("description").getValue(),
                         testDocument.getArray("data"), test.asDocument()});

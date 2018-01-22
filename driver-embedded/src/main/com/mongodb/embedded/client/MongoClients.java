@@ -16,6 +16,7 @@
 
 package com.mongodb.embedded.client;
 
+import com.mongodb.client.MongoClient;
 import com.mongodb.connection.EmbeddedCluster;
 
 import java.util.Collections;
@@ -23,10 +24,11 @@ import java.util.List;
 
 public class MongoClients {
 
-    // TODO: figure out how to configure
-    public static EmbeddedMongoClient create(final List<String> embeddedClusterArguments) {
-        return new EmbeddedMongoClientImpl(new EmbeddedCluster(embeddedClusterArguments, Collections.<String>emptyList(),
-                new EmbeddedServerFactoryImpl()));
+    public static MongoClient create(final List<String> embeddedClusterArguments) {
+        // asList("--dbpath=/tmp/db/")
+        EmbeddedCluster cluster = new EmbeddedCluster(embeddedClusterArguments, Collections.<String>emptyList(),
+                new EmbeddedServerFactoryImpl());
+        return new EmbeddedMongoClientImpl(cluster);
     }
 
     // static methods here...

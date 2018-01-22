@@ -191,6 +191,14 @@ configure(subprojects.findAll { it.name != 'util' && it.name != 'mongo-java-driv
                     )
         }
 
+        if (project.buildingWith('embedded.enabled')) {
+            systemProperties(
+                    'org.mongodb.test.embedded.dbpath': System.getProperty('org.mongodb.test.embedded.dbpath'),
+                    'jna.library.path': System.getProperty('jna.library.path'),
+                    'jna.debug_load': System.getProperty('jna.debug_load', 'true')
+            )
+        }
+
         useJUnit {
             if (!project.buildingWith('rs.enabled')) {
                 excludeCategories 'category.ReplicaSet'
