@@ -30,9 +30,9 @@ import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.mongodb.client.model.Accumulators.sum;
@@ -50,26 +50,19 @@ import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Sorts.descending;
 import static com.mongodb.client.model.Updates.inc;
 import static com.mongodb.client.model.Updates.set;
+import static com.mongodb.embedded.client.EmbeddedServerFixture.getDefaultDatabaseName;
+import static com.mongodb.embedded.client.EmbeddedServerFixture.getMongoClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class EmbeddedServerTest {
 
-    /**
-     * Run this main method to see the output of this quick example.
-     *
-     * @param args takes an optional single argument for the connection string
-     */
-    public static void main(final String[] args) {
+    @Test
+    public void testSmokeTest() {
 
-        MongoClient mongoClient = MongoClients.create(Collections.<String>emptyList());
-
-        // get handle to "mydb" database
-        MongoDatabase database = mongoClient.getDatabase("mydb");
-
-
-        // get a handle to the "test" collection
-        MongoCollection<Document> collection = database.getCollection("test");
+        MongoClient mongoClient = getMongoClient();
+        MongoDatabase database = mongoClient.getDatabase(getDefaultDatabaseName());
+        MongoCollection<Document> collection = database.getCollection(getClass().getName());
 
         // drop all the data in it
         collection.drop();

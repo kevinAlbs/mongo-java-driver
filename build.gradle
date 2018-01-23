@@ -195,6 +195,7 @@ configure(subprojects.findAll { it.name != 'util' && it.name != 'mongo-java-driv
             systemProperties(
                     'org.mongodb.test.embedded.dbpath': System.getProperty('org.mongodb.test.embedded.dbpath'),
                     'jna.library.path': System.getProperty('jna.library.path'),
+                    'java.library.path': System.getProperty('java.library.path'),
                     'jna.debug_load': System.getProperty('jna.debug_load', 'true')
             )
         }

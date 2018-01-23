@@ -23,7 +23,9 @@ import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 interface MongoDBCAPI extends Library {
+
     MongoDBCAPI INSTANCE = Native.loadLibrary("mongo_embedded_capi", MongoDBCAPI.class);
+
 
     // CHECKSTYLE.OFF: MethodName
 
