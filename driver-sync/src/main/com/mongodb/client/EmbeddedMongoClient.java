@@ -36,7 +36,7 @@ import org.bson.Document;
  * @since 3.7
  */
 @Immutable
-public interface MongoClient {
+public interface EmbeddedMongoClient {
 
     /**
      * Gets a {@link MongoDatabase} instance for the given database name.

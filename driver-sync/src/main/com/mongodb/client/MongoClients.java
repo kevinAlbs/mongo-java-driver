@@ -52,9 +52,9 @@ import static java.util.Arrays.asList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 
 /**
- * A factory for {@link MongoClient} instances.  Use of this class is now the recommended way to connect to MongoDB via the Java driver.
+ * A factory for {@link EmbeddedMongoClient} instances.  Use of this class is now the recommended way to connect to MongoDB via the Java driver.
  *
- * @see MongoClient
+ * @see EmbeddedMongoClient
  * @since 3.7
  */
 public final class MongoClients {
@@ -94,7 +94,7 @@ public final class MongoClients {
      * @param connectionString the connection
      * @return the client
      */
-    public static MongoClient create(final String connectionString) {
+    public static EmbeddedMongoClient create(final String connectionString) {
         return create(new ConnectionString(connectionString));
     }
 
@@ -104,7 +104,7 @@ public final class MongoClients {
      * @param connectionString the settings
      * @return the client
      */
-    public static MongoClient create(final ConnectionString connectionString) {
+    public static EmbeddedMongoClient create(final ConnectionString connectionString) {
         return create(connectionString, Collections.<CommandListener>emptyList());
     }
 
@@ -121,7 +121,7 @@ public final class MongoClients {
      *
      * @return the client
      */
-    public static MongoClient create(final ConnectionString connectionString, final List<CommandListener> commandListeners) {
+    public static EmbeddedMongoClient create(final ConnectionString connectionString, final List<CommandListener> commandListeners) {
         ClusterSettings clusterSettings = ClusterSettings.builder()
                 .applyConnectionString(connectionString)
                 .build();

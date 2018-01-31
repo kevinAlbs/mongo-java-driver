@@ -24,14 +24,10 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ListDatabasesIterable;
-import com.mongodb.client.MongoClient;
+import com.mongodb.client.EmbeddedMongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
-import com.mongodb.client.internal.ListDatabasesIterableImpl;
-import com.mongodb.client.internal.MongoClientDelegate;
-import com.mongodb.client.internal.MongoDatabaseImpl;
-import com.mongodb.client.internal.OperationExecutor;
 import com.mongodb.connection.Cluster;
 import com.mongodb.session.ClientSession;
 import org.bson.BsonDocument;
@@ -43,7 +39,7 @@ import java.util.List;
 import static com.mongodb.assertions.Assertions.notNull;
 
 // Not part of public API: yada yada yada
-public class MongoClientImpl implements MongoClient {
+public class MongoClientImpl implements EmbeddedMongoClient {
 
     private final ReadPreference readPreference;
     private final boolean retryWrites;

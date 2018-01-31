@@ -38,7 +38,7 @@ class EmbeddedServerFixture {
     static MongoClient getMongoClient() {
         List<String> embeddedServerOptions = getEmbeddedServerOptions();
         assumeTrue("Requires `org.mongodb.test.embedded.` settings to be configured.", !embeddedServerOptions.isEmpty());
-        return MongoClients.create(embeddedServerOptions);
+        return EmbeddedMongoClients.create(embeddedServerOptions);
     }
 
     private static List<String> getEmbeddedServerOptions() {

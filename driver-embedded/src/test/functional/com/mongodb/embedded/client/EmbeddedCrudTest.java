@@ -23,7 +23,6 @@ import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -79,7 +78,7 @@ public class EmbeddedCrudTest {
     public void setUp() {
         List<String> embeddedServerOptions = getEmbeddedServerOptions();
         assumeTrue("Requires `org.mongodb.test.embedded.` settings to be configured.", !embeddedServerOptions.isEmpty());
-        mongoClient = MongoClients.create(embeddedServerOptions);
+        mongoClient = EmbeddedMongoClients.create(embeddedServerOptions);
         database = mongoClient.getDatabase(DEFAULT_DATABASE_NAME);
         collection = database.getCollection(getClass().getName(), BsonDocument.class);
         List<BsonDocument> documents = new ArrayList<BsonDocument>();
