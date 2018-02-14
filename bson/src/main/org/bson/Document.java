@@ -23,6 +23,7 @@ import org.bson.codecs.Encoder;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
+import org.bson.internal.OrderedMap;
 import org.bson.json.JsonReader;
 import org.bson.json.JsonWriter;
 import org.bson.json.JsonWriterSettings;
@@ -32,7 +33,6 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,13 +48,13 @@ import static org.bson.assertions.Assertions.notNull;
 public class Document implements Map<String, Object>, Serializable, Bson {
     private static final long serialVersionUID = 6297731997167536582L;
 
-    private final LinkedHashMap<String, Object> documentAsMap;
+    private final OrderedMap<String, Object> documentAsMap;
 
     /**
      * Creates an empty Document instance.
      */
     public Document() {
-        documentAsMap = new LinkedHashMap<String, Object>();
+        documentAsMap = new OrderedMap<String, Object>();
     }
 
     /**
@@ -64,7 +64,7 @@ public class Document implements Map<String, Object>, Serializable, Bson {
      * @param value value
      */
     public Document(final String key, final Object value) {
-        documentAsMap = new LinkedHashMap<String, Object>();
+        documentAsMap = new OrderedMap<String, Object>();
         documentAsMap.put(key, value);
     }
 
@@ -74,7 +74,7 @@ public class Document implements Map<String, Object>, Serializable, Bson {
      * @param map initial map
      */
     public Document(final Map<String, Object> map) {
-        documentAsMap = new LinkedHashMap<String, Object>(map);
+        documentAsMap = new OrderedMap<String, Object>(map);
     }
 
 

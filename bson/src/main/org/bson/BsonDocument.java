@@ -21,6 +21,7 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
+import org.bson.internal.OrderedMap;
 import org.bson.io.BasicOutputBuffer;
 import org.bson.json.JsonReader;
 import org.bson.json.JsonWriter;
@@ -33,7 +34,6 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +48,7 @@ import static java.lang.String.format;
 public class BsonDocument extends BsonValue implements Map<String, BsonValue>, Cloneable, Bson, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, BsonValue> map = new LinkedHashMap<String, BsonValue>();
+    private final Map<String, BsonValue> map = new OrderedMap<String, BsonValue>();
 
     /**
      * Parses a string in MongoDB Extended JSON format to a {@code BsonDocument}
