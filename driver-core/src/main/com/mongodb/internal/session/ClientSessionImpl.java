@@ -16,6 +16,7 @@
 
 package com.mongodb.internal.session;
 
+import com.mongodb.TransactionOptions;
 import com.mongodb.session.ClientSession;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.session.ServerSession;
@@ -46,6 +47,26 @@ public class ClientSessionImpl implements ClientSession {
     @Override
     public ClientSessionOptions getOptions() {
         return options;
+    }
+
+    @Override
+    public void startTransaction(final TransactionOptions options) {
+        // TODO: Implement this
+    }
+
+    @Override
+    public void startTransaction() {
+        // TODO: Implement this
+    }
+
+    @Override
+    public void commitTransaction() {
+        // TODO: Implement this
+    }
+
+    @Override
+    public void abortTransaction() {
+        // TODO: Implement this
     }
 
     @Override

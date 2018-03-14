@@ -17,6 +17,7 @@
 package com.mongodb.session;
 
 import com.mongodb.ClientSessionOptions;
+import com.mongodb.TransactionOptions;
 import com.mongodb.annotations.NotThreadSafe;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -39,6 +40,37 @@ public interface ClientSession extends Closeable {
      * @return the options, which may not be null
      */
     ClientSessionOptions getOptions();
+
+    /**
+     * Start a transaction on this session.
+     *
+     * @param options the transaction options
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    void startTransaction(TransactionOptions options);
+
+    /**
+     * Start a transaction on this session using the default transaction options for the session.
+     *
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    void startTransaction();
+
+    /**
+     * Commits the currently active transaction
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    void commitTransaction();
+
+    /**
+     * Aborts the currently active transaction.
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    void abortTransaction();
 
     /**
      * Returns true if operations in this session must be causally consistent
