@@ -16,6 +16,7 @@
 
 package com.mongodb.internal.session;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.session.ClientSession;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
@@ -73,5 +74,16 @@ public class ClientSessionContext implements SessionContext {
     @Override
     public void advanceClusterTime(final BsonDocument clusterTime) {
         clientSession.advanceClusterTime(clusterTime);
+    }
+
+    @Override
+    public boolean hasActiveTransaction() {
+        return clientSession.hasActiveTransaction();
+    }
+
+    @Override
+    public WriteConcern getWriteConcern() {
+        // TODO: fix this
+        return WriteConcern.ACKNOWLEDGED;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.mongodb.binding;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
@@ -75,6 +76,17 @@ class SimpleSessionContext implements SessionContext {
     @Override
     public void advanceClusterTime(final BsonDocument clusterTime) {
         this.clusterTime = clusterTime;
+    }
+
+    @Override
+    public boolean hasActiveTransaction() {
+        return false;
+    }
+
+    @Override
+    public WriteConcern getWriteConcern() {
+        // TODO: fix this
+        return WriteConcern.ACKNOWLEDGED;
     }
 
     private static BsonDocument createNewServerSessionIdentifier() {

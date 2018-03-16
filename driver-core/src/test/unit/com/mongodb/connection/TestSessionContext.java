@@ -16,6 +16,7 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -66,5 +67,16 @@ class TestSessionContext implements SessionContext {
     @Override
     public void advanceClusterTime(final BsonDocument clusterTime) {
         this.clusterTime = clusterTime;
+    }
+
+    @Override
+    public boolean hasActiveTransaction() {
+        return false;
+    }
+
+    @Override
+    public WriteConcern getWriteConcern() {
+        // TODO: fix this
+        return WriteConcern.ACKNOWLEDGED;
     }
 }

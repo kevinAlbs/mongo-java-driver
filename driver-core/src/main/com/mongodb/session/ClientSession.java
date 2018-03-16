@@ -42,6 +42,15 @@ public interface ClientSession extends Closeable {
     ClientSessionOptions getOptions();
 
     /**
+     * Returns true if there is an active transaction on this session, and false otherwise
+     *
+     * @return true if there is an active transaction on this session
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    boolean hasActiveTransaction();
+
+    /**
      * Start a transaction on this session.
      *
      * @param options the transaction options

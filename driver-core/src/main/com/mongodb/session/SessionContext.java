@@ -16,6 +16,7 @@
 
 package com.mongodb.session;
 
+import com.mongodb.WriteConcern;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 
@@ -81,4 +82,21 @@ public interface SessionContext {
      * @param clusterTime the new cluster time
      */
     void advanceClusterTime(BsonDocument clusterTime);
+
+    /**
+     * Gets whether the session has an active transaction
+     *
+     * @return true if the session has an active transaction
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    boolean hasActiveTransaction();
+
+    /**
+     * Gets the write concern to apply to operations on this binding.
+     *
+     * @return the write concern to apply to operations on this binding
+     * @since 3.8
+     */
+    WriteConcern getWriteConcern();
 }

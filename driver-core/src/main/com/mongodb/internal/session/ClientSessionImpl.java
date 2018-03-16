@@ -50,6 +50,14 @@ public class ClientSessionImpl implements ClientSession {
     }
 
     @Override
+    public boolean hasActiveTransaction() {
+        // TODO: implement this
+        return false;
+    }
+
+    // TODO: make async versions of these :(
+
+    @Override
     public void startTransaction(final TransactionOptions options) {
         // TODO: Implement this
     }

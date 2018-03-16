@@ -16,6 +16,7 @@
 
 package com.mongodb.internal.connection;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -68,6 +69,17 @@ public final class NoOpSessionContext implements SessionContext {
 
     @Override
     public void advanceClusterTime(final BsonDocument clusterTime) {
+    }
+
+    @Override
+    public boolean hasActiveTransaction() {
+        return false;
+    }
+
+    @Override
+    public WriteConcern getWriteConcern() {
+        // TODO: fix this
+        return WriteConcern.ACKNOWLEDGED;
     }
 
     private NoOpSessionContext() {
