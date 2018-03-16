@@ -129,7 +129,7 @@ final class BulkWriteBatch {
 
         command.put(getCommandName(batchType), new BsonString(namespace.getCollectionName()));
         command.put("ordered", new BsonBoolean(ordered));
-        if (!writeConcern.isServerDefault()) {
+        if (!writeConcern.isServerDefault() && !sessionContext.hasActiveTransaction()) {
             command.put("writeConcern", writeConcern.asDocument());
         }
         if (bypassDocumentValidation != null) {
