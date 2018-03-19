@@ -17,6 +17,7 @@
 package com.mongodb.client.internal;
 
 import com.mongodb.ReadPreference;
+import com.mongodb.WriteConcern;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.binding.ReadWriteBinding;
 import com.mongodb.connection.Connection;
@@ -40,7 +41,7 @@ public class ClientSessionBinding implements ReadWriteBinding {
         this.wrapped = notNull("wrapped", wrapped);
         this.ownsSession = ownsSession;
         this.session = notNull("session", session);
-        this.sessionContext = new ClientSessionContext(session);
+        this.sessionContext = new SyncClientSessionContext(session);
     }
 
     @Override
@@ -127,4 +128,26 @@ public class ClientSessionBinding implements ReadWriteBinding {
         }
     }
 
+    private final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
+
+        private final ClientSession clientSession;
+
+        SyncClientSessionContext(final ClientSession clientSession) {
+            super(clientSession);
+            this.clientSession = clientSession;
+        }
+
+
+        @Override
+        public boolean hasActiveTransaction() {
+            // TODO: not really a safe cast given the current API
+            return ((com.mongodb.client.ClientSession) clientSession).hasActiveTransaction();
+        }
+
+        @Override
+        public WriteConcern getWriteConcern() {
+            // TODO: get this from the client session
+            return WriteConcern.ACKNOWLEDGED;
+        }
+    }
 }

@@ -31,7 +31,6 @@ public class ClientSessionImpl implements ClientSession {
     private final ServerSession serverSession;
     private final Object originator;
     private final ClientSessionOptions options;
-    private boolean inTransaction;
     private BsonDocument clusterTime;
     private BsonTimestamp operationTime;
     private volatile boolean closed;
@@ -47,22 +46,6 @@ public class ClientSessionImpl implements ClientSession {
     @Override
     public ClientSessionOptions getOptions() {
         return options;
-    }
-
-    @Override
-    public boolean hasActiveTransaction() {
-        return inTransaction;
-    }
-
-    @Override
-    public void startTransaction() {
-        inTransaction = true;
-        serverSession.advanceTransactionNumber();
-    }
-
-    @Override
-    public void endTransaction() {
-        inTransaction = false;
     }
 
     @Override

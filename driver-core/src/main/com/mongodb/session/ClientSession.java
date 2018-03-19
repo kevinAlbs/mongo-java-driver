@@ -41,25 +41,6 @@ public interface ClientSession extends Closeable {
     ClientSessionOptions getOptions();
 
     /**
-     * Returns true if there is an active transaction on this session, and false otherwise
-     *
-     * @return true if there is an active transaction on this session
-     * @since 3.8
-     * @mongodb.server.release 4.0
-     */
-    boolean hasActiveTransaction();
-
-    /**
-     * TODO: this has to go
-     */
-    void startTransaction();
-
-    /**
-     * TODO: this has to go
-     */
-    void endTransaction();
-
-    /**
      * Returns true if operations in this session must be causally consistent
      *
      * @return whether operations in this session must be causally consistent.

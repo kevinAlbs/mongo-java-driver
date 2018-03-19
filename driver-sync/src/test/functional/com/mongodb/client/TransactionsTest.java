@@ -26,7 +26,8 @@ import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.TestCommandListener;
 import com.mongodb.event.CommandEvent;
 import com.mongodb.event.CommandStartedEvent;
-import com.mongodb.session.ClientSession;
+import com.mongodb.lang.Nullable;
+import com.mongodb.client.ClientSession;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
@@ -136,6 +137,8 @@ public class TransactionsTest {
     @After
     public void cleanUp() {
         if (mongoClient != null) {
+            // TODO: remove this once it's added back to #shouldPassAllOutcomes
+            closeAllSessions();
             mongoClient.close();
         }
     }
@@ -143,7 +146,13 @@ public class TransactionsTest {
     private void closeAllSessions() {
         for (ClientSession cur : sessionsMap.values()) {
             if (cur.hasActiveTransaction()) {
-                mongoClient.abortTransaction(cur);
+                // TODO: should be abortTransaction, once that works
+                // TODO: remove this once ClientSession#close implicity abort an open transaction
+                try {
+                    cur.commitTransaction();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             cur.close();
         }
@@ -161,11 +170,11 @@ public class TransactionsTest {
                 try {
                     if (operationName.equals("startTransaction")) {
                         // TODO: transaction options
-                        mongoClient.startTransaction(nonNullClientSession(clientSession));
-                    } else if (operationName.equals("commitTransaction")) {
-                        mongoClient.commitTransaction(nonNullClientSession(clientSession));
+                        nonNullClientSession(clientSession).startTransaction();
+                   } else if (operationName.equals("commitTransaction")) {
+                        nonNullClientSession(clientSession).commitTransaction();
                     } else if (operationName.equals("abortTransaction")) {
-                        mongoClient.abortTransaction(nonNullClientSession(clientSession));
+                        nonNullClientSession(clientSession).abortTransaction();
                     } else {
                         BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
                         BsonValue actualResult = actualOutcome.get("result");
@@ -180,8 +189,8 @@ public class TransactionsTest {
                 }
             }
         } finally {
-            // TODO: request spec change for this
-            closeAllSessions();
+//            // TODO: request spec change for this
+//            closeAllSessions();
         }
 
         if (definition.containsKey("expectations")) {
@@ -201,7 +210,7 @@ public class TransactionsTest {
         }
     }
 
-    private ClientSession nonNullClientSession(final ClientSession clientSession) {
+    private ClientSession nonNullClientSession(@Nullable final ClientSession clientSession) {
         if (clientSession == null) {
             throw new IllegalArgumentException("clientSession can't be null in this context");
         }

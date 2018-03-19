@@ -28,7 +28,6 @@ import com.mongodb.connection.Cluster;
 import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ServerDescription;
-import com.mongodb.internal.session.ClientSessionImpl;
 import com.mongodb.internal.session.ServerSessionPool;
 import com.mongodb.lang.Nullable;
 import com.mongodb.operation.ReadOperation;
@@ -70,12 +69,12 @@ public class MongoClientDelegate {
     }
 
     @Nullable
-    public ClientSession createClientSession(final ClientSessionOptions options) {
+    public com.mongodb.client.ClientSession createClientSession(final ClientSessionOptions options) {
         if (credentialList.size() > 1) {
             return null;
         }
         if (getConnectedClusterDescription().getLogicalSessionTimeoutMinutes() != null) {
-            return new ClientSessionImpl(serverSessionPool, originator, options);
+            return new ClientSessionImpl(serverSessionPool, originator, options, this);
         } else {
             return null;
         }

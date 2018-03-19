@@ -19,7 +19,6 @@ package com.mongodb.client;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.MongoNamespace;
 import com.mongodb.annotations.Immutable;
-import com.mongodb.session.ClientSession;
 import org.bson.Document;
 
 /**
@@ -120,25 +119,4 @@ public interface MongoClient {
      * @mongodb.server.release 3.6
      */
     <TResult> ListDatabasesIterable<TResult> listDatabases(ClientSession clientSession, Class<TResult> resultClass);
-
-    /**
-     * TODO: comment or move this to ClientSession
-     *
-     * @param clientSession the client session to use for the transaction
-     */
-    void startTransaction(ClientSession clientSession);
-
-    /**
-     * TODO: comment or move this to ClientSession
-     *
-     * @param clientSession the client session to use for the transaction
-     */
-    void commitTransaction(ClientSession clientSession);
-
-    /**
-     * TODO: comment or move this to ClientSession
-     *
-     * @param clientSession the client session to use for the transaction
-     */
-    void abortTransaction(ClientSession clientSession);
 }
