@@ -116,7 +116,7 @@ public class TransactionsTest {
 //        for (BsonDocument cur : collectionHelper.find(new BsonDocumentCodec())) {
 //            collectionHelper.deleteOne(new BsonDocument("_id", cur.get("_id")));
 //        }
-        collectionHelper.create(collectionName, new CreateCollectionOptions());
+        collectionHelper.create(collectionName, new CreateCollectionOptions(), WriteConcern.MAJORITY);
 
         if (!data.isEmpty()) {
             List<BsonDocument> documents = new ArrayList<BsonDocument>();
