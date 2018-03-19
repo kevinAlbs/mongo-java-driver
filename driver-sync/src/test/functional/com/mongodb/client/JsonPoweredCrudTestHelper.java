@@ -156,7 +156,7 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             iterable = collection.aggregate(pipeline);
         } else {
-            iterable = collection.aggregate(pipeline);
+            iterable = collection.aggregate(clientSession, pipeline);
         }
 
         if (arguments.containsKey("batchSize")) {
@@ -245,7 +245,7 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             deletedCount = (int) collection.deleteMany(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) collection.deleteMany(arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) collection.deleteMany(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
         }
 
         return toResult("deletedCount",
@@ -262,7 +262,7 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             deletedCount = (int) collection.deleteOne(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) collection.deleteOne(arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) collection.deleteOne(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
         }
 
         return toResult("deletedCount", new BsonInt32(deletedCount));
@@ -510,7 +510,7 @@ public class JsonPoweredCrudTestHelper {
                             .ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         } else {
             bulkWriteResult = collection.withWriteConcern(writeConcern)
-                    .bulkWrite(writeModels, new BulkWriteOptions()
+                    .bulkWrite(clientSession, writeModels, new BulkWriteOptions()
                             .ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         }
 
