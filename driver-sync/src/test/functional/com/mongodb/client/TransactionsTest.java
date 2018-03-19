@@ -16,10 +16,13 @@
 
 package com.mongodb.client;
 
+import com.mongodb.Block;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.MongoNamespace;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.test.CollectionHelper;
+import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.TestCommandListener;
 import com.mongodb.event.CommandEvent;
 import com.mongodb.event.CommandStartedEvent;
@@ -28,6 +31,7 @@ import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.bson.Document;
+import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.DocumentCodec;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,8 +50,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.ClusterFixture.isDiscoverableReplicaSet;
 import static com.mongodb.ClusterFixture.serverVersionAtLeast;
@@ -57,7 +60,6 @@ import static com.mongodb.client.Fixture.getDefaultDatabaseName;
 import static com.mongodb.client.Fixture.getMongoClientSettingsBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 // See https://github.com/mongodb/specifications/tree/master/source/transactions/tests
@@ -66,13 +68,13 @@ public class TransactionsTest {
     private final String filename;
     private final String description;
     private final String databaseName;
-    private final String collectionName;
     private final BsonArray data;
     private final BsonDocument definition;
-    private MongoCollection<BsonDocument> collection;
     private JsonPoweredCrudTestHelper helper;
     private final TestCommandListener commandListener;
     private MongoClient mongoClient;
+    private CollectionHelper<Document> collectionHelper;
+    private Map<String, ClientSession> sessionsMap;
 
     @BeforeClass
     public static void beforeClass() {
@@ -86,7 +88,6 @@ public class TransactionsTest {
         this.filename = filename;
         this.description = description;
         this.databaseName = getDefaultDatabaseName();
-        this.collectionName = filename.substring(0, filename.lastIndexOf("."));
         this.data = data;
         this.definition = definition;
         this.commandListener = new TestCommandListener();
@@ -95,70 +96,96 @@ public class TransactionsTest {
     @Before
     public void setUp() {
         assumeTrue(canRunTests());
-
+        assumeTrue(!definition.containsKey("skipReason"));
+//        assumeTrue(filename.startsWith("isolation"));
         mongoClient = MongoClients.create(getMongoClientSettingsBuilder()
                 .addCommandListener(commandListener)
+                .applyToSocketSettings(new Block<SocketSettings.Builder>() {
+                    @Override
+                    public void apply(final SocketSettings.Builder builder) {
+                        builder.readTimeout(5, TimeUnit.SECONDS);
+                    }
+                })
                 .build());
 
-        List<BsonDocument> documents = new ArrayList<BsonDocument>();
-        for (BsonValue document : data) {
-            documents.add(document.asDocument());
-        }
-        CollectionHelper<Document> collectionHelper = new CollectionHelper<Document>(new DocumentCodec(),
-                new MongoNamespace(databaseName, collectionName));
+        MongoDatabase database = mongoClient.getDatabase(databaseName);
+        String collectionName = "test";
+        collectionHelper = new CollectionHelper<Document>(new DocumentCodec(), new MongoNamespace(databaseName, collectionName));
 
-        collectionHelper.drop();
-        if (!documents.isEmpty()) {
+        // TODO: just drop the damn collection
+//        for (BsonDocument cur : collectionHelper.find(new BsonDocumentCodec())) {
+//            collectionHelper.deleteOne(new BsonDocument("_id", cur.get("_id")));
+//        }
+        collectionHelper.create(collectionName, new CreateCollectionOptions());
+
+        if (!data.isEmpty()) {
+            List<BsonDocument> documents = new ArrayList<BsonDocument>();
+            for (BsonValue document : data) {
+                documents.add(document.asDocument());
+            }
+
             collectionHelper.insertDocuments(documents, WriteConcern.MAJORITY);
         }
+        helper = new JsonPoweredCrudTestHelper(description, database.getCollection(collectionName, BsonDocument.class));
 
-        collection = mongoClient.getDatabase(databaseName).getCollection(collectionName, BsonDocument.class);
-        helper = new JsonPoweredCrudTestHelper(description, collection);
-    }
-
-    @After
-    public void cleanUp() {
-        mongoClient.close();
-    }
-
-    @Test
-    public void shouldPassAllOutcomes() {
         // TODO: session options
         ClientSession sessionZero = mongoClient.startSession(ClientSessionOptions.builder().build());
         ClientSession sessionOne = mongoClient.startSession(ClientSessionOptions.builder().build());
 
-        Map<String, ClientSession> sessionsMap = new HashMap<String, ClientSession>();
+        sessionsMap = new HashMap<String, ClientSession>();
         sessionsMap.put("session0", sessionZero);
         sessionsMap.put("session1", sessionOne);
+    }
 
-        BsonArray operations = definition.getArray("operations");
+    @After
+    public void cleanUp() {
+        if (mongoClient != null) {
+            mongoClient.close();
+        }
+    }
 
-        for (BsonValue cur : operations) {
-            BsonDocument operation = cur.asDocument();
-            String operationName = operation.getString("name").getValue();
-            BsonValue expectedResult = operation.get("result", null);
-            ClientSession clientSession = operation.getDocument("arguments").containsKey("session")
-                    ? sessionsMap.get(operation.getDocument("arguments").getString("session").getValue()) : null;
-            try {
-                if (operationName.equals("startTransaction")) {
-                    // TODO: transaction options
-                    mongoClient.startTransaction(nonNullClientSession(clientSession));
-                } else if (operationName.equals("commitTransaction")) {
-                    mongoClient.commitTransaction(nonNullClientSession(clientSession));
-                } else if (operationName.equals("abortTransaction")) {
-                    mongoClient.abortTransaction(nonNullClientSession(clientSession));
-                } else {
-                    BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
-                    BsonValue actualResult = actualOutcome.get("result");
-
-                    assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
-                }
-            } catch (Exception e) {
-                if (expectedResult == null || !expectedResult.asDocument().containsKey("errorContains"))  {
-                    fail("Unexpected operation failure: " + e);
-                }
-                assertTrue(e.getMessage().contains(expectedResult.asDocument().getString("errorContains").getValue()));
+    private void closeAllSessions() {
+        for (ClientSession cur : sessionsMap.values()) {
+            if (cur.hasActiveTransaction()) {
+                mongoClient.abortTransaction(cur);
             }
+            cur.close();
+        }
+    }
+
+    @Test
+    public void shouldPassAllOutcomes() {
+        try {
+            for (BsonValue cur : definition.getArray("operations")) {
+                BsonDocument operation = cur.asDocument();
+                String operationName = operation.getString("name").getValue();
+                BsonValue expectedResult = operation.get("result", null);
+                ClientSession clientSession = operation.getDocument("arguments").containsKey("session")
+                        ? sessionsMap.get(operation.getDocument("arguments").getString("session").getValue()) : null;
+                try {
+                    if (operationName.equals("startTransaction")) {
+                        // TODO: transaction options
+                        mongoClient.startTransaction(nonNullClientSession(clientSession));
+                    } else if (operationName.equals("commitTransaction")) {
+                        mongoClient.commitTransaction(nonNullClientSession(clientSession));
+                    } else if (operationName.equals("abortTransaction")) {
+                        mongoClient.abortTransaction(nonNullClientSession(clientSession));
+                    } else {
+                        BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
+                        BsonValue actualResult = actualOutcome.get("result");
+
+                        assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
+                    }
+                } catch (RuntimeException e) {
+                    if (expectedResult == null || !expectedResult.isDocument() || !expectedResult.asDocument().containsKey("errorContains")) {
+                        throw e;
+                    }
+                    assertTrue(e.getMessage().contains(expectedResult.asDocument().getString("errorContains").getValue()));
+                }
+            }
+        } finally {
+            // TODO: request spec change for this
+            closeAllSessions();
         }
 
         if (definition.containsKey("expectations")) {
@@ -167,15 +194,15 @@ public class TransactionsTest {
             List<CommandEvent> expectedEvents = getExpectedEvents(definition.getArray("expectations"), databaseName, null);
             List<CommandEvent> events = getCommandStartedEvents();
 
+            // TODO: enable this
             assertEventsEquality(expectedEvents, events);
         }
 
         BsonDocument expectedOutcome = definition.getDocument("outcome", new BsonDocument());
         if (expectedOutcome.containsKey("collection")) {
-            List<BsonDocument> collectionData = collection.withDocumentClass(BsonDocument.class).find().into(new ArrayList<BsonDocument>());
+            List<BsonDocument> collectionData = collectionHelper.find(new BsonDocumentCodec());
             assertEquals(expectedOutcome.getDocument("collection").getArray("data").getValues(), collectionData);
         }
-
     }
 
     private ClientSession nonNullClientSession(final ClientSession clientSession) {
@@ -186,12 +213,13 @@ public class TransactionsTest {
     }
 
     private List<CommandEvent> getCommandStartedEvents() {
-        return commandListener.getEvents().stream().filter(new Predicate<CommandEvent>() {
-            @Override
-            public boolean test(final CommandEvent commandEvent) {
-                return commandEvent instanceof CommandStartedEvent;
+        List<CommandEvent> commandStartedEvents = new ArrayList<CommandEvent>();
+        for (CommandEvent cur : commandListener.getEvents()) {
+            if (cur instanceof CommandStartedEvent) {
+                commandStartedEvents.add(cur);
             }
-        }).collect(Collectors.<CommandEvent>toList());
+        }
+        return commandStartedEvents;
     }
 
     @Parameterized.Parameters(name = "{0}: {1}")

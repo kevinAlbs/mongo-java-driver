@@ -115,7 +115,7 @@ public final class CommandMonitoringTestHelper {
 
             if (actual.getClass().equals(CommandStartedEvent.class)) {
                 CommandStartedEvent actualCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) actual);
-                CommandStartedEvent expectedCommandStartedEvent = (CommandStartedEvent) expected;
+                CommandStartedEvent expectedCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) expected);
 
                 assertEquals(expectedCommandStartedEvent.getDatabaseName(), actualCommandStartedEvent.getDatabaseName());
                 assertEquals(expectedCommandStartedEvent.getCommand(), actualCommandStartedEvent.getCommand());

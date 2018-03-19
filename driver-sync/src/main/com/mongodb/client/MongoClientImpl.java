@@ -111,13 +111,17 @@ final class MongoClientImpl implements MongoClient {
 
     @Override
     public void startTransaction(final ClientSession clientSession) {
-        isTrue("not in transaction", !clientSession.hasActiveTransaction());
+        if (clientSession.hasActiveTransaction()) {
+            throw new IllegalStateException("A transaction is already in progress");
+        }
         clientSession.startTransaction();
     }
 
     @Override
     public void commitTransaction(final ClientSession clientSession) {
-        isTrue("in transaction", clientSession.hasActiveTransaction());
+        if (!clientSession.hasActiveTransaction()) {
+            throw new IllegalStateException("There is no transaction in progress");
+        }
         try {
             // TODO: use proper write concern from ClientSession
             delegate.getOperationExecutor().execute(new CommitTransactionOperation(settings.getWriteConcern()), clientSession);
@@ -128,7 +132,9 @@ final class MongoClientImpl implements MongoClient {
 
     @Override
     public void abortTransaction(final ClientSession clientSession) {
-        isTrue("in transaction", clientSession.hasActiveTransaction());
+        if (!clientSession.hasActiveTransaction()) {
+            throw new IllegalStateException("There is no transaction in progress");
+        }
         try {
             // TODO: use proper write concern from ClientSession
             delegate.getOperationExecutor().execute(new AbortTransactionOperation(settings.getWriteConcern()), clientSession);
