@@ -112,10 +112,6 @@ public class TransactionsTest {
         String collectionName = "test";
         collectionHelper = new CollectionHelper<Document>(new DocumentCodec(), new MongoNamespace(databaseName, collectionName));
 
-        // TODO: just drop the damn collection
-//        for (BsonDocument cur : collectionHelper.find(new BsonDocumentCodec())) {
-//            collectionHelper.deleteOne(new BsonDocument("_id", cur.get("_id")));
-//        }
         collectionHelper.create(collectionName, new CreateCollectionOptions(), WriteConcern.MAJORITY);
 
         if (!data.isEmpty()) {
