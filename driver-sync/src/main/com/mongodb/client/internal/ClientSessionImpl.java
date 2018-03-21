@@ -17,13 +17,11 @@
 package com.mongodb.client.internal;
 
 import com.mongodb.ClientSessionOptions;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.internal.MongoClientDelegate;
 import com.mongodb.internal.session.ServerSessionPool;
 import com.mongodb.operation.CommitTransactionOperation;
-import org.bson.types.ObjectId;
 
 final class ClientSessionImpl extends com.mongodb.internal.session.ClientSessionImpl implements ClientSession {
 
@@ -57,9 +55,11 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
         }
         try {
             // TODO: use proper write concern from ClientSession
-            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED), this);
+            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED),
+                    getTransactionReadPreferenceOrPrimary(), this);
         } finally {
             inTransaction = false;
+            setTransactionReadPreference(null);
         }
     }
 
@@ -70,9 +70,16 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
         }
         try {
             // TODO: use proper write concern from ClientSession
-            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED), this);
+            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED),
+                    getTransactionReadPreferenceOrPrimary(),this);
         } finally {
             inTransaction = false;
+            setTransactionReadPreference(null);
         }
+    }
+
+    private ReadPreference getTransactionReadPreferenceOrPrimary() {
+        ReadPreference readPreference = getTransactionReadPreference();
+        return readPreference == null ? ReadPreference.primary() : readPreference;
     }
 }

@@ -125,9 +125,10 @@ public class TransactionsTest {
         }
         helper = new JsonPoweredCrudTestHelper(description, database.getCollection(collectionName, BsonDocument.class));
 
-        // TODO: session options
-        ClientSession sessionZero = mongoClient.startSession(ClientSessionOptions.builder().build());
-        ClientSession sessionOne = mongoClient.startSession(ClientSessionOptions.builder().build());
+        // TODO: should causal be on or off?
+        ClientSessionOptions clientSessionOptions = ClientSessionOptions.builder().causallyConsistent(false).build();
+        ClientSession sessionZero = mongoClient.startSession(clientSessionOptions);
+        ClientSession sessionOne = mongoClient.startSession(clientSessionOptions);
 
         sessionsMap = new HashMap<String, ClientSession>();
         sessionsMap.put("session0", sessionZero);
@@ -185,7 +186,8 @@ public class TransactionsTest {
                     if (expectedResult == null || !expectedResult.isDocument() || !expectedResult.asDocument().containsKey("errorContains")) {
                         throw e;
                     }
-                    assertTrue(e.getMessage().contains(expectedResult.asDocument().getString("errorContains").getValue()));
+                    assertTrue(e.getMessage().toLowerCase().contains(expectedResult.asDocument()
+                            .getString("errorContains").getValue().toLowerCase()));
                 }
             }
         } finally {

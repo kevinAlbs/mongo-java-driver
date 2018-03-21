@@ -17,7 +17,7 @@
 package com.mongodb.operation;
 
 import com.mongodb.WriteConcern;
-import com.mongodb.binding.WriteBinding;
+import com.mongodb.binding.ReadBinding;
 import com.mongodb.connection.Connection;
 import com.mongodb.operation.OperationHelper.CallableWithConnection;
 import org.bson.BsonDocument;
@@ -34,7 +34,7 @@ import static com.mongodb.operation.WriteConcernHelper.writeConcernErrorTransfor
  *
  * @since 3.8
  */
-public abstract class TransactionOperation implements WriteOperation<Void> {
+public abstract class TransactionOperation implements ReadOperation<Void> {
     private final WriteConcern writeConcern;
 
     /**
@@ -56,7 +56,7 @@ public abstract class TransactionOperation implements WriteOperation<Void> {
     }
 
     @Override
-    public Void execute(final WriteBinding binding) {
+    public Void execute(final ReadBinding binding) {
         isTrue("in transaction", binding.getSessionContext().hasActiveTransaction());
         return withConnection(binding, new CallableWithConnection<Void>() {
             @Override
@@ -67,7 +67,7 @@ public abstract class TransactionOperation implements WriteOperation<Void> {
         });
     }
 
-    private BsonDocument getCommand(final WriteBinding binding) {
+    private BsonDocument getCommand(final ReadBinding binding) {
         BsonDocument command = new BsonDocument(getCommandName(), new BsonInt32(1));
         if (!getWriteConcern().isServerDefault()) {
             command.put("writeConcern", getWriteConcern().asDocument());

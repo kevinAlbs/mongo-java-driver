@@ -17,6 +17,7 @@
 package com.mongodb.client;
 
 import com.mongodb.MongoException;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
@@ -50,6 +51,7 @@ import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonNull;
 import org.bson.BsonValue;
+import org.bson.Document;
 import org.junit.AssumptionViolatedException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -61,11 +63,11 @@ import static java.lang.String.format;
 
 public class JsonPoweredCrudTestHelper {
     private final String description;
-    private final MongoCollection<BsonDocument> collection;
+    private final MongoCollection<BsonDocument> baseCollection;
 
     public JsonPoweredCrudTestHelper(final String description, final MongoCollection<BsonDocument> collection) {
         this.description = description;
-        this.collection = collection;
+        this.baseCollection = collection;
     }
 
     BsonDocument getOperationResults(final BsonDocument operation) {
@@ -132,7 +134,7 @@ public class JsonPoweredCrudTestHelper {
                 resultDoc.append("modifiedCount", new BsonInt32(bulkWriteResult.getModifiedCount()));
             }
             resultDoc.append("upsertedCount", bulkWriteResult.getUpserts() == null
-                                                      ? new BsonInt32(0) : new BsonInt32(bulkWriteResult.getUpserts().size()));
+                    ? new BsonInt32(0) : new BsonInt32(bulkWriteResult.getUpserts().size()));
             BsonDocument upserts = new BsonDocument();
             for (BulkWriteUpsert bulkWriteUpsert : bulkWriteResult.getUpserts()) {
                 upserts.put(String.valueOf(bulkWriteUpsert.getIndex()), bulkWriteUpsert.getId());
@@ -154,9 +156,9 @@ public class JsonPoweredCrudTestHelper {
 
         AggregateIterable<BsonDocument> iterable;
         if (clientSession == null) {
-            iterable = collection.aggregate(pipeline);
+            iterable = getCollection(arguments).aggregate(pipeline);
         } else {
-            iterable = collection.aggregate(clientSession, pipeline);
+            iterable = getCollection(arguments).aggregate(clientSession, pipeline);
         }
 
         if (arguments.containsKey("batchSize")) {
@@ -181,9 +183,9 @@ public class JsonPoweredCrudTestHelper {
         }
         int count;
         if (clientSession == null) {
-            count = (int) collection.count(arguments.getDocument("filter", new BsonDocument()), options);
+            count = (int) getCollection(arguments).count(arguments.getDocument("filter", new BsonDocument()), options);
         } else {
-            count = (int) collection.count(clientSession, arguments.getDocument("filter", new BsonDocument()), options);
+            count = (int) getCollection(arguments).count(clientSession, arguments.getDocument("filter", new BsonDocument()), options);
         }
         return toResult(count);
     }
@@ -191,9 +193,9 @@ public class JsonPoweredCrudTestHelper {
     BsonDocument getDistinctResult(final BsonDocument arguments, @Nullable final ClientSession clientSession) {
         DistinctIterable<BsonValue> iterable;
         if (clientSession == null) {
-            iterable = collection.distinct(arguments.getString("fieldName").getValue(), BsonValue.class);
+            iterable = getCollection(arguments).distinct(arguments.getString("fieldName").getValue(), BsonValue.class);
         } else {
-            iterable = collection.distinct(clientSession, arguments.getString("fieldName").getValue(), BsonValue.class);
+            iterable = getCollection(arguments).distinct(clientSession, arguments.getString("fieldName").getValue(), BsonValue.class);
         }
 
         if (arguments.containsKey("filter")) {
@@ -209,9 +211,9 @@ public class JsonPoweredCrudTestHelper {
     BsonDocument getFindResult(final BsonDocument arguments, @Nullable final ClientSession clientSession) {
         FindIterable<BsonDocument> iterable;
         if (clientSession == null) {
-            iterable = collection.find(arguments.getDocument("filter", new BsonDocument()));
+            iterable = getCollection(arguments).find(arguments.getDocument("filter", new BsonDocument()));
         } else {
-            iterable = collection.find(clientSession, arguments.getDocument("filter", new BsonDocument()));
+            iterable = getCollection(arguments).find(clientSession, arguments.getDocument("filter", new BsonDocument()));
         }
 
         if (arguments.containsKey("skip")) {
@@ -243,13 +245,13 @@ public class JsonPoweredCrudTestHelper {
 
         int deletedCount;
         if (clientSession == null) {
-            deletedCount = (int) collection.deleteMany(arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteMany(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) collection.deleteMany(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteMany(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
         }
 
         return toResult("deletedCount",
-                        new BsonInt32(deletedCount));
+                new BsonInt32(deletedCount));
     }
 
     BsonDocument getDeleteOneResult(final BsonDocument arguments, @Nullable final ClientSession clientSession) {
@@ -260,9 +262,9 @@ public class JsonPoweredCrudTestHelper {
 
         int deletedCount;
         if (clientSession == null) {
-            deletedCount = (int) collection.deleteOne(arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteOne(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) collection.deleteOne(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteOne(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
         }
 
         return toResult("deletedCount", new BsonInt32(deletedCount));
@@ -282,9 +284,9 @@ public class JsonPoweredCrudTestHelper {
 
         BsonDocument result;
         if (clientSession == null) {
-            result = collection.findOneAndDelete(arguments.getDocument("filter"), options);
+            result = getCollection(arguments).findOneAndDelete(arguments.getDocument("filter"), options);
         } else {
-            result = collection.findOneAndDelete(clientSession, arguments.getDocument("filter"), options);
+            result = getCollection(arguments).findOneAndDelete(clientSession, arguments.getDocument("filter"), options);
         }
 
 
@@ -304,7 +306,7 @@ public class JsonPoweredCrudTestHelper {
         }
         if (arguments.containsKey("returnDocument")) {
             options.returnDocument(arguments.getString("returnDocument").getValue().equals("After") ? ReturnDocument.AFTER
-                                                                                                    : ReturnDocument.BEFORE);
+                    : ReturnDocument.BEFORE);
         }
         if (arguments.containsKey("collation")) {
             options.collation(getCollation(arguments.getDocument("collation")));
@@ -312,10 +314,11 @@ public class JsonPoweredCrudTestHelper {
 
         BsonDocument result;
         if (clientSession == null) {
-            result = collection.findOneAndReplace(arguments.getDocument("filter"), arguments.getDocument("replacement"), options);
-        } else {
-            result = collection.findOneAndReplace(clientSession, arguments.getDocument("filter"), arguments.getDocument("replacement"),
+            result = getCollection(arguments).findOneAndReplace(arguments.getDocument("filter"), arguments.getDocument("replacement"),
                     options);
+        } else {
+            result = getCollection(arguments).findOneAndReplace(clientSession, arguments.getDocument("filter"),
+                    arguments.getDocument("replacement"), options);
         }
 
         return toResult(result);
@@ -334,7 +337,7 @@ public class JsonPoweredCrudTestHelper {
         }
         if (arguments.containsKey("returnDocument")) {
             options.returnDocument(arguments.getString("returnDocument").getValue().equals("After") ? ReturnDocument.AFTER
-                                                                                                    : ReturnDocument.BEFORE);
+                    : ReturnDocument.BEFORE);
         }
         if (arguments.containsKey("collation")) {
             options.collation(getCollation(arguments.getDocument("collation")));
@@ -345,9 +348,10 @@ public class JsonPoweredCrudTestHelper {
 
         BsonDocument result;
         if (clientSession == null) {
-            result = collection.findOneAndUpdate(arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            result = getCollection(arguments).findOneAndUpdate(arguments.getDocument("filter"), arguments.getDocument("update"), options);
         } else {
-            result = collection.findOneAndUpdate(clientSession, arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            result = getCollection(arguments).findOneAndUpdate(clientSession, arguments.getDocument("filter"),
+                    arguments.getDocument("update"), options);
         }
 
         return toResult(result);
@@ -356,9 +360,9 @@ public class JsonPoweredCrudTestHelper {
     BsonDocument getInsertOneResult(final BsonDocument arguments, @Nullable final ClientSession clientSession) {
         BsonDocument document = arguments.getDocument("document");
         if (clientSession == null) {
-            collection.insertOne(document);
+            getCollection(arguments).insertOne(document);
         } else {
-            collection.insertOne(clientSession, document);
+            getCollection(arguments).insertOne(clientSession, document);
         }
 
         return toResult(new BsonDocument("insertedId", document.get("_id")));
@@ -371,10 +375,10 @@ public class JsonPoweredCrudTestHelper {
         }
 
         if (clientSession == null) {
-            collection.insertMany(documents,
+            getCollection(arguments).insertMany(documents,
                     new InsertManyOptions().ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         } else {
-            collection.insertMany(clientSession, documents,
+            getCollection(arguments).insertMany(clientSession, documents,
                     new InsertManyOptions().ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         }
 
@@ -395,10 +399,11 @@ public class JsonPoweredCrudTestHelper {
         }
         UpdateResult updateResult;
         if (clientSession == null) {
-            updateResult = collection.replaceOne(arguments.getDocument("filter"), arguments.getDocument("replacement"), options);
-        } else {
-            updateResult = collection.replaceOne(clientSession, arguments.getDocument("filter"), arguments.getDocument("replacement"),
+            updateResult = getCollection(arguments).replaceOne(arguments.getDocument("filter"), arguments.getDocument("replacement"),
                     options);
+        } else {
+            updateResult = getCollection(arguments).replaceOne(clientSession, arguments.getDocument("filter"),
+                    arguments.getDocument("replacement"), options);
         }
 
         return toResult(updateResult);
@@ -418,9 +423,10 @@ public class JsonPoweredCrudTestHelper {
 
         UpdateResult updateResult;
         if (clientSession == null) {
-            updateResult = collection.updateMany(arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            updateResult = getCollection(arguments).updateMany(arguments.getDocument("filter"), arguments.getDocument("update"), options);
         } else {
-            updateResult = collection.updateMany(clientSession, arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            updateResult = getCollection(arguments).updateMany(clientSession, arguments.getDocument("filter"),
+                    arguments.getDocument("update"), options);
         }
 
         return toResult(updateResult);
@@ -441,24 +447,15 @@ public class JsonPoweredCrudTestHelper {
 
         UpdateResult updateResult;
         if (clientSession == null) {
-            updateResult = collection.updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            updateResult = getCollection(arguments).updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
         } else {
-            updateResult = collection.updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            updateResult = getCollection(arguments).updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
         }
 
         return toResult(updateResult);
     }
 
     BsonDocument getBulkWriteResult(final BsonDocument arguments, final @Nullable ClientSession clientSession) {
-        WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
-        if (arguments.containsKey("writeConcern")) {
-            if (arguments.getDocument("writeConcern").size() > 1) {
-                throw new UnsupportedOperationException("Write concern document contains unexpected keys: "
-                                                        + arguments.getDocument("writeConcern").keySet());
-            }
-            writeConcern = new WriteConcern(arguments.getDocument("writeConcern").getInt32("w").intValue());
-        }
-
         List<WriteModel<BsonDocument>> writeModels = new ArrayList<WriteModel<BsonDocument>>();
         for (BsonValue bsonValue : arguments.getArray("requests")) {
             BsonDocument cur = bsonValue.asDocument();
@@ -469,12 +466,12 @@ public class JsonPoweredCrudTestHelper {
                     writeModels.add(new InsertOneModel<BsonDocument>(requestArguments.getDocument("document")));
                 } else if (name.equals("updateOne")) {
                     writeModels.add(new UpdateOneModel<BsonDocument>(requestArguments.getDocument("filter"),
-                                                                            requestArguments.getDocument("update"),
-                                                                            getUpdateOptions(requestArguments)));
+                            requestArguments.getDocument("update"),
+                            getUpdateOptions(requestArguments)));
                 } else if (name.equals("updateMany")) {
                     writeModels.add(new UpdateManyModel<BsonDocument>(requestArguments.getDocument("filter"),
-                                                                             requestArguments.getDocument("update"),
-                                                                             getUpdateOptions(requestArguments)));
+                            requestArguments.getDocument("update"),
+                            getUpdateOptions(requestArguments)));
                 } else if (name.equals("deleteOne")) {
                     writeModels.add(new DeleteOneModel<BsonDocument>(requestArguments.getDocument("filter")));
                 } else if (name.equals("replaceOne")) {
@@ -490,13 +487,13 @@ public class JsonPoweredCrudTestHelper {
                 } else if (cur.get("updateOne") != null) {
                     BsonDocument updateOneArguments = cur.getDocument("updateOne");
                     writeModels.add(new UpdateOneModel<BsonDocument>(updateOneArguments.getDocument("filter"),
-                                                                            updateOneArguments.getDocument("update"),
-                                                                            getUpdateOptions(updateOneArguments)));
+                            updateOneArguments.getDocument("update"),
+                            getUpdateOptions(updateOneArguments)));
                 } else if (cur.get("updateMany") != null) {
                     BsonDocument updateManyArguments = cur.getDocument("updateMany");
                     writeModels.add(new UpdateManyModel<BsonDocument>(updateManyArguments.getDocument("filter"),
-                                                                             updateManyArguments.getDocument("update"),
-                                                                             getUpdateOptions(updateManyArguments)));
+                            updateManyArguments.getDocument("update"),
+                            getUpdateOptions(updateManyArguments)));
                 } else {
                     throw new UnsupportedOperationException(format("Unsupported write request type: %s", cur.toJson()));
                 }
@@ -505,11 +502,11 @@ public class JsonPoweredCrudTestHelper {
 
         BulkWriteResult bulkWriteResult;
         if (clientSession == null) {
-            bulkWriteResult = collection.withWriteConcern(writeConcern)
+            bulkWriteResult = getCollection(arguments)
                     .bulkWrite(writeModels, new BulkWriteOptions()
                             .ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         } else {
-            bulkWriteResult = collection.withWriteConcern(writeConcern)
+            bulkWriteResult = getCollection(arguments)
                     .bulkWrite(clientSession, writeModels, new BulkWriteOptions()
                             .ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         }
@@ -573,5 +570,26 @@ public class JsonPoweredCrudTestHelper {
             arrayFilters.add(cur.asDocument());
         }
         return arrayFilters;
+    }
+
+    private MongoCollection<BsonDocument> getCollection(final BsonDocument arguments) {
+        MongoCollection<BsonDocument> retVal = baseCollection;
+        if (arguments.containsKey("readPreference")) {
+            ReadPreference readPreference = ReadPreference.valueOf(
+                    arguments.getDocument("readPreference").getString("mode").getValue());
+            retVal = retVal.withReadPreference(readPreference);
+        }
+
+        WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
+        if (arguments.containsKey("writeConcern")) {
+            if (arguments.getDocument("writeConcern").size() > 1) {
+                throw new UnsupportedOperationException("Write concern document contains unexpected keys: "
+                        + arguments.getDocument("writeConcern").keySet());
+            }
+            writeConcern = new WriteConcern(arguments.getDocument("writeConcern").getInt32("w").intValue());
+            retVal = retVal.withWriteConcern(writeConcern);
+        }
+
+        return retVal;
     }
 }
