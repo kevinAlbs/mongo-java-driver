@@ -165,7 +165,7 @@ public class MongoClientDelegate {
                                              final boolean ownsSession) {
             ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, readPreference);
             if (session != null) {
-                readWriteBinding = new ClientSessionBinding(session, ownsSession, readWriteBinding);
+                readWriteBinding = new ClientSessionBinding((com.mongodb.client.ClientSession) session, ownsSession, readWriteBinding);
             }
             return readWriteBinding;
         }
