@@ -97,6 +97,11 @@ final class MongoClientImpl implements MongoClient {
     }
 
     @Override
+    public ClientSession startSession() {
+        return startSession(ClientSessionOptions.builder().build());
+    }
+
+    @Override
     public ClientSession startSession(final ClientSessionOptions options) {
         ClientSession clientSession = delegate.createClientSession(notNull("options", options));
         if (clientSession == null) {

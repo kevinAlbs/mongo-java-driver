@@ -48,6 +48,16 @@ public interface MongoClient {
     MongoDatabase getDatabase(String databaseName);
 
     /**
+     * Creates a client session with default options.
+     *
+     * <p>Note: A ClientSession instance can not be used concurrently in multiple asynchronous operations.</p>
+     *
+     * @return the client session
+     * @mongodb.server.release 3.6
+     */
+    ClientSession startSession();
+
+    /**
      * Creates a client session.
      *
      * <p>Note: A ClientSession instance can not be used concurrently in multiple asynchronous operations.</p>

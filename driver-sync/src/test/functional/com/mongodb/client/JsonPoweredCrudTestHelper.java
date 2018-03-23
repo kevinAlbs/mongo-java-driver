@@ -575,21 +575,27 @@ public class JsonPoweredCrudTestHelper {
     private MongoCollection<BsonDocument> getCollection(final BsonDocument arguments) {
         MongoCollection<BsonDocument> retVal = baseCollection;
         if (arguments.containsKey("readPreference")) {
-            ReadPreference readPreference = ReadPreference.valueOf(
-                    arguments.getDocument("readPreference").getString("mode").getValue());
-            retVal = retVal.withReadPreference(readPreference);
+            retVal = retVal.withReadPreference(getReadPreference(arguments, retVal));
         }
 
-        WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
         if (arguments.containsKey("writeConcern")) {
-            if (arguments.getDocument("writeConcern").size() > 1) {
-                throw new UnsupportedOperationException("Write concern document contains unexpected keys: "
-                        + arguments.getDocument("writeConcern").keySet());
-            }
-            writeConcern = new WriteConcern(arguments.getDocument("writeConcern").getInt32("w").intValue());
+            WriteConcern writeConcern = getWriteConcern(arguments);
             retVal = retVal.withWriteConcern(writeConcern);
         }
 
         return retVal;
+    }
+
+    ReadPreference getReadPreference(final BsonDocument arguments, MongoCollection<BsonDocument> retVal) {
+        return ReadPreference.valueOf(
+                arguments.getDocument("readPreference").getString("mode").getValue());
+    }
+
+    WriteConcern getWriteConcern(final BsonDocument arguments) {
+        if (arguments.getDocument("writeConcern").size() > 1) {
+            throw new UnsupportedOperationException("Write concern document contains unexpected keys: "
+                    + arguments.getDocument("writeConcern").keySet());
+        }
+        return new WriteConcern(arguments.getDocument("writeConcern").getInt32("w").intValue());
     }
 }

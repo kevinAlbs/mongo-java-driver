@@ -18,9 +18,11 @@ package com.mongodb.client.internal;
 
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadPreference;
+import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
 import com.mongodb.internal.session.ServerSessionPool;
+import com.mongodb.operation.AbortTransactionOperation;
 import com.mongodb.operation.CommitTransactionOperation;
 
 final class ClientSessionImpl extends com.mongodb.internal.session.ClientSessionImpl implements ClientSession {
@@ -28,8 +30,8 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
     private final MongoClientDelegate delegate;
     private boolean inTransaction;
 
-    public ClientSessionImpl(final ServerSessionPool serverSessionPool, final Object originator, final ClientSessionOptions options,
-                             final MongoClientDelegate delegate) {
+    ClientSessionImpl(final ServerSessionPool serverSessionPool, final Object originator, final ClientSessionOptions options,
+                      final MongoClientDelegate delegate) {
         super(serverSessionPool, originator, options);
         this.delegate = delegate;
     }
@@ -41,10 +43,16 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
 
     @Override
     public void startTransaction() {
+        startTransaction(TransactionOptions.builder().build());
+    }
+
+    @Override
+    public void startTransaction(final TransactionOptions transactionOptions) {
         if (inTransaction) {
             throw new IllegalStateException("A transaction is already in progress");
         }
         inTransaction = true;
+        // TODO: save the transaction options
         getServerSession().advanceTransactionNumber();
     }
 
@@ -70,8 +78,8 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
         }
         try {
             // TODO: use proper write concern from ClientSession
-            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED),
-                    getTransactionReadPreferenceOrPrimary(),this);
+            delegate.getOperationExecutor().execute(new AbortTransactionOperation(WriteConcern.ACKNOWLEDGED),
+                    getTransactionReadPreferenceOrPrimary(), this);
         } finally {
             inTransaction = false;
             setTransactionReadPreference(null);

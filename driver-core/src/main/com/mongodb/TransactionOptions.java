@@ -109,7 +109,7 @@ public final class TransactionOptions {
          * @param readConcern the read concern
          * @return this
          */
-        Builder readConcern(final ReadConcern readConcern) {
+        public Builder readConcern(final ReadConcern readConcern) {
             this.readConcern = notNull("readConcern", readConcern);
             return this;
         }
@@ -120,7 +120,7 @@ public final class TransactionOptions {
          * @param writeConcern the write concern, which must be acknowledged
          * @return this
          */
-        Builder writeConcern(final WriteConcern writeConcern) {
+        public Builder writeConcern(final WriteConcern writeConcern) {
             this.writeConcern = notNull("writeConcern", writeConcern);
             isTrueArgument("acknowleded write concern", writeConcern.isAcknowledged());
             return this;

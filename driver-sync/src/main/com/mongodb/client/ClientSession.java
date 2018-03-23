@@ -16,6 +16,8 @@
 
 package com.mongodb.client;
 
+import com.mongodb.TransactionOptions;
+
 /**
  *
  * @since 3.8
@@ -34,6 +36,14 @@ public interface ClientSession extends com.mongodb.session.ClientSession {
      * @mongodb.server.release 4.0
      */
     void startTransaction();
+
+    /**
+     *
+     * @param transactionOptions the options to apply to the transaction
+     *
+     * @mongodb.server.release 4.0
+     */
+    void startTransaction(TransactionOptions transactionOptions);
 
     /**
      *
