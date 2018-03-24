@@ -20,7 +20,7 @@ import com.mongodb.ReadPreference;
 import com.mongodb.lang.Nullable;
 import com.mongodb.operation.ReadOperation;
 import com.mongodb.operation.WriteOperation;
-import com.mongodb.session.ClientSession;
+import com.mongodb.client.ClientSession;
 
 import java.util.ArrayList;
 import java.util.List;

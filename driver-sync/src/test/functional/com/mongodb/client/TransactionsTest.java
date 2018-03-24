@@ -161,7 +161,7 @@ public class TransactionsTest {
                     cur.abortTransaction();
                 } catch (Exception e) {
                     // TODO: fail on this?
-                }                                               
+                }
             }
             cur.close();
         }
@@ -197,7 +197,9 @@ public class TransactionsTest {
 //                    for (CommandEvent curEvent : getCommandStartedEvents()) {
 //                        System.out.println(((CommandStartedEvent) curEvent).getCommand());
 //                    }
-                    if (expectedResult == null || !expectedResult.isDocument() || !expectedResult.asDocument().containsKey("errorContains")) {
+                    if (expectedResult == null
+                            || !expectedResult.isDocument()
+                            || !expectedResult.asDocument().containsKey("errorContains")) {
                         throw e;
                     }
                     assertTrue(e.getMessage().toLowerCase().contains(expectedResult.asDocument()

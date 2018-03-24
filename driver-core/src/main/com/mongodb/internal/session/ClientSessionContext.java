@@ -89,12 +89,12 @@ public class ClientSessionContext implements SessionContext {
     @Override
     public boolean hasActiveTransaction() {
         // TODO: move this to async ClientSession implementation of this method
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     @Override
     public WriteConcern getWriteConcern() {
         // TODO: move this to async ClientSession implementation of this method
-        throw new UnsupportedOperationException();
+        return WriteConcern.ACKNOWLEDGED;
     }
 }

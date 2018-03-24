@@ -33,7 +33,7 @@ import com.mongodb.lang.Nullable;
 import com.mongodb.operation.ReadOperation;
 import com.mongodb.operation.WriteOperation;
 import com.mongodb.selector.ServerSelector;
-import com.mongodb.session.ClientSession;
+import com.mongodb.client.ClientSession;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,7 @@ public class MongoClientDelegate {
     }
 
     @Nullable
-    public com.mongodb.client.ClientSession createClientSession(final ClientSessionOptions options) {
+    public ClientSession createClientSession(final ClientSessionOptions options) {
         if (credentialList.size() > 1) {
             return null;
         }
@@ -165,7 +165,7 @@ public class MongoClientDelegate {
                                              final boolean ownsSession) {
             ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, readPreference);
             if (session != null) {
-                readWriteBinding = new ClientSessionBinding((com.mongodb.client.ClientSession) session, ownsSession, readWriteBinding);
+                readWriteBinding = new ClientSessionBinding(session, ownsSession, readWriteBinding);
             }
             return readWriteBinding;
         }

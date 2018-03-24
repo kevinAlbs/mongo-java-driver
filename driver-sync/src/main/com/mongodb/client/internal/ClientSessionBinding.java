@@ -149,7 +149,7 @@ public class ClientSessionBinding implements ReadWriteBinding {
         }
     }
 
-    private final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
+    private static final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
 
         private final ClientSession clientSession;
 
@@ -162,7 +162,7 @@ public class ClientSessionBinding implements ReadWriteBinding {
         @Override
         public boolean hasActiveTransaction() {
             // TODO: not really a safe cast given the current API
-            return ((com.mongodb.client.ClientSession) clientSession).hasActiveTransaction();
+            return clientSession.hasActiveTransaction();
         }
 
         @Override

@@ -21,11 +21,12 @@ import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
+import com.mongodb.internal.session.BaseClientSessionImpl;
 import com.mongodb.internal.session.ServerSessionPool;
 import com.mongodb.operation.AbortTransactionOperation;
 import com.mongodb.operation.CommitTransactionOperation;
 
-final class ClientSessionImpl extends com.mongodb.internal.session.ClientSessionImpl implements ClientSession {
+final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSession {
 
     private final MongoClientDelegate delegate;
     private boolean inTransaction;

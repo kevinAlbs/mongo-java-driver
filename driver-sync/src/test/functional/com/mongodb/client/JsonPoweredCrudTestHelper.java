@@ -44,14 +44,12 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.lang.Nullable;
-import com.mongodb.session.ClientSession;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonNull;
 import org.bson.BsonValue;
-import org.bson.Document;
 import org.junit.AssumptionViolatedException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -247,7 +245,8 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             deletedCount = (int) getCollection(arguments).deleteMany(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) getCollection(arguments).deleteMany(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteMany(clientSession, arguments.getDocument("filter"), options)
+                    .getDeletedCount();
         }
 
         return toResult("deletedCount",
@@ -264,7 +263,8 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             deletedCount = (int) getCollection(arguments).deleteOne(arguments.getDocument("filter"), options).getDeletedCount();
         } else {
-            deletedCount = (int) getCollection(arguments).deleteOne(clientSession, arguments.getDocument("filter"), options).getDeletedCount();
+            deletedCount = (int) getCollection(arguments).deleteOne(clientSession, arguments.getDocument("filter"), options)
+                    .getDeletedCount();
         }
 
         return toResult("deletedCount", new BsonInt32(deletedCount));
@@ -575,7 +575,7 @@ public class JsonPoweredCrudTestHelper {
     private MongoCollection<BsonDocument> getCollection(final BsonDocument arguments) {
         MongoCollection<BsonDocument> retVal = baseCollection;
         if (arguments.containsKey("readPreference")) {
-            retVal = retVal.withReadPreference(getReadPreference(arguments, retVal));
+            retVal = retVal.withReadPreference(getReadPreference(arguments));
         }
 
         if (arguments.containsKey("writeConcern")) {
@@ -586,7 +586,7 @@ public class JsonPoweredCrudTestHelper {
         return retVal;
     }
 
-    ReadPreference getReadPreference(final BsonDocument arguments, MongoCollection<BsonDocument> retVal) {
+    ReadPreference getReadPreference(final BsonDocument arguments) {
         return ReadPreference.valueOf(
                 arguments.getDocument("readPreference").getString("mode").getValue());
     }
