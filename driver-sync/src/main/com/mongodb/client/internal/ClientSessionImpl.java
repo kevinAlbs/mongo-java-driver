@@ -49,7 +49,7 @@ final class ClientSessionImpl extends com.mongodb.internal.session.ClientSession
     @Override
     public void startTransaction(final TransactionOptions transactionOptions) {
         if (inTransaction) {
-            throw new IllegalStateException("A transaction is already in progress");
+            throw new IllegalStateException("Transaction already in progress");
         }
         inTransaction = true;
         // TODO: save the transaction options
