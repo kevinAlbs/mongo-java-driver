@@ -30,6 +30,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
 
     private final MongoClientDelegate delegate;
     private boolean inTransaction;
+    private TransactionOptions transactionOptions;
 
     ClientSessionImpl(final ServerSessionPool serverSessionPool, final Object originator, final ClientSessionOptions options,
                       final MongoClientDelegate delegate) {
@@ -56,7 +57,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             throw new IllegalStateException("Transaction already in progress");
         }
         inTransaction = true;
-        // TODO: save the transaction options
+        this.transactionOptions = transactionOptions;
         getServerSession().advanceTransactionNumber();
     }
 
@@ -66,8 +67,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             throw new IllegalStateException("There is no transaction in progress");
         }
         try {
-            // TODO: use proper write concern from ClientSession
-            delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED),
+            delegate.getOperationExecutor().execute(new CommitTransactionOperation(transactionOptions.getWriteConcern()),
                     getTransactionReadPreferenceOrPrimary(), this);
         } finally {
             cleanupTransaction();
@@ -80,8 +80,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             throw new IllegalStateException("There is no transaction in progress");
         }
         try {
-            // TODO: use proper write concern from ClientSession
-            delegate.getOperationExecutor().execute(new AbortTransactionOperation(WriteConcern.ACKNOWLEDGED),
+            delegate.getOperationExecutor().execute(new AbortTransactionOperation(transactionOptions.getWriteConcern()),
                     getTransactionReadPreferenceOrPrimary(), this);
         } finally {
             cleanupTransaction();
@@ -90,6 +89,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
 
     private void cleanupTransaction() {
         inTransaction = false;
+        transactionOptions = null;
         setTransactionReadPreference(null);
         if (getOptions().getAutoStartTransaction()) {
             startTransaction(getOptions().getDefaultTransactionOptions());

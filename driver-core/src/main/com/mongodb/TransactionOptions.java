@@ -101,7 +101,7 @@ public final class TransactionOptions {
      */
     public static final class Builder {
         private ReadConcern readConcern = ReadConcern.DEFAULT;
-        private WriteConcern writeConcern = WriteConcern.MAJORITY;
+        private WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
 
         /**
          * Sets the read concern.

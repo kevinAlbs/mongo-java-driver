@@ -183,8 +183,9 @@ public class TransactionsTest {
                 try {
                     if (operationName.equals("startTransaction")) {
                         TransactionOptions.Builder builder = TransactionOptions.builder();
-                        if (operation.containsKey("writeConcern")) {
-                            builder.writeConcern(helper.getWriteConcern(operation));
+                        BsonDocument arguments = operation.getDocument("arguments");
+                        if (arguments.containsKey("writeConcern")) {
+                            builder.writeConcern(helper.getWriteConcern(arguments));
                         }
                         nonNullClientSession(clientSession).startTransaction(builder.build());
                     } else if (operationName.equals("commitTransaction")) {

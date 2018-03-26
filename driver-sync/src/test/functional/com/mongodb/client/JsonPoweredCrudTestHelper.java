@@ -604,10 +604,14 @@ public class JsonPoweredCrudTestHelper {
     }
 
     WriteConcern getWriteConcern(final BsonDocument arguments) {
-        if (arguments.getDocument("writeConcern").size() > 1) {
-            throw new UnsupportedOperationException("Write concern document contains unexpected keys: "
-                    + arguments.getDocument("writeConcern").keySet());
+        BsonDocument writeConcernDocument = arguments.getDocument("writeConcern");
+        if (writeConcernDocument.size() > 1) {
+            throw new UnsupportedOperationException("Write concern document contains unexpected keys: " + writeConcernDocument.keySet());
         }
-        return new WriteConcern(arguments.getDocument("writeConcern").getInt32("w").intValue());
+        if (writeConcernDocument.isNumber("w")) {
+            return new WriteConcern(writeConcernDocument.getNumber("w").intValue());
+        } else {
+            return new WriteConcern(writeConcernDocument.getString("w").getValue());
+        }
     }
 }
