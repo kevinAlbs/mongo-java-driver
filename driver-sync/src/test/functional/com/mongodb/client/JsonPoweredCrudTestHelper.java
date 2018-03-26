@@ -120,12 +120,24 @@ public class JsonPoweredCrudTestHelper {
         return toResult(resultDoc);
     }
 
-    BsonDocument toResult(final BulkWriteResult bulkWriteResult) {
+    BsonDocument toResult(final BulkWriteResult bulkWriteResult, final List<WriteModel<BsonDocument>> writeModels) {
 
         BsonDocument resultDoc = new BsonDocument();
         if (bulkWriteResult.wasAcknowledged()) {
             resultDoc.append("deletedCount", new BsonInt32(bulkWriteResult.getDeletedCount()));
-            resultDoc.append("insertedIds", new BsonDocument());
+
+            // Determine insertedIds
+            BsonDocument insertedIds = new BsonDocument();
+            for (int i = 0; i < writeModels.size(); i++) {
+                WriteModel<BsonDocument> cur = writeModels.get(i);
+                // TODO: Any need to suport InsertManyModel, and if so, how to represent it?
+                if (cur instanceof InsertOneModel) {
+                    InsertOneModel<BsonDocument> insertOneModel = (InsertOneModel<BsonDocument>) cur;
+                    insertedIds.put(Integer.toString(i), insertOneModel.getDocument().get("_id"));
+                }
+            }
+            resultDoc.append("insertedIds", insertedIds);
+
             resultDoc.append("insertedCount", new BsonInt32(bulkWriteResult.getInsertedCount()));
             resultDoc.append("matchedCount", new BsonInt32(bulkWriteResult.getMatchedCount()));
             if (bulkWriteResult.isModifiedCountAvailable()) {
@@ -511,7 +523,7 @@ public class JsonPoweredCrudTestHelper {
                             .ordered(arguments.getBoolean("ordered", BsonBoolean.TRUE).getValue()));
         }
 
-        return toResult(bulkWriteResult);
+        return toResult(bulkWriteResult, writeModels);
     }
 
     Collation getCollation(final BsonDocument bsonCollation) {

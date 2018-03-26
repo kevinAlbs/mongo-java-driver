@@ -199,6 +199,11 @@ public class TransactionsTest {
                         BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
                         BsonValue actualResult = actualOutcome.get("result");
 
+                        // Remove insertedCount
+                        if (actualResult.isDocument() && actualResult.asDocument().containsKey("insertedCount")) {
+                            actualResult.asDocument().remove("insertedCount");
+                        }
+
                         assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
                     }
                 } catch (RuntimeException e) {
@@ -210,8 +215,9 @@ public class TransactionsTest {
                             || !expectedResult.asDocument().containsKey("errorContains")) {
                         throw e;
                     }
-                    assertTrue(e.getMessage().toLowerCase().contains(expectedResult.asDocument()
-                            .getString("errorContains").getValue().toLowerCase()));
+                    String expectedError = expectedResult.asDocument().getString("errorContains").getValue();
+                    assertTrue(String.format("Expected '%s' but got '%s'", expectedError, e.getMessage()),
+                            e.getMessage().toLowerCase().contains(expectedError.toLowerCase()));
                 }
             }
         } finally {
