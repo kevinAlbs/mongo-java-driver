@@ -42,6 +42,7 @@
                   "_id": 1
                 }
               ],
+              "ordered": true,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "1"
@@ -120,6 +121,7 @@
                   "_id": 1
                 }
               ],
+              "ordered": true,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "1"
@@ -199,12 +201,13 @@
                   "_id": 1
                 }
               ],
+              "ordered": true,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "1"
               },
               "stmtId": 0,
-              "autoabort": false,
+              "autocommit": false,
               "writeConcern": null
             },
             "command_name": "insert",
@@ -219,6 +222,7 @@
               "txnNumber": {
                 "$numberLong": "1"
               },
+              "stmtId": 1,
               "writeConcern": {
                 "w": "majority"
               }
@@ -230,11 +234,7 @@
       ],
       "outcome": {
         "collection": {
-          "data": [
-            {
-              "_id": 1
-            }
-          ]
+          "data": []
         }
       }
     },
@@ -276,12 +276,13 @@
                   "_id": 1
                 }
               ],
+              "ordered": true,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "1"
               },
               "stmtId": 0,
-              "autoabort": false,
+              "autocommit": false,
               "writeConcern": null
             },
             "command_name": "insert",
@@ -296,6 +297,7 @@
               "txnNumber": {
                 "$numberLong": "1"
               },
+              "stmtId": 1,
               "writeConcern": null
             },
             "command_name": "abortTransaction",
@@ -305,11 +307,7 @@
       ],
       "outcome": {
         "collection": {
-          "data": [
-            {
-              "_id": 1
-            }
-          ]
+          "data": []
         }
       }
     }

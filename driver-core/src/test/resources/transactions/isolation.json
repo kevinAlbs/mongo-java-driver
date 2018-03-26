@@ -3,6 +3,7 @@
   "tests": [
     {
       "description": "one transaction",
+      "skipReason": "Skip until SERVER-33213 is fixed",
       "operations": [
         {
           "name": "startTransaction",

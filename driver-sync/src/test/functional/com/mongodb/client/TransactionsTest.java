@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.ClusterFixture.isDiscoverableReplicaSet;
 import static com.mongodb.ClusterFixture.serverVersionAtLeast;
+import static com.mongodb.client.CommandMonitoringTestHelper.assertEventsEquality;
 import static com.mongodb.client.CommandMonitoringTestHelper.getExpectedEvents;
 import static com.mongodb.client.Fixture.getDefaultDatabaseName;
 import static com.mongodb.client.Fixture.getMongoClientSettingsBuilder;
@@ -100,13 +101,8 @@ public class TransactionsTest {
         assumeTrue(!definition.containsKey("skipReason"));
 
         // TODO: make these pass
-//        assumeTrue(!filename.startsWith("auto-start"));
-        assumeTrue(!filename.startsWith("delete"));
-        assumeTrue(!filename.startsWith("update"));
-        assumeTrue(!filename.startsWith("reads"));
-        assumeTrue(!filename.startsWith("snapshot-reads"));
-        assumeTrue(!filename.startsWith("read-pref"));
-        assumeTrue(!filename.startsWith("write-concern"));
+        assumeTrue(!filename.startsWith("delete"));    // Crashed the server with uassert
+        assumeTrue(!filename.startsWith("update"));    // Crashed the server with uassert
 
         String collectionName = "test";
         collectionHelper = new CollectionHelper<Document>(new DocumentCodec(), new MongoNamespace(databaseName, collectionName));
@@ -207,9 +203,6 @@ public class TransactionsTest {
                         assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
                     }
                 } catch (RuntimeException e) {
-//                    for (CommandEvent curEvent : getCommandStartedEvents()) {
-//                        System.out.println(((CommandStartedEvent) curEvent).getCommand());
-//                    }
                     if (expectedResult == null
                             || !expectedResult.isDocument()
                             || !expectedResult.asDocument().containsKey("errorContains")) {
@@ -221,7 +214,6 @@ public class TransactionsTest {
                 }
             }
         } finally {
-            // TODO: request spec change for this
             closeAllSessions();
         }
 
@@ -231,8 +223,7 @@ public class TransactionsTest {
             List<CommandEvent> expectedEvents = getExpectedEvents(definition.getArray("expectations"), databaseName, null);
             List<CommandEvent> events = getCommandStartedEvents();
 
-            // TODO: enable this
-//            assertEventsEquality(expectedEvents, events);
+            assertEventsEquality(expectedEvents, events);
         }
 
         BsonDocument expectedOutcome = definition.getDocument("outcome", new BsonDocument());

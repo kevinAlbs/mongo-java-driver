@@ -75,16 +75,21 @@ public final class CommandMonitoringTestHelper {
             String commandName = eventDescriptionDocument.getString("command_name").getValue();
             if (eventType.equals("command_started_event")) {
                 BsonDocument commandDocument = eventDescriptionDocument.getDocument("command");
+                String actualDatabaseName = databaseName;
+                if (commandName.equals("commitTransaction") || commandName.equals("abortTransaction")) {
+                    actualDatabaseName = "admin";
+                }
                 // Not clear whether these global fields should be included, but also not clear how to efficiently exclude them
                 if (ClusterFixture.serverVersionAtLeast(3, 6)) {
-                    commandDocument.put("$db", new BsonString(databaseName));
+                    commandDocument.put("$db", new BsonString(actualDatabaseName));
                     if (operation != null && operation.containsKey("read_preference")) {
                         commandDocument.put("$readPreference", operation.getDocument("read_preference"));
                     } else if (!isDiscoverableReplicaSet() && !isSharded() && !isWriteCommand(commandName)) {
                         commandDocument.put("$readPreference", ReadPreference.primaryPreferred().toDocument());
                     }
                 }
-                commandEvent = new CommandStartedEvent(1, null, databaseName, commandName, commandDocument);
+                commandEvent = new CommandStartedEvent(1, null, actualDatabaseName, commandName,
+                        commandDocument);
             } else if (eventType.equals("command_succeeded_event")) {
                 BsonDocument replyDocument = eventDescriptionDocument.get("reply").asDocument();
                 commandEvent = new CommandSucceededEvent(1, null, commandName, replyDocument, 1);
@@ -206,6 +211,20 @@ public final class CommandMonitoringTestHelper {
         }
         command.remove("$clusterTime");
         command.remove("lsid");
+
+        // TODO: Only do this for expected
+        if (command.containsKey("txnNumber") && command.isNull("txnNumber")) {
+            command.remove("txnNumber");
+        }
+        if (command.containsKey("stmtId") && command.isNull("stmtId")) {
+            command.remove("stmtId");
+        }
+        if (command.containsKey("autocommit") && command.isNull("autocommit")) {
+            command.remove("autocommit");
+        }
+        if (command.containsKey("writeConcern") && command.isNull("writeConcern")) {
+            command.remove("writeConcern");
+        }
 
         return new CommandStartedEvent(actual.getRequestId(), actual.getConnectionDescription(), actual.getDatabaseName(),
                 actual.getCommandName(), command);
