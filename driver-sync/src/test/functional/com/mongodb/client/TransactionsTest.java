@@ -29,6 +29,7 @@ import com.mongodb.event.CommandEvent;
 import com.mongodb.event.CommandStartedEvent;
 import com.mongodb.lang.Nullable;
 import org.bson.BsonArray;
+import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.bson.Document;
@@ -99,7 +100,7 @@ public class TransactionsTest {
         assumeTrue(!definition.containsKey("skipReason"));
 
         // TODO: make these pass
-        assumeTrue(!filename.startsWith("auto-start"));
+//        assumeTrue(!filename.startsWith("auto-start"));
         assumeTrue(!filename.startsWith("delete"));
         assumeTrue(!filename.startsWith("update"));
         assumeTrue(!filename.startsWith("reads"));
@@ -134,14 +135,21 @@ public class TransactionsTest {
         MongoDatabase database = mongoClient.getDatabase(databaseName);
         helper = new JsonPoweredCrudTestHelper(description, database.getCollection(collectionName, BsonDocument.class));
 
-        // TODO: should causal be on or off?
-        ClientSessionOptions clientSessionOptions = ClientSessionOptions.builder().causallyConsistent(false).build();
-        ClientSession sessionZero = mongoClient.startSession(clientSessionOptions);
-        ClientSession sessionOne = mongoClient.startSession(clientSessionOptions);
+        ClientSession sessionZero = createSession("session0");
+        ClientSession sessionOne = createSession("session1");
 
         sessionsMap = new HashMap<String, ClientSession>();
         sessionsMap.put("session0", sessionZero);
         sessionsMap.put("session1", sessionOne);
+    }
+
+    private ClientSession createSession(final String sessionName) {
+        BsonDocument optionsDocument = definition.getDocument("sessionOptions", new BsonDocument())
+                .getDocument(sessionName, new BsonDocument());
+        ClientSessionOptions options = ClientSessionOptions.builder().causallyConsistent(false)
+                .autoStartTransaction(optionsDocument.getBoolean("autoStartTransaction", BsonBoolean.FALSE).getValue())
+                .build();
+        return mongoClient.startSession(options);
     }
 
     @After

@@ -35,6 +35,9 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
                       final MongoClientDelegate delegate) {
         super(serverSessionPool, originator, options);
         this.delegate = delegate;
+        if (options.getAutoStartTransaction()) {
+            startTransaction(options.getDefaultTransactionOptions());
+        }
     }
 
     @Override
@@ -67,8 +70,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             delegate.getOperationExecutor().execute(new CommitTransactionOperation(WriteConcern.ACKNOWLEDGED),
                     getTransactionReadPreferenceOrPrimary(), this);
         } finally {
-            inTransaction = false;
-            setTransactionReadPreference(null);
+            cleanupTransaction();
         }
     }
 
@@ -82,8 +84,15 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             delegate.getOperationExecutor().execute(new AbortTransactionOperation(WriteConcern.ACKNOWLEDGED),
                     getTransactionReadPreferenceOrPrimary(), this);
         } finally {
-            inTransaction = false;
-            setTransactionReadPreference(null);
+            cleanupTransaction();
+        }
+    }
+
+    private void cleanupTransaction() {
+        inTransaction = false;
+        setTransactionReadPreference(null);
+        if (getOptions().getAutoStartTransaction()) {
+            startTransaction(getOptions().getDefaultTransactionOptions());
         }
     }
 
