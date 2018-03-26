@@ -67,8 +67,10 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             throw new IllegalStateException("There is no transaction in progress");
         }
         try {
-            delegate.getOperationExecutor().execute(new CommitTransactionOperation(transactionOptions.getWriteConcern()),
-                    getTransactionReadPreferenceOrPrimary(), this);
+            if (getServerSession().getStatementId() > 0) {
+                delegate.getOperationExecutor().execute(new CommitTransactionOperation(transactionOptions.getWriteConcern()),
+                        getTransactionReadPreferenceOrPrimary(), this);
+            }
         } finally {
             cleanupTransaction();
         }
@@ -80,8 +82,10 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
             throw new IllegalStateException("There is no transaction in progress");
         }
         try {
-            delegate.getOperationExecutor().execute(new AbortTransactionOperation(transactionOptions.getWriteConcern()),
-                    getTransactionReadPreferenceOrPrimary(), this);
+            if (getServerSession().getStatementId() > 0) {
+                delegate.getOperationExecutor().execute(new AbortTransactionOperation(transactionOptions.getWriteConcern()),
+                        getTransactionReadPreferenceOrPrimary(), this);
+            }
         } finally {
             cleanupTransaction();
         }

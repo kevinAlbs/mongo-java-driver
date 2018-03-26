@@ -168,6 +168,11 @@ public class ServerSessionPool {
         }
 
         @Override
+        public int getStatementId() {
+            return statementId;
+        }
+
+        @Override
         public int advanceStatementId(final int increment) {
             isTrue("increment >= 1", increment >= 1);
             statementId += increment;

@@ -40,10 +40,21 @@ public interface ServerSession {
     long getTransactionNumber();
 
     /**
+     * Gets the current statement id.  The statement id is reset to 0 at the start of transaction
+     *
+     * @return the statement identifier
+     * @since 3.8
+     * @mongodb.server.release 4.0
+     */
+    int getStatementId();
+
+    /**
      * Advance the statement identifier by the given increment.
      *
      * @param increment the increment, which must be &gt;= 1
      * @return the statement identifier prior to advancement
+     * @since 3.8
+     * @mongodb.server.release 4.0
      */
     int advanceStatementId(int increment);
 
