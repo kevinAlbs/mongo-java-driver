@@ -98,6 +98,20 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
         }
     }
 
+    @Override
+    public void close() {
+        try {
+            if (inTransaction) {
+                abortTransaction();
+            }
+        } catch (Exception e) {
+            // do nothing
+        } finally {
+            super.close();
+        }
+
+    }
+
     private void cleanupTransaction() {
         inTransaction = false;
         transactionOptions = null;

@@ -149,22 +149,12 @@ public class TransactionsTest {
     @After
     public void cleanUp() {
         if (mongoClient != null) {
-            // TODO: remove this once it's added back to #shouldPassAllOutcomes
-            closeAllSessions();
             mongoClient.close();
         }
     }
 
     private void closeAllSessions() {
         for (ClientSession cur : sessionsMap.values()) {
-            if (cur.hasActiveTransaction()) {
-                // TODO: remove this once ClientSession#close implicitly abort an open transaction
-                try {
-                    cur.abortTransaction();
-                } catch (Exception e) {
-                    // TODO: fail on this?
-                }
-            }
             cur.close();
         }
     }
