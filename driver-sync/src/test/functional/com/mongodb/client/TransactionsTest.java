@@ -31,6 +31,7 @@ import com.mongodb.lang.Nullable;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
+import org.bson.BsonString;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.codecs.BsonDocumentCodec;
@@ -98,11 +99,8 @@ public class TransactionsTest {
     @Before
     public void setUp() {
         assumeTrue(canRunTests());
-        assumeTrue(!definition.containsKey("skipReason"));
-
-        // TODO: make these pass
-        assumeTrue(!filename.startsWith("delete"));    // Crashed the server with uassert
-        assumeTrue(!filename.startsWith("update"));    // Crashed the server with uassert
+        assumeTrue("Skipping test: " + definition.getString("skipReason", new BsonString("")).getValue(),
+                !definition.containsKey("skipReason"));
 
         String collectionName = "test";
         collectionHelper = new CollectionHelper<Document>(new DocumentCodec(), new MongoNamespace(databaseName, collectionName));
