@@ -138,7 +138,6 @@ public class JsonPoweredCrudTestHelper {
             }
             resultDoc.append("insertedIds", insertedIds);
 
-            resultDoc.append("insertedCount", new BsonInt32(bulkWriteResult.getInsertedCount()));
             resultDoc.append("matchedCount", new BsonInt32(bulkWriteResult.getMatchedCount()));
             if (bulkWriteResult.isModifiedCountAvailable()) {
                 resultDoc.append("modifiedCount", new BsonInt32(bulkWriteResult.getModifiedCount()));
@@ -461,7 +460,8 @@ public class JsonPoweredCrudTestHelper {
         if (clientSession == null) {
             updateResult = getCollection(arguments).updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
         } else {
-            updateResult = getCollection(arguments).updateOne(arguments.getDocument("filter"), arguments.getDocument("update"), options);
+            updateResult = getCollection(arguments).updateOne(clientSession, arguments.getDocument("filter"),
+                    arguments.getDocument("update"), options);
         }
 
         return toResult(updateResult);

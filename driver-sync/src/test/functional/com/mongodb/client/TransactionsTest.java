@@ -196,11 +196,6 @@ public class TransactionsTest {
                         BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
                         BsonValue actualResult = actualOutcome.get("result");
 
-                        // Remove insertedCount
-                        if (actualResult.isDocument() && actualResult.asDocument().containsKey("insertedCount")) {
-                            actualResult.asDocument().remove("insertedCount");
-                        }
-
                         assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
                     }
                 } catch (RuntimeException e) {
