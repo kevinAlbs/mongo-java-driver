@@ -16,7 +16,7 @@
   "tests": [
     {
       "description": "primary",
-      "skipReason": "Skip until SERVER-33213 is fixed",
+      "skipReason": "Skip until find supports stmtId, SERVER-33213",
       "operations": [
         {
           "name": "startTransaction",
@@ -178,6 +178,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "1"
               },
@@ -281,6 +284,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "2"
               },
@@ -401,7 +407,7 @@
     },
     {
       "description": "primary abort",
-      "skipReason": "Skip until SERVER-33213 is fixed",
+      "skipReason": "Skip until find supports stmtId, SERVER-33213",
       "operations": [
         {
           "name": "startTransaction",
@@ -484,6 +490,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "1"
               },
@@ -603,7 +612,7 @@
     },
     {
       "description": "secondary",
-      "skipReason": "Implement transaction pinning",
+      "skipReason": "Await abortTransaction on secondaries, SERVER-34004",
       "operations": [
         {
           "name": "startTransaction",
@@ -784,6 +793,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "1"
               },
@@ -887,6 +899,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "2"
               },
@@ -1007,7 +1022,7 @@
     },
     {
       "description": "secondary abort",
-      "skipReason": "Server must implements abort on secondary",
+      "skipReason": "Await abortTransaction on secondaries, SERVER-34004",
       "operations": [
         {
           "name": "startTransaction",
@@ -1099,6 +1114,9 @@
             "command": {
               "count": "test",
               "lsid": "session0",
+              "readConcern": {
+                "level": "snapshot"
+              },
               "txnNumber": {
                 "$numberLong": "1"
               },
