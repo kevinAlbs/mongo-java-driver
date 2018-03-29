@@ -96,7 +96,7 @@ final class BulkWriteBatch {
                                                       final Boolean bypassDocumentValidation, final boolean retryWrites,
                                                       final List<? extends WriteRequest> writeRequests,
                                                       final SessionContext sessionContext) {
-        boolean canRetryWrites = isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription);
+        boolean canRetryWrites = isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription, sessionContext);
         List<WriteRequestWithIndex> writeRequestsWithIndex = new ArrayList<WriteRequestWithIndex>();
         boolean writeRequestsAreRetryable = true;
         for (int i = 0; i < writeRequests.size(); i++) {

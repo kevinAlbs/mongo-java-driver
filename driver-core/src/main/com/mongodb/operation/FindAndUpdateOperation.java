@@ -403,7 +403,7 @@ public class FindAndUpdateOperation<T> extends BaseFindAndModifyOperation<T> {
                 if (arrayFilters != null) {
                     commandDocument.put("arrayFilters", new BsonArray(arrayFilters));
                 }
-                if (isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription)) {
+                if (isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription, sessionContext)) {
                     commandDocument.put("txnNumber", new BsonInt64(sessionContext.advanceTransactionNumber()));
                 }
                 return commandDocument;

@@ -366,7 +366,7 @@ public class FindAndReplaceOperation<T> extends BaseFindAndModifyOperation<T> {
                 if (collation != null) {
                     commandDocument.put("collation", collation.asDocument());
                 }
-                if (isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription)) {
+                if (isRetryableWrite(retryWrites, writeConcern, serverDescription, connectionDescription, sessionContext)) {
                     commandDocument.put("txnNumber", new BsonInt64(sessionContext.advanceTransactionNumber()));
                 }
                 return commandDocument;
