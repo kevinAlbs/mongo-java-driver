@@ -50,7 +50,7 @@ public interface MongoClient {
     /**
      * Creates a client session with default options.
      *
-     * <p>Note: A ClientSession instance can not be used concurrently in multiple asynchronous operations.</p>
+     * <p>Note: A ClientSession instance can not be used concurrently in multiple operations.</p>
      *
      * @return the client session
      * @mongodb.server.release 3.6
@@ -60,7 +60,7 @@ public interface MongoClient {
     /**
      * Creates a client session.
      *
-     * <p>Note: A ClientSession instance can not be used concurrently in multiple asynchronous operations.</p>
+     * <p>Note: A ClientSession instance can not be used concurrently in multiple operations.</p>
      *
      * @param options  the options for the client session
      * @return the client session

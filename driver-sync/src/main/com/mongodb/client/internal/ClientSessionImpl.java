@@ -112,6 +112,8 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
 
     }
 
+
+
     private void cleanupTransaction() {
         inTransaction = false;
         transactionOptions = null;

@@ -19,6 +19,7 @@ package com.mongodb.client;
 import com.mongodb.TransactionOptions;
 
 /**
+ * A client session that supports transactions.
  *
  * @since 3.8
  */
@@ -39,12 +40,16 @@ public interface ClientSession extends com.mongodb.session.ClientSession {
     TransactionOptions getTransactionOptions();
 
     /**
+     * Start a transaction in the context of this session with default transaction options. A transaction can not be started if there is
+     * already an active transaction on this session.
      *
      * @mongodb.server.release 4.0
      */
     void startTransaction();
 
     /**
+     * Start a transaction in the context of this session with the given transaction options. A transaction can not be started if there is
+     * already an active transaction on this session.
      *
      * @param transactionOptions the options to apply to the transaction
      *
@@ -53,12 +58,14 @@ public interface ClientSession extends com.mongodb.session.ClientSession {
     void startTransaction(TransactionOptions transactionOptions);
 
     /**
+     * Commit a transaction in the context of this session.  A transaction can only be commmited if one has first been started.
      *
      * @mongodb.server.release 4.0
      */
     void commitTransaction();
 
     /**
+     * Abort a transaction in the context of this session.  A transaction can only be aborted if one has first been started.
      *
      * @mongodb.server.release 4.0
      */
