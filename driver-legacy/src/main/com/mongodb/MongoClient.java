@@ -529,6 +529,18 @@ public class MongoClient extends Mongo implements Closeable {
     }
 
     /**
+     * Creates a client session with default session options.
+     *
+     * @return the client session
+     * @throws MongoClientException if the MongoDB cluster to which this client is connected does not support sessions
+     * @mongodb.server.release 3.6
+     * @since 3.8
+     */
+    public ClientSession startSession() {
+        return startSession(ClientSessionOptions.builder().build());
+    }
+
+    /**
      * Creates a client session.
      *
      * @param options the options for the client session
