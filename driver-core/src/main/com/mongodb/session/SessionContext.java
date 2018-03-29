@@ -49,11 +49,28 @@ public interface SessionContext {
     boolean isCausallyConsistent();
 
     /**
+     * Gets the current transaction number.
+     *
+     * @return the current transaction number
+     * @since 3.8
+     */
+    long getTransactionNumber();
+
+    /**
      * Advance the transaction number.
      *
      * @return the next transaction number for the session
      */
     long advanceTransactionNumber();
+
+    /**
+     * Advance the statement id by the given increment
+     *
+     * @param increment the increment, which much by &gt;= 1
+     * @return the statement id prior to advancement
+     * @since 3.8
+     */
+    int advanceStatementId(int increment);
 
     /**
      * Gets the current operation time for this session context

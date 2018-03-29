@@ -120,4 +120,25 @@ public interface MongoClient {
      * @mongodb.server.release 3.6
      */
     <TResult> ListDatabasesIterable<TResult> listDatabases(ClientSession clientSession, Class<TResult> resultClass);
+
+    /**
+     * TODO: comment or move this to ClientSession
+     *
+     * @param clientSession the client session to use for the transaction
+     */
+    void startTransaction(ClientSession clientSession);
+
+    /**
+     * TODO: comment or move this to ClientSession
+     *
+     * @param clientSession the client session to use for the transaction
+     */
+    void commitTransaction(ClientSession clientSession);
+
+    /**
+     * TODO: comment or move this to ClientSession
+     *
+     * @param clientSession the client session to use for the transaction
+     */
+    void abortTransaction(ClientSession clientSession);
 }

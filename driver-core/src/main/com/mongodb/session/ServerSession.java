@@ -32,6 +32,22 @@ public interface ServerSession {
     BsonDocument getIdentifier();
 
     /**
+     * Gets the current transaction number.
+     *
+     * @return the current transaction number
+     * @since 3.8
+     */
+    long getTransactionNumber();
+
+    /**
+     * Advance the statement identifier by the given increment.
+     *
+     * @param increment the increment, which must be &gt;= 1
+     * @return the statement identifier prior to advancement
+     */
+    int advanceStatementId(int increment);
+
+    /**
      * Return the next available transaction number.
      *
      * @return the next transaction number

@@ -47,8 +47,18 @@ final class ClusterClockAdvancingSessionContext implements SessionContext {
     }
 
     @Override
+    public long getTransactionNumber() {
+        return wrapped.getTransactionNumber();
+    }
+
+    @Override
     public long advanceTransactionNumber() {
         return wrapped.advanceTransactionNumber();
+    }
+
+    @Override
+    public int advanceStatementId(final int increment) {
+        return wrapped.advanceStatementId(increment);
     }
 
     @Override

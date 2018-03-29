@@ -145,7 +145,8 @@ public class ServerSessionPool {
 
     final class ServerSessionImpl implements ServerSession {
         private final BsonDocument identifier;
-        private int transactionNumber;
+        private long transactionNumber;
+        private int statementId;
         private volatile long lastUsedAtMillis = clock.millis();
         private volatile boolean closed;
 
@@ -161,8 +162,16 @@ public class ServerSessionPool {
             return lastUsedAtMillis;
         }
 
-        int getTransactionNumber() {
+        @Override
+        public long getTransactionNumber() {
             return transactionNumber;
+        }
+
+        @Override
+        public int advanceStatementId(final int increment) {
+            isTrue("increment >= 1", increment >= 1);
+            statementId += increment;
+            return statementId - increment;
         }
 
         @Override
@@ -173,6 +182,7 @@ public class ServerSessionPool {
 
         @Override
         public long advanceTransactionNumber() {
+            statementId = 0;
             return transactionNumber++;
         }
 

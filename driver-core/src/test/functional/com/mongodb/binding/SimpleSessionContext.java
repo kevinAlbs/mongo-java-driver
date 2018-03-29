@@ -53,9 +53,19 @@ class SimpleSessionContext implements SessionContext {
     }
 
     @Override
+    public long getTransactionNumber() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long advanceTransactionNumber() {
         counter++;
         return counter;
+    }
+
+    @Override
+    public int advanceStatementId(final int increment) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

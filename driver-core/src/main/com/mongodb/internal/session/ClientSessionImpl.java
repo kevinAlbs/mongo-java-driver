@@ -16,7 +16,6 @@
 
 package com.mongodb.internal.session;
 
-import com.mongodb.TransactionOptions;
 import com.mongodb.session.ClientSession;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.session.ServerSession;
@@ -32,6 +31,7 @@ public class ClientSessionImpl implements ClientSession {
     private final ServerSession serverSession;
     private final Object originator;
     private final ClientSessionOptions options;
+    private boolean inTransaction;
     private BsonDocument clusterTime;
     private BsonTimestamp operationTime;
     private volatile boolean closed;
@@ -51,30 +51,18 @@ public class ClientSessionImpl implements ClientSession {
 
     @Override
     public boolean hasActiveTransaction() {
-        // TODO: implement this
-        return false;
-    }
-
-    // TODO: make async versions of these :(
-
-    @Override
-    public void startTransaction(final TransactionOptions options) {
-        // TODO: Implement this
+        return inTransaction;
     }
 
     @Override
     public void startTransaction() {
-        // TODO: Implement this
+        inTransaction = true;
+        serverSession.advanceTransactionNumber();
     }
 
     @Override
-    public void commitTransaction() {
-        // TODO: Implement this
-    }
-
-    @Override
-    public void abortTransaction() {
-        // TODO: Implement this
+    public void endTransaction() {
+        inTransaction = false;
     }
 
     @Override

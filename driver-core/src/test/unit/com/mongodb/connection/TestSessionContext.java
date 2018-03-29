@@ -50,7 +50,17 @@ class TestSessionContext implements SessionContext {
     }
 
     @Override
+    public long getTransactionNumber() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long advanceTransactionNumber() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int advanceStatementId(final int increment) {
         throw new UnsupportedOperationException();
     }
 

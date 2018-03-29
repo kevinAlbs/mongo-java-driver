@@ -51,12 +51,14 @@ import java.util.stream.Collectors;
 
 import static com.mongodb.ClusterFixture.isDiscoverableReplicaSet;
 import static com.mongodb.ClusterFixture.serverVersionAtLeast;
+import static com.mongodb.client.CommandMonitoringTestHelper.assertEventsEquality;
 import static com.mongodb.client.CommandMonitoringTestHelper.getExpectedEvents;
 import static com.mongodb.client.Fixture.getDefaultDatabaseName;
 import static com.mongodb.client.Fixture.getMongoClientSettingsBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 // See https://github.com/mongodb/specifications/tree/master/source/transactions/tests
 @RunWith(Parameterized.class)
@@ -92,8 +94,7 @@ public class TransactionsTest {
 
     @Before
     public void setUp() {
-        // TODO: re-enable this
-//        assumeTrue(canRunTests());
+        assumeTrue(canRunTests());
 
         mongoClient = MongoClients.create(getMongoClientSettingsBuilder()
                 .addCommandListener(commandListener)
@@ -117,6 +118,7 @@ public class TransactionsTest {
 
     @After
     public void cleanUp() {
+        mongoClient.close();
     }
 
     @Test
@@ -140,11 +142,11 @@ public class TransactionsTest {
             try {
                 if (operationName.equals("startTransaction")) {
                     // TODO: transaction options
-                    nonNullClientSession(clientSession).startTransaction();
+                    mongoClient.startTransaction(nonNullClientSession(clientSession));
                 } else if (operationName.equals("commitTransaction")) {
-                    nonNullClientSession(clientSession).commitTransaction();
+                    mongoClient.commitTransaction(nonNullClientSession(clientSession));
                 } else if (operationName.equals("abortTransaction")) {
-                    nonNullClientSession(clientSession).abortTransaction();
+                    mongoClient.abortTransaction(nonNullClientSession(clientSession));
                 } else {
                     BsonDocument actualOutcome = helper.getOperationResults(operation, clientSession);
                     BsonValue actualResult = actualOutcome.get("result");
@@ -165,8 +167,7 @@ public class TransactionsTest {
             List<CommandEvent> expectedEvents = getExpectedEvents(definition.getArray("expectations"), databaseName, null);
             List<CommandEvent> events = getCommandStartedEvents();
 
-            // TODO: re-enable
-//            assertEventsEquality(expectedEvents, events);
+            assertEventsEquality(expectedEvents, events);
         }
 
         BsonDocument expectedOutcome = definition.getDocument("outcome", new BsonDocument());

@@ -52,8 +52,18 @@ public class ClientSessionContext implements SessionContext {
     }
 
     @Override
+    public long getTransactionNumber() {
+        return clientSession.getServerSession().getTransactionNumber();
+    }
+
+    @Override
     public long advanceTransactionNumber() {
         return clientSession.getServerSession().advanceTransactionNumber();
+    }
+
+    @Override
+    public int advanceStatementId(final int increment) {
+        return clientSession.getServerSession().advanceStatementId(increment);
     }
 
     @Override

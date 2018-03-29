@@ -31,6 +31,8 @@ import com.mongodb.connection.Cluster;
 import com.mongodb.connection.DefaultClusterFactory;
 import com.mongodb.connection.SocketStreamFactory;
 import com.mongodb.connection.StreamFactory;
+import com.mongodb.operation.AbortTransactionOperation;
+import com.mongodb.operation.CommitTransactionOperation;
 import com.mongodb.connection.StreamFactoryFactory;
 import com.mongodb.lang.Nullable;
 import com.mongodb.session.ClientSession;
@@ -40,6 +42,7 @@ import org.bson.Document;
 import java.util.Collections;
 import java.util.List;
 
+import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.event.EventListenerHelper.getCommandListener;
 
@@ -104,6 +107,35 @@ final class MongoClientImpl implements MongoClient {
             throw new MongoClientException("Sessions are not supported by the MongoDB cluster to which this client is connected");
         }
         return clientSession;
+    }
+
+    @Override
+    public void startTransaction(final ClientSession clientSession) {
+        isTrue("not in transaction", !clientSession.hasActiveTransaction());
+        clientSession.startTransaction();
+    }
+
+    @Override
+    public void commitTransaction(final ClientSession clientSession) {
+        isTrue("in transaction", clientSession.hasActiveTransaction());
+        try {
+            // TODO: use proper write concern from ClientSession
+            delegate.getOperationExecutor().execute(new CommitTransactionOperation(settings.getWriteConcern()), clientSession);
+        } finally {
+            clientSession.endTransaction();
+        }
+    }
+
+    @Override
+    public void abortTransaction(final ClientSession clientSession) {
+        isTrue("in transaction", clientSession.hasActiveTransaction());
+        try {
+            // TODO: use proper write concern from ClientSession
+            delegate.getOperationExecutor().execute(new AbortTransactionOperation(settings.getWriteConcern()), clientSession);
+        } finally {
+            // TODO: should this always happen?
+            clientSession.endTransaction();
+        }
     }
 
     @Override

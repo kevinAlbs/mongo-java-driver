@@ -22,8 +22,11 @@ import com.mongodb.internal.validator.MappedFieldNameValidator;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonArray;
 import org.bson.BsonBinaryWriter;
+import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonElement;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
 import org.bson.BsonString;
 import org.bson.BsonWriter;
 import org.bson.FieldNameValidator;
@@ -232,6 +235,14 @@ final class CommandMessage extends RequestMessage {
         }
         if (sessionContext.hasSession() && responseExpected) {
             extraElements.add(new BsonElement("lsid", sessionContext.getSessionId()));
+        }
+        if (sessionContext.hasActiveTransaction()) {
+            extraElements.add(new BsonElement("txnNumber", new BsonInt64(sessionContext.getTransactionNumber())));
+            int statementId = sessionContext.advanceStatementId(1);
+            extraElements.add(new BsonElement("stmtId", new BsonInt32(statementId)));
+            if (statementId == 0) {
+                extraElements.add(new BsonElement("autocommit", BsonBoolean.FALSE));
+            }
         }
         if (readPreference != null) {
             if (!readPreference.equals(primary())) {
