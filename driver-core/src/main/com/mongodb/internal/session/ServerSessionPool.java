@@ -145,7 +145,7 @@ public class ServerSessionPool {
 
     final class ServerSessionImpl implements ServerSession {
         private final BsonDocument identifier;
-        private long transactionNumber;
+        private long transactionNumber = 1;
         private int statementId;
         private volatile long lastUsedAtMillis = clock.millis();
         private volatile boolean closed;

@@ -66,7 +66,6 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
         }
         inTransaction = true;
         this.transactionOptions = transactionOptions;
-        getServerSession().advanceTransactionNumber();
     }
 
     @Override
@@ -125,6 +124,7 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
         if (getOptions().getAutoStartTransaction()) {
             startTransaction(getOptions().getDefaultTransactionOptions());
         }
+        getServerSession().advanceTransactionNumber();
     }
 
     private ReadPreference getTransactionReadPreferenceOrPrimary() {

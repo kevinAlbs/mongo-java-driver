@@ -116,6 +116,8 @@ public class TransactionsTest {
             collectionHelper.insertDocuments(documents, WriteConcern.MAJORITY);
         }
 
+        BsonDocument clientOptions = definition.getDocument("clientOptions", new BsonDocument());
+
         mongoClient = MongoClients.create(getMongoClientSettingsBuilder()
                 .addCommandListener(commandListener)
                 .applyToSocketSettings(new Block<SocketSettings.Builder>() {
@@ -124,6 +126,7 @@ public class TransactionsTest {
                         builder.readTimeout(5, TimeUnit.SECONDS);
                     }
                 })
+                .retryWrites(clientOptions.getBoolean("retryWrites", BsonBoolean.FALSE).getValue())
                 .build());
 
         MongoDatabase database = mongoClient.getDatabase(databaseName);
