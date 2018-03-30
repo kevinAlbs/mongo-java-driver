@@ -225,6 +225,13 @@ public final class CommandMonitoringTestHelper {
         if (command.containsKey("writeConcern") && command.isNull("writeConcern")) {
             command.remove("writeConcern");
         }
+        if (command.containsKey("readConcern")) {
+            if (command.isNull("readConcern")) {
+                command.remove("readConcern");
+            } else if (command.getDocument("readConcern").containsKey("afterClusterTime")) {
+                command.getDocument("readConcern").put("afterClusterTime", new BsonInt32(42));
+            }
+        }
 
         return new CommandStartedEvent(actual.getRequestId(), actual.getConnectionDescription(), actual.getDatabaseName(),
                 actual.getCommandName(), command);

@@ -58,7 +58,10 @@ Each YAML file has the following keys:
 Use as integration tests
 ========================
 
-Run a MongoDB replica set with server version 4.0 or later.
+Run a MongoDB replica set with a primary, two secondaries, and an arbiter,
+server version 4.0 or later. (Including two secondaries ensures that transaction
+pinning works properly. Include an arbiter to ensure no new bugs have been
+introduced related to arbiters.)
 
 For each YAML file, for each element in ``tests``:
 
@@ -109,9 +112,9 @@ For each YAML file, for each element in ``tests``:
      exactly the documents in the ``data`` array.
 
 TODO:
+
 - drivers MUST NOT retry writes in a transaction even when retryWrites=true, needs to use failpoint.
 - drivers MUST retry commit/abort, needs to use failpoint.
-- drivers MUST add txnNumber/stmtId to all commands in a transaction
 - test findAndModify once SERVER-33559 is done
 - test that stmtId is incremented after any failed write or read
 - ensure first test operation is causally consistent with create-collection command
@@ -121,9 +124,6 @@ TODO:
 - test writeConcernErrors
 - test readConcern everywhere
 - test retryable writes in transaction
-- test interaction of transactions and causal consistency
-- prose or YAML test of secondary snapshot reads, test all commands go to same
-  secondary, including commit/abortTransaction commands
 
 Command-Started Events
 ``````````````````````
@@ -152,3 +152,9 @@ that MUST be ignored. (In the Command Monitoring Spec tests, fake cursorIds are
 correlated with real ones, but that is not necessary for Transactions Spec
 tests.)
 
+afterClusterTime
+^^^^^^^^^^^^^^^^
+
+A ``readConcern.afterClusterTime`` value of ``42`` in a command-started event
+is a fake cluster time. Drivers MUST assert that the actual command includes an
+afterClusterTime.

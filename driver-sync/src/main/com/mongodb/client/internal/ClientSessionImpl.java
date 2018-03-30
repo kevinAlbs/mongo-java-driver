@@ -17,6 +17,7 @@
 package com.mongodb.client.internal;
 
 import com.mongodb.ClientSessionOptions;
+import com.mongodb.MongoException;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.ClientSession;
@@ -93,7 +94,10 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
                 delegate.getOperationExecutor().execute(new AbortTransactionOperation(transactionOptions.getWriteConcern()),
                         getTransactionReadPreferenceOrPrimary(), transactionOptions.getReadConcern(), this);
             }
-        } finally {
+        } catch (MongoException e) {
+            // ignore errors
+        }
+        finally {
             cleanupTransaction();
         }
     }
