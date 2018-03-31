@@ -139,10 +139,7 @@
                 }
               ],
               "ordered": true,
-              "readConcern": {
-                "level": "local",
-                "afterClusterTime": 42
-              },
+              "readConcern": null,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "2"
@@ -209,10 +206,7 @@
                 }
               ],
               "ordered": true,
-              "readConcern": {
-                "level": "local",
-                "afterClusterTime": 42
-              },
+              "readConcern": null,
               "lsid": "session0",
               "txnNumber": {
                 "$numberLong": "4"

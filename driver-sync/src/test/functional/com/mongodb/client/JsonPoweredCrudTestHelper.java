@@ -28,6 +28,7 @@ import com.mongodb.client.model.CollationCaseFirst;
 import com.mongodb.client.model.CollationMaxVariable;
 import com.mongodb.client.model.CollationStrength;
 import com.mongodb.client.model.CountOptions;
+import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.DeleteOneModel;
 import com.mongodb.client.model.DeleteOptions;
 import com.mongodb.client.model.FindOneAndDeleteOptions;
@@ -486,6 +487,8 @@ public class JsonPoweredCrudTestHelper {
                             getUpdateOptions(requestArguments)));
                 } else if (name.equals("deleteOne")) {
                     writeModels.add(new DeleteOneModel<BsonDocument>(requestArguments.getDocument("filter")));
+                } else if (name.equals("deleteMany")) {
+                    writeModels.add(new DeleteManyModel<BsonDocument>(requestArguments.getDocument("filter")));
                 } else if (name.equals("replaceOne")) {
                     writeModels.add(new ReplaceOneModel<BsonDocument>(requestArguments.getDocument("filter"),
                             requestArguments.getDocument("replacement")));
