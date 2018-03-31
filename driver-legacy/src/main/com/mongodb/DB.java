@@ -227,7 +227,7 @@ public class DB {
      */
     public void dropDatabase() {
         try {
-            getExecutor().execute(new DropDatabaseOperation(getName(), getWriteConcern()));
+            getExecutor().execute(new DropDatabaseOperation(getName(), getWriteConcern()), getReadConcern());
         } catch (MongoWriteConcernException e) {
             throw createWriteConcernException(e);
         }
@@ -303,7 +303,7 @@ public class DB {
     public DBCollection createCollection(final String collectionName, @Nullable final DBObject options) {
         if (options != null) {
             try {
-                executor.execute(getCreateCollectionOperation(collectionName, options));
+                executor.execute(getCreateCollectionOperation(collectionName, options), getReadConcern());
             } catch (MongoWriteConcernException e) {
                 throw createWriteConcernException(e);
             }
@@ -350,7 +350,7 @@ public class DB {
             notNull("options", options);
             DBCollection view = getCollection(viewName);
             executor.execute(new CreateViewOperation(name, viewName, viewOn, view.preparePipeline(pipeline), writeConcern)
-                                     .collation(options.getCollation()));
+                                     .collation(options.getCollation()), getReadConcern());
             return view;
         } catch (MongoWriteConcernException e) {
             throw createWriteConcernException(e);
@@ -636,7 +636,7 @@ public class DB {
         MongoCredential credential = createMongoCRCredential(userName, getName(), password);
         boolean userExists = false;
         try {
-            userExists = executor.execute(new UserExistsOperation(getName(), userName), primary());
+            userExists = executor.execute(new UserExistsOperation(getName(), userName), primary(), getReadConcern());
         } catch (MongoCommandException e) {
             if (e.getCode() != 13) {
                 throw e;
@@ -644,10 +644,10 @@ public class DB {
         }
         try {
             if (userExists) {
-                executor.execute(new UpdateUserOperation(credential, readOnly, getWriteConcern()));
+                executor.execute(new UpdateUserOperation(credential, readOnly, getWriteConcern()), getReadConcern());
                 return new WriteResult(1, true, null);
             } else {
-                executor.execute(new CreateUserOperation(credential, readOnly, getWriteConcern()));
+                executor.execute(new CreateUserOperation(credential, readOnly, getWriteConcern()), getReadConcern());
                 return new WriteResult(1, false, null);
             }
         } catch (MongoWriteConcernException e) {
@@ -667,7 +667,7 @@ public class DB {
     @Deprecated
     public WriteResult removeUser(final String userName) {
         try {
-            executor.execute(new DropUserOperation(getName(), userName, getWriteConcern()));
+            executor.execute(new DropUserOperation(getName(), userName, getWriteConcern()), getReadConcern());
             return new WriteResult(1, true, null);
         } catch (MongoWriteConcernException e) {
             throw createWriteConcernException(e);
@@ -730,13 +730,13 @@ public class DB {
 
     CommandResult executeCommand(final BsonDocument commandDocument) {
         return new CommandResult(executor.execute(new CommandWriteOperation<BsonDocument>(getName(), commandDocument,
-                                                                                          new BsonDocumentCodec())));
+                                                                                          new BsonDocumentCodec()), getReadConcern()));
     }
 
     CommandResult executeCommand(final BsonDocument commandDocument, final ReadPreference readPreference) {
         return new CommandResult(executor.execute(new CommandReadOperation<BsonDocument>(getName(), commandDocument,
                                                                                          new BsonDocumentCodec()),
-                                                  readPreference));
+                                                  readPreference, getReadConcern()));
     }
 
     OperationExecutor getExecutor() {

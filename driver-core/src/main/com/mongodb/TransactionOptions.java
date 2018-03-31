@@ -37,7 +37,7 @@ public final class TransactionOptions {
     /**
      * Gets the read concern.
      *
-     * @return the read concern, which defaults to {@link ReadConcern#DEFAULT}
+     * @return the read concern, which defaults to {@link ReadConcern#SNAPSHOT}
      */
     public ReadConcern getReadConcern() {
         return readConcern;
@@ -100,7 +100,7 @@ public final class TransactionOptions {
      * The builder for transaction options
      */
     public static final class Builder {
-        private ReadConcern readConcern = ReadConcern.DEFAULT;
+        private ReadConcern readConcern = ReadConcern.SNAPSHOT;
         private WriteConcern writeConcern = WriteConcern.ACKNOWLEDGED;
 
         /**

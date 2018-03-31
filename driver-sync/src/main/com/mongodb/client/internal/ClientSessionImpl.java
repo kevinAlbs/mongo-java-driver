@@ -19,12 +19,13 @@ package com.mongodb.client.internal;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
-import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
 import com.mongodb.internal.session.BaseClientSessionImpl;
 import com.mongodb.internal.session.ServerSessionPool;
 import com.mongodb.operation.AbortTransactionOperation;
 import com.mongodb.operation.CommitTransactionOperation;
+
+import static com.mongodb.assertions.Assertions.isTrue;
 
 final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSession {
 
@@ -47,6 +48,12 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
     }
 
     @Override
+    public TransactionOptions getTransactionOptions() {
+        isTrue("in transaction", inTransaction);
+        return transactionOptions;
+    }
+
+    @Override
     public void startTransaction() {
         startTransaction(TransactionOptions.builder().build());
     }
@@ -64,12 +71,12 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
     @Override
     public void commitTransaction() {
         if (!inTransaction) {
-            throw new IllegalStateException("There is no transaction in progress");
+            throw new IllegalStateException("There is no transaction started");
         }
         try {
             if (getServerSession().getStatementId() > 0) {
                 delegate.getOperationExecutor().execute(new CommitTransactionOperation(transactionOptions.getWriteConcern()),
-                        getTransactionReadPreferenceOrPrimary(), this);
+                        getTransactionReadPreferenceOrPrimary(), transactionOptions.getReadConcern(), this);
             }
         } finally {
             cleanupTransaction();
@@ -79,12 +86,12 @@ final class ClientSessionImpl extends BaseClientSessionImpl implements ClientSes
     @Override
     public void abortTransaction() {
         if (!inTransaction) {
-            throw new IllegalStateException("There is no transaction in progress");
+            throw new IllegalStateException("There is no transaction started");
         }
         try {
             if (getServerSession().getStatementId() > 0) {
                 delegate.getOperationExecutor().execute(new AbortTransactionOperation(transactionOptions.getWriteConcern()),
-                        getTransactionReadPreferenceOrPrimary(), this);
+                        getTransactionReadPreferenceOrPrimary(), transactionOptions.getReadConcern(), this);
             }
         } finally {
             cleanupTransaction();

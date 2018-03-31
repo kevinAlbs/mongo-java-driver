@@ -16,7 +16,7 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -85,8 +85,7 @@ class TestSessionContext implements SessionContext {
     }
 
     @Override
-    public WriteConcern getWriteConcern() {
-        // TODO: fix this
-        return WriteConcern.ACKNOWLEDGED;
+    public ReadConcern getReadConcern() {
+        return ReadConcern.DEFAULT;
     }
 }

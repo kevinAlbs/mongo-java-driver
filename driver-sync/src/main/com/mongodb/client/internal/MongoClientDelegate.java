@@ -18,6 +18,7 @@ package com.mongodb.client.internal;
 
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.MongoCredential;
+import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.mongodb.binding.ClusterBinding;
@@ -122,19 +123,21 @@ public class MongoClientDelegate {
 
     private class DelegateOperationExecutor implements OperationExecutor {
         @Override
-        public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference) {
-            return execute(operation, readPreference, null);
+        public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference, final ReadConcern readConcern) {
+            return execute(operation, readPreference, readConcern, null);
         }
 
         @Override
-        public <T> T execute(final WriteOperation<T> operation) {
-            return execute(operation, null);
+        public <T> T execute(final WriteOperation<T> operation, final ReadConcern readConcern) {
+            return execute(operation, readConcern, null);
         }
 
         @Override
-        public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference, @Nullable final ClientSession session) {
+        public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference, final ReadConcern readConcern,
+                             @Nullable final ClientSession session) {
             ClientSession actualClientSession = getClientSession(session);
-            ReadBinding binding = getReadBinding(readPreference, actualClientSession, session == null && actualClientSession != null);
+            ReadBinding binding = getReadBinding(readPreference, readConcern, actualClientSession,
+                    session == null && actualClientSession != null);
             try {
                 return operation.execute(binding);
             } finally {
@@ -143,9 +146,9 @@ public class MongoClientDelegate {
         }
 
         @Override
-        public <T> T execute(final WriteOperation<T> operation, @Nullable final ClientSession session) {
+        public <T> T execute(final WriteOperation<T> operation, final ReadConcern readConcern, @Nullable final ClientSession session) {
             ClientSession actualClientSession = getClientSession(session);
-            WriteBinding binding = getWriteBinding(actualClientSession, session == null && actualClientSession != null);
+            WriteBinding binding = getWriteBinding(readConcern, actualClientSession, session == null && actualClientSession != null);
             try {
                 return operation.execute(binding);
             } finally {
@@ -153,17 +156,18 @@ public class MongoClientDelegate {
             }
         }
 
-        WriteBinding getWriteBinding(@Nullable final ClientSession session, final boolean ownsSession) {
-            return getReadWriteBinding(primary(), session, ownsSession);
+        WriteBinding getWriteBinding(final ReadConcern readConcern, @Nullable final ClientSession session, final boolean ownsSession) {
+            return getReadWriteBinding(primary(), readConcern, session, ownsSession);
         }
 
-        ReadBinding getReadBinding(final ReadPreference readPreference, @Nullable final ClientSession session, final boolean ownsSession) {
-            return getReadWriteBinding(readPreference, session, ownsSession);
+        ReadBinding getReadBinding(final ReadPreference readPreference, final ReadConcern readConcern,
+                                   @Nullable final ClientSession session, final boolean ownsSession) {
+            return getReadWriteBinding(readPreference, readConcern, session, ownsSession);
         }
 
-        ReadWriteBinding getReadWriteBinding(final ReadPreference readPreference, @Nullable final ClientSession session,
-                                             final boolean ownsSession) {
-            ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, readPreference);
+        ReadWriteBinding getReadWriteBinding(final ReadPreference readPreference, final ReadConcern readConcern,
+                                             @Nullable final ClientSession session, final boolean ownsSession) {
+            ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, readPreference, readConcern);
             if (session != null) {
                 readWriteBinding = new ClientSessionBinding(session, ownsSession, readWriteBinding);
             }

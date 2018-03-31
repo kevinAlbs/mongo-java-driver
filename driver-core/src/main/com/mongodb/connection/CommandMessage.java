@@ -46,6 +46,7 @@ import static com.mongodb.connection.BsonWriterHelper.writePayload;
 import static com.mongodb.connection.ClusterConnectionMode.MULTIPLE;
 import static com.mongodb.connection.ClusterConnectionMode.SINGLE;
 import static com.mongodb.connection.ServerType.SHARD_ROUTER;
+import static com.mongodb.internal.connection.ReadConcernHelper.getReadConcernDocument;
 
 /**
  * A command message that uses OP_MSG or OP_QUERY to send the command.
@@ -242,6 +243,7 @@ final class CommandMessage extends RequestMessage {
             extraElements.add(new BsonElement("stmtId", new BsonInt32(statementId)));
             if (statementId == 0) {
                 extraElements.add(new BsonElement("autocommit", BsonBoolean.FALSE));
+                addReadConcernDocument(extraElements, sessionContext);
             }
         }
         if (readPreference != null) {
@@ -252,6 +254,13 @@ final class CommandMessage extends RequestMessage {
             }
         }
         return extraElements;
+    }
+
+    private void addReadConcernDocument(final List<BsonElement> extraElements, final SessionContext sessionContext) {
+        BsonDocument readConcernDocument = getReadConcernDocument(sessionContext);
+        if (!readConcernDocument.isEmpty()) {
+            extraElements.add(new BsonElement("readConcern", readConcernDocument));
+        }
     }
 
     private static OpCode getOpCode(final MessageSettings settings) {

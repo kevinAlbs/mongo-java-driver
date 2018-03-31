@@ -17,14 +17,14 @@
 package com.mongodb.client.internal;
 
 import com.mongodb.MongoClientException;
+import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
-import com.mongodb.WriteConcern;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.binding.ReadWriteBinding;
+import com.mongodb.client.ClientSession;
 import com.mongodb.connection.Connection;
 import com.mongodb.connection.ServerDescription;
 import com.mongodb.internal.session.ClientSessionContext;
-import com.mongodb.client.ClientSession;
 import com.mongodb.session.SessionContext;
 
 import static org.bson.assertions.Assertions.notNull;
@@ -149,7 +149,7 @@ public class ClientSessionBinding implements ReadWriteBinding {
         }
     }
 
-    private static final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
+    private final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
 
         private final ClientSession clientSession;
 
@@ -161,14 +161,16 @@ public class ClientSessionBinding implements ReadWriteBinding {
 
         @Override
         public boolean hasActiveTransaction() {
-            // TODO: not really a safe cast given the current API
             return clientSession.hasActiveTransaction();
         }
 
         @Override
-        public WriteConcern getWriteConcern() {
-            // TODO: get this from the client session
-            return WriteConcern.ACKNOWLEDGED;
+        public ReadConcern getReadConcern() {
+            if (clientSession.hasActiveTransaction()) {
+                return clientSession.getTransactionOptions().getReadConcern();
+            } else {
+               return wrapped.getSessionContext().getReadConcern();
+            }
         }
     }
 }

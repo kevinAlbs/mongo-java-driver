@@ -16,7 +16,7 @@
 
 package com.mongodb.internal.session;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import com.mongodb.session.ClientSession;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
@@ -93,8 +93,8 @@ public class ClientSessionContext implements SessionContext {
     }
 
     @Override
-    public WriteConcern getWriteConcern() {
+    public ReadConcern getReadConcern() {
         // TODO: move this to async ClientSession implementation of this method
-        return WriteConcern.ACKNOWLEDGED;
+        return ReadConcern.DEFAULT;
     }
 }

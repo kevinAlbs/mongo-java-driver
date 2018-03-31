@@ -51,7 +51,7 @@ import static com.mongodb.operation.OperationHelper.LOGGER;
 import static com.mongodb.operation.OperationHelper.validateReadConcernAndCollation;
 import static com.mongodb.operation.OperationHelper.releasingCallback;
 import static com.mongodb.operation.OperationHelper.withConnection;
-import static com.mongodb.operation.ReadConcernHelper.appendReadConcernToCommand;
+import static com.mongodb.operation.OperationReadConcernHelper.appendReadConcernToCommand;
 
 /**
  * Finds the distinct values for a specified field across a single collection.
@@ -185,7 +185,7 @@ public class DistinctOperation<T> implements AsyncReadOperation<AsyncBatchCursor
         return withConnection(binding, new CallableWithConnectionAndSource<BatchCursor<T>>() {
             @Override
             public BatchCursor<T> call(final ConnectionSource source, final Connection connection) {
-                validateReadConcernAndCollation(connection, readConcern, collation);
+                validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
                 return executeWrappedCommandProtocol(binding, namespace.getDatabaseName(), getCommand(binding.getSessionContext()),
                         createCommandDecoder(), connection, transformer(source, connection));
             }
@@ -203,7 +203,7 @@ public class DistinctOperation<T> implements AsyncReadOperation<AsyncBatchCursor
                 } else {
                     final SingleResultCallback<AsyncBatchCursor<T>> wrappedCallback = releasingCallback(
                             errHandlingCallback, source, connection);
-                    validateReadConcernAndCollation(source, connection, readConcern, collation,
+                    validateReadConcernAndCollation(source, connection, binding.getSessionContext().getReadConcern(), collation,
                             new AsyncCallableWithConnectionAndSource() {
                                 @Override
                                 public void call(final AsyncConnectionSource source, final AsyncConnection connection, final Throwable t) {
@@ -252,7 +252,7 @@ public class DistinctOperation<T> implements AsyncReadOperation<AsyncBatchCursor
 
     private BsonDocument getCommand(final SessionContext sessionContext) {
         BsonDocument commandDocument = new BsonDocument("distinct", new BsonString(namespace.getCollectionName()));
-        appendReadConcernToCommand(readConcern, sessionContext, commandDocument);
+        appendReadConcernToCommand(sessionContext, commandDocument);
         commandDocument.put("key", new BsonString(fieldName));
         putIfNotNull(commandDocument, "query", filter);
         putIfNotZero(commandDocument, "maxTimeMS", maxTimeMS);

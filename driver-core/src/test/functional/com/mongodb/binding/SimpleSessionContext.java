@@ -16,7 +16,7 @@
 
 package com.mongodb.binding;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
@@ -94,9 +94,8 @@ class SimpleSessionContext implements SessionContext {
     }
 
     @Override
-    public WriteConcern getWriteConcern() {
-        // TODO: fix this
-        return WriteConcern.ACKNOWLEDGED;
+    public ReadConcern getReadConcern() {
+        return ReadConcern.DEFAULT;
     }
 
     private static BsonDocument createNewServerSessionIdentifier() {

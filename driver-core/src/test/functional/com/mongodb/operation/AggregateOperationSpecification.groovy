@@ -65,7 +65,7 @@ import static com.mongodb.ExplainVerbosity.QUERY_PLANNER
 import static com.mongodb.connection.ServerHelper.waitForLastRelease
 import static com.mongodb.connection.ServerType.STANDALONE
 import static com.mongodb.operation.QueryOperationHelper.getKeyPattern
-import static com.mongodb.operation.ReadConcernHelper.appendReadConcernToCommand
+import static com.mongodb.operation.OperationReadConcernHelper.appendReadConcernToCommand
 import static java.util.concurrent.TimeUnit.MILLISECONDS
 import static java.util.concurrent.TimeUnit.SECONDS
 
@@ -123,7 +123,6 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 .collation(defaultCollation)
                 .maxAwaitTime(15, MILLISECONDS)
                 .maxTime(10, MILLISECONDS)
-                .readConcern(ReadConcern.MAJORITY)
                 .useCursor(true)
 
         def expectedCommand = new BsonDocument('aggregate', new BsonString(helper.namespace.getCollectionName()))
@@ -132,7 +131,6 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 .append('collation', defaultCollation.asDocument())
                 .append('cursor', new BsonDocument('batchSize', new BsonInt32(10)))
                 .append('maxTimeMS', new BsonInt64(10))
-                .append('readConcern', new BsonDocument('level', new BsonString('majority')))
 
         then:
         testOperation(operation, [3, 4, 0], expectedCommand, async, helper.cursorResult)
@@ -144,10 +142,10 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
     def 'should throw an exception when using an unsupported ReadConcern'() {
         given:
         def pipeline = [new BsonDocument('$match', new BsonDocument('a', new BsonString('A')))]
-        def operation = new AggregateOperation<Document>(helper.namespace, pipeline, new DocumentCodec()).readConcern(readConcern)
+        def operation = new AggregateOperation<Document>(helper.namespace, pipeline, new DocumentCodec())
 
         when:
-        testOperationThrows(operation, [3, 0, 0], async)
+        testOperationThrows(operation, [3, 0, 0], readConcern, async)
 
         then:
         def exception = thrown(IllegalArgumentException)
@@ -460,10 +458,9 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
         def commandDocument = new BsonDocument('aggregate', new BsonString(getCollectionName()))
                 .append('pipeline', new BsonArray())
                 .append('cursor', new BsonDocument())
-        appendReadConcernToCommand(ReadConcern.MAJORITY, sessionContext, commandDocument)
+        appendReadConcernToCommand(sessionContext, commandDocument)
 
         def operation = new AggregateOperation<Document>(getNamespace(), [], new DocumentCodec())
-                .readConcern(ReadConcern.MAJORITY)
 
         when:
         operation.execute(binding)
@@ -482,6 +479,8 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 Stub(SessionContext) {
                     isCausallyConsistent() >> true
                     getOperationTime() >> new BsonTimestamp(42, 0)
+                    hasActiveTransaction() >> false
+                    getReadConcern() >> ReadConcern.MAJORITY
                 }
         ]
     }
@@ -499,10 +498,9 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
         def commandDocument = new BsonDocument('aggregate', new BsonString(getCollectionName()))
                 .append('pipeline', new BsonArray())
                 .append('cursor', new BsonDocument())
-        appendReadConcernToCommand(ReadConcern.MAJORITY, sessionContext, commandDocument)
+        appendReadConcernToCommand(sessionContext, commandDocument)
 
         def operation = new AggregateOperation<Document>(getNamespace(), [], new DocumentCodec())
-                .readConcern(ReadConcern.MAJORITY)
 
         when:
         executeAsync(operation, binding)
@@ -522,6 +520,8 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 Stub(SessionContext) {
                     isCausallyConsistent() >> true
                     getOperationTime() >> new BsonTimestamp(42, 0)
+                    hasActiveTransaction() >> false
+                    getReadConcern() >> ReadConcern.MAJORITY
                 }
         ]
     }

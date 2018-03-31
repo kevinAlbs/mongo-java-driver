@@ -16,7 +16,7 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -88,7 +88,7 @@ final class ClusterClockAdvancingSessionContext implements SessionContext {
     }
 
     @Override
-    public WriteConcern getWriteConcern() {
-        return wrapped.getWriteConcern();
+    public ReadConcern getReadConcern() {
+        return wrapped.getReadConcern();
     }
 }

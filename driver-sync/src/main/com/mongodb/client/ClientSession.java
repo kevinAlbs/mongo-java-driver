@@ -32,6 +32,13 @@ public interface ClientSession extends com.mongodb.session.ClientSession {
     boolean hasActiveTransaction();
 
     /**
+     * Gets the transaction options.  Only call this method of the session has an active transaction
+     *
+     * @return the transaction options
+     */
+    TransactionOptions getTransactionOptions();
+
+    /**
      *
      * @mongodb.server.release 4.0
      */

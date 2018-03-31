@@ -77,7 +77,7 @@ class AggregateIterableImpl<TDocument, TResult> extends MongoIterableImpl<TResul
         }
 
         getExecutor().execute(operations.aggregateToCollection(pipeline, maxTimeMS, allowDiskUse, bypassDocumentValidation, collation, hint,
-                comment), getClientSession());
+                comment), getReadConcern(), getClientSession());
     }
 
     @Override
@@ -144,7 +144,7 @@ class AggregateIterableImpl<TDocument, TResult> extends MongoIterableImpl<TResul
 
         if (outCollection != null) {
             getExecutor().execute(operations.aggregateToCollection(pipeline, maxTimeMS, allowDiskUse, bypassDocumentValidation, collation,
-                    hint, comment), getClientSession());
+                    hint, comment), getReadConcern(), getClientSession());
 
             FindOptions findOptions = new FindOptions().collation(collation);
             Integer batchSize = getBatchSize();

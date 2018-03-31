@@ -645,7 +645,7 @@ public class Mongo {
      * @mongodb.driver.manual reference/command/fsync/ fsync command
      */
     public DBObject unlock() {
-        return DBObjects.toDBObject(createOperationExecutor().execute(new FsyncUnlockOperation(), readPreference));
+        return DBObjects.toDBObject(createOperationExecutor().execute(new FsyncUnlockOperation(), readPreference, readConcern));
     }
 
     /**
@@ -656,7 +656,7 @@ public class Mongo {
      * @mongodb.driver.manual reference/command/fsync/ fsync command
      */
     public boolean isLocked() {
-        return createOperationExecutor().execute(new CurrentOpOperation(), ReadPreference.primary())
+        return createOperationExecutor().execute(new CurrentOpOperation(), ReadPreference.primary(), readConcern)
                        .getBoolean("fsyncLock", BsonBoolean.FALSE).getValue();
     }
 

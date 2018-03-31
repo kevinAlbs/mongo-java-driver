@@ -129,6 +129,6 @@ public abstract class MongoIterableImpl<TResult> implements MongoIterable<TResul
     }
 
     private BatchCursor<TResult> execute() {
-        return executor.execute(asReadOperation(), readPreference, clientSession);
+        return executor.execute(asReadOperation(), readPreference, readConcern, clientSession);
     }
 }

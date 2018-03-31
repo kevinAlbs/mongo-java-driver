@@ -16,10 +16,12 @@
 
 package com.mongodb.internal.connection;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
+
+import static com.mongodb.assertions.Assertions.notNull;
 
 /**
  * A SessionContext implementation that does nothing and reports that it has no session.
@@ -28,10 +30,21 @@ import org.bson.BsonTimestamp;
  */
 public final class NoOpSessionContext implements SessionContext {
 
+    private final ReadConcern readConcern;
+
     /**
      * A singleton instance of a NoOpSessionContext
      */
-    public static final NoOpSessionContext INSTANCE = new NoOpSessionContext();
+    public static final NoOpSessionContext INSTANCE = new NoOpSessionContext(ReadConcern.DEFAULT);  // TODO: deprecate this
+
+    /**
+     * Construct an instance.
+     *
+     * @param readConcern the read concern
+     */
+    public NoOpSessionContext(final ReadConcern readConcern) {
+        this.readConcern = notNull("readConcern", readConcern);
+    }
 
     @Override
     public boolean hasSession() {
@@ -87,11 +100,7 @@ public final class NoOpSessionContext implements SessionContext {
     }
 
     @Override
-    public WriteConcern getWriteConcern() {
-        // TODO: fix this
-        return WriteConcern.ACKNOWLEDGED;
-    }
-
-    private NoOpSessionContext() {
+    public ReadConcern getReadConcern() {
+        return readConcern;
     }
 }

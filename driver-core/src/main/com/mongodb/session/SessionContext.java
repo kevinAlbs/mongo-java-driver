@@ -16,7 +16,7 @@
 
 package com.mongodb.session;
 
-import com.mongodb.WriteConcern;
+import com.mongodb.ReadConcern;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 
@@ -110,10 +110,10 @@ public interface SessionContext {
     boolean hasActiveTransaction();
 
     /**
-     * Gets the write concern to apply to operations on this binding.
+     * Gets the read concern to apply to operations on this binding.
      *
-     * @return the write concern to apply to operations on this binding
+     * @return the read concern to apply to operations on this binding
      * @since 3.8
      */
-    WriteConcern getWriteConcern();
+    ReadConcern getReadConcern();
 }

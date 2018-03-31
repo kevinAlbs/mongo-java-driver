@@ -85,7 +85,7 @@ class MapReduceIterableImpl<TDocument, TResult> extends MongoIterableImpl<TResul
             throw new IllegalStateException("The options must specify a non-inline result");
         }
 
-        getExecutor().execute(createMapReduceToCollectionOperation(), getClientSession());
+        getExecutor().execute(createMapReduceToCollectionOperation(), getReadConcern(), getClientSession());
     }
 
     @Override
@@ -202,7 +202,7 @@ class MapReduceIterableImpl<TDocument, TResult> extends MongoIterableImpl<TResul
                     resultClass, filter, limit, maxTimeMS, jsMode, scope, sort, verbose, collation);
             return new WrappedMapReduceReadOperation<TResult>(operation);
         } else {
-            getExecutor().execute(createMapReduceToCollectionOperation(), getClientSession());
+            getExecutor().execute(createMapReduceToCollectionOperation(), getReadConcern(), getClientSession());
 
             String dbName = databaseName != null ? databaseName : namespace.getDatabaseName();
 
