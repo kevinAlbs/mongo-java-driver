@@ -30,7 +30,7 @@ public final class ReadConcernHelper {
 
         BsonDocument readConcernDocument = new BsonDocument();
 
-        ReadConcernLevel level = getReadConcernLevel(sessionContext);
+        ReadConcernLevel level = sessionContext.getReadConcern().getLevel();
         if (level != null) {
             readConcernDocument.append("level", new BsonString(level.getValue()));
         }
@@ -39,14 +39,6 @@ public final class ReadConcernHelper {
             readConcernDocument.append("afterClusterTime", sessionContext.getOperationTime());
         }
         return readConcernDocument;
-    }
-
-    private static ReadConcernLevel getReadConcernLevel(final SessionContext sessionContext) {
-        if (sessionContext.getReadConcern().getLevel() == null && shouldAddAfterClusterTime(sessionContext)) {
-            return ReadConcernLevel.LOCAL;
-        } else {
-            return sessionContext.getReadConcern().getLevel();
-        }
     }
 
     private static boolean shouldAddAfterClusterTime(final SessionContext sessionContext) {

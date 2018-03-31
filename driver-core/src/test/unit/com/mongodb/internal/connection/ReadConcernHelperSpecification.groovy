@@ -49,7 +49,7 @@ class ReadConcernHelperSpecification extends Specification {
                 .append('afterClusterTime', operationTime)
     }
 
-    def 'should add afterClusterTime and local level to default read concern when session is causally consistent'() {
+    def 'should add afterClusterTime to default read concern when session is causally consistent'() {
         given:
         def operationTime = new BsonTimestamp(42, 1)
         def sessionContext = Stub(SessionContext) {
@@ -59,8 +59,7 @@ class ReadConcernHelperSpecification extends Specification {
         }
 
         expect:
-        getReadConcernDocument(sessionContext) == new BsonDocument(new BsonDocument('level', new BsonString('local')))
-                .append('afterClusterTime', operationTime)
+        getReadConcernDocument(sessionContext) == new BsonDocument(new BsonDocument('afterClusterTime', operationTime))
     }
 
     def 'should not add afterClusterTime to ReadConcern when session is not causally consistent'() {
