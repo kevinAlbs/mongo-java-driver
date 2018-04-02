@@ -251,18 +251,7 @@ public class MixedBulkWriteOperation implements AsyncWriteOperation<BulkWriteRes
 
         try {
             while (currentBatch.shouldProcessBatch()) {
-                BsonDocument result;
-                int startPosition = currentBatch.getPayload().getPosition();
-                try {
-                    result = executeCommand(connection, currentBatch, binding);
-                } finally {
-                    if (binding.getSessionContext().hasActiveTransaction()) {
-                        int newPosition = currentBatch.getPayload().getPosition();
-                        if (newPosition - startPosition > 1) {
-                            binding.getSessionContext().advanceStatementId(newPosition - startPosition - 1);
-                        }
-                    }
-                }
+                BsonDocument result = executeCommand(connection, currentBatch, binding);
                 currentBatch.addResult(result);
                 currentBatch = currentBatch.getNextBatch();
             }

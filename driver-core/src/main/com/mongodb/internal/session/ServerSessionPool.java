@@ -174,7 +174,7 @@ public class ServerSessionPool {
 
         @Override
         public int advanceStatementId(final int increment) {
-            isTrue("increment >= 1", increment >= 1);
+            isTrue("increment >= 0", increment >= 0);
             statementId += increment;
             return statementId - increment;
         }

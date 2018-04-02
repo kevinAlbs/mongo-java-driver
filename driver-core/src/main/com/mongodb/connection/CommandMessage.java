@@ -133,15 +133,20 @@ final class CommandMessage extends RequestMessage {
             addDocument(getCommandToEncode(), bsonOutput, commandFieldNameValidator, getExtraElements(sessionContext));
 
             if (payload != null) {
+                int payloadStartPosition = payload.getPosition();
                 bsonOutput.writeByte(1);          // payload type
-                int payloadPosition = bsonOutput.getPosition();
+                int payloadBsonOutputStartPosition = bsonOutput.getPosition();
                 bsonOutput.writeInt32(0);         // size
                 bsonOutput.writeCString(payload.getPayloadName());
                 writePayload(new BsonBinaryWriter(bsonOutput, payloadFieldNameValidator), bsonOutput, getSettings(),
                         messageStartPosition, payload);
 
-                int payloadLength = bsonOutput.getPosition() - payloadPosition;
-                bsonOutput.writeInt32(payloadPosition, payloadLength);
+                int payloadBsonOutputLength = bsonOutput.getPosition() - payloadBsonOutputStartPosition;
+                bsonOutput.writeInt32(payloadBsonOutputStartPosition, payloadBsonOutputLength);
+
+                if (sessionContext.hasActiveTransaction()) {
+                    sessionContext.advanceStatementId(payload.getPosition() - payloadStartPosition - 1);
+                }
             }
 
             // Write the flag bits
