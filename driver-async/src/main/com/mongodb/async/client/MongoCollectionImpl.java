@@ -90,8 +90,8 @@ class MongoCollectionImpl<TDocument> implements MongoCollection<TDocument> {
         this.retryWrites = retryWrites;
         this.readConcern = notNull("readConcern", readConcern);
         this.executor = notNull("executor", executor);
-        this.operations = new AsyncOperations<TDocument>(namespace, documentClass, readPreference, codecRegistry, writeConcern, retryWrites,
-                readConcern);
+        this.operations = new AsyncOperations<TDocument>(namespace, documentClass, readPreference, codecRegistry, writeConcern,
+                retryWrites);
 
     }
 
