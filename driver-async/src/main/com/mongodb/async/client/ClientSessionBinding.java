@@ -16,7 +16,8 @@
 
 package com.mongodb.async.client;
 
-import com.mongodb.session.ClientSession;
+import com.mongodb.MongoClientException;
+import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.binding.AsyncConnectionSource;
@@ -38,7 +39,7 @@ class ClientSessionBinding implements AsyncReadWriteBinding {
         this.wrapped = notNull("wrapped", wrapped);
         this.ownsSession = ownsSession;
         this.session = notNull("session", session);
-        this.sessionContext = new ClientSessionContext(session);
+        this.sessionContext = new SyncClientSessionContext(session);
     }
 
     @Override
@@ -48,12 +49,21 @@ class ClientSessionBinding implements AsyncReadWriteBinding {
 
     @Override
     public void getWriteConnectionSource(final SingleResultCallback<AsyncConnectionSource> callback) {
+        if (session.hasActiveTransaction()) {
+            ReadPreference transactionReadPreference = session.getTransactionReadPreference();
+            if (transactionReadPreference != null && !transactionReadPreference.equals(wrapped.getReadPreference())) {
+                throw new MongoClientException("Transaction readPreference changed");
+            }
+        }
         wrapped.getWriteConnectionSource(new SingleResultCallback<AsyncConnectionSource>() {
             @Override
             public void onResult(final AsyncConnectionSource result, final Throwable t) {
                 if (t != null) {
                     callback.onResult(null, t);
                 } else {
+                    if (session.hasActiveTransaction()) {
+                        session.setTransactionReadPreference(wrapped.getReadPreference());
+                    }
                     callback.onResult(new SessionBindingAsyncConnectionSource(result), null);
                 }
             }
@@ -67,12 +77,21 @@ class ClientSessionBinding implements AsyncReadWriteBinding {
 
     @Override
     public void getReadConnectionSource(final SingleResultCallback<AsyncConnectionSource> callback) {
+        if (session.hasActiveTransaction()) {
+            ReadPreference transactionReadPreference = session.getTransactionReadPreference();
+            if (transactionReadPreference != null && !transactionReadPreference.equals(wrapped.getReadPreference())) {
+                throw new MongoClientException("Transaction readPreference changed");
+            }
+        }
         wrapped.getReadConnectionSource(new SingleResultCallback<AsyncConnectionSource>() {
             @Override
             public void onResult(final AsyncConnectionSource result, final Throwable t) {
                 if (t != null) {
                     callback.onResult(null, t);
                 } else {
+                    if (session.hasActiveTransaction()) {
+                        session.setTransactionReadPreference(wrapped.getReadPreference());
+                    }
                     callback.onResult(new SessionBindingAsyncConnectionSource(result), null);
                 }
             }
@@ -139,6 +158,31 @@ class ClientSessionBinding implements AsyncReadWriteBinding {
         public void release() {
             wrapped.release();
             closeSessionIfCountIsZero();
+        }
+    }
+
+    private final class SyncClientSessionContext extends ClientSessionContext implements SessionContext {
+
+        private final ClientSession clientSession;
+
+        SyncClientSessionContext(final ClientSession clientSession) {
+            super(clientSession);
+            this.clientSession = clientSession;
+        }
+
+
+        @Override
+        public boolean hasActiveTransaction() {
+            return clientSession.hasActiveTransaction();
+        }
+
+        @Override
+        public ReadConcern getReadConcern() {
+            if (clientSession.hasActiveTransaction()) {
+                return clientSession.getTransactionOptions().getReadConcern();
+            } else {
+                return wrapped.getSessionContext().getReadConcern();
+            }
         }
     }
 }

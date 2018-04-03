@@ -62,7 +62,6 @@ import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import com.mongodb.client.test.Worker
-import com.mongodb.operation.AsyncOperationExecutor
 import com.mongodb.operation.CountOperation
 import com.mongodb.operation.CreateIndexesOperation
 import com.mongodb.operation.DropCollectionOperation
@@ -73,7 +72,6 @@ import com.mongodb.operation.FindAndUpdateOperation
 import com.mongodb.operation.ListIndexesOperation
 import com.mongodb.operation.MixedBulkWriteOperation
 import com.mongodb.operation.RenameCollectionOperation
-import com.mongodb.session.ClientSession
 import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.Document
@@ -616,7 +614,7 @@ class MongoCollectionSpecification extends Specification {
     def 'should validate the insertMany data correctly'() {
         given:
         def collection = new MongoCollectionImpl(namespace, Document, codecRegistry, readPreference, ACKNOWLEDGED,
-                true, readConcern, Stub(AsyncOperationExecutor))
+                true, readConcern, Stub(OperationExecutor))
 
         when:
         collection.insertMany(null, Stub(SingleResultCallback))
@@ -1178,7 +1176,7 @@ class MongoCollectionSpecification extends Specification {
     def 'should validate the createIndexes data correctly'() {
         given:
         def collection = new MongoCollectionImpl(namespace, Document, codecRegistry, readPreference, ACKNOWLEDGED,
-                true, readConcern, Stub(AsyncOperationExecutor))
+                true, readConcern, Stub(OperationExecutor))
 
         when:
         collection.createIndexes(null, Stub(SingleResultCallback))
@@ -1375,7 +1373,7 @@ class MongoCollectionSpecification extends Specification {
     def 'should validate the client session correctly'() {
         given:
         def collection = new MongoCollectionImpl(namespace, Document, codecRegistry, readPreference, ACKNOWLEDGED,
-                true, readConcern, Stub(AsyncOperationExecutor))
+                true, readConcern, Stub(OperationExecutor))
         def callback = Stub(SingleResultCallback)
 
         when:

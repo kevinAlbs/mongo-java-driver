@@ -25,7 +25,6 @@ import com.mongodb.async.FutureResultCallback
 import com.mongodb.async.SingleResultCallback
 import com.mongodb.connection.TestCommandListener
 import com.mongodb.event.CommandStartedEvent
-import com.mongodb.session.ClientSession
 import org.bson.BsonBinarySubType
 import org.bson.BsonDocument
 import org.bson.BsonInt32
