@@ -89,7 +89,6 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
         operation.getMaxAwaitTime(MILLISECONDS) == 0
         operation.getMaxTime(MILLISECONDS) == 0
         operation.getPipeline() == []
-        operation.getReadConcern() == ReadConcern.DEFAULT
         operation.getUseCursor() == null
     }
 
@@ -101,7 +100,6 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 .collation(defaultCollation)
                 .maxAwaitTime(10, MILLISECONDS)
                 .maxTime(10, MILLISECONDS)
-                .readConcern(ReadConcern.MAJORITY)
                 .useCursor(true)
 
         then:
@@ -110,7 +108,6 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
         operation.getCollation() == defaultCollation
         operation.getMaxAwaitTime(MILLISECONDS) == 10
         operation.getMaxTime(MILLISECONDS) == 10
-        operation.getReadConcern() == ReadConcern.MAJORITY
         operation.getUseCursor()
     }
 
