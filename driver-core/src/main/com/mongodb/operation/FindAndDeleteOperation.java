@@ -259,7 +259,7 @@ public class FindAndDeleteOperation<T> extends BaseFindAndModifyOperation<T> {
             @Override
             public BsonDocument create(final ServerDescription serverDescription, final ConnectionDescription connectionDescription) {
                 validateCollation(connectionDescription, collation);
-                BsonDocument commandDocument = new BsonDocument("findandmodify", new BsonString(namespace.getCollectionName()));
+                BsonDocument commandDocument = new BsonDocument("findAndModify", new BsonString(namespace.getCollectionName()));
                 putIfNotNull(commandDocument, "query", getFilter());
                 putIfNotNull(commandDocument, "fields", getProjection());
                 putIfNotNull(commandDocument, "sort", getSort());

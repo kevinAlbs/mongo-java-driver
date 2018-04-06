@@ -30,10 +30,10 @@ import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
-import com.mongodb.session.SessionContext;
 import com.mongodb.operation.CommandOperationHelper.CommandTransformer;
 import com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionAndSource;
 import com.mongodb.operation.OperationHelper.CallableWithConnectionAndSource;
+import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.codecs.Codec;
@@ -45,11 +45,11 @@ import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocol;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocolAsync;
-import static com.mongodb.operation.DocumentHelper.putIfNotNull;
+import static com.mongodb.operation.DocumentHelper.putIfNotNullOrEmpty;
 import static com.mongodb.operation.DocumentHelper.putIfNotZero;
 import static com.mongodb.operation.OperationHelper.LOGGER;
-import static com.mongodb.operation.OperationHelper.validateReadConcernAndCollation;
 import static com.mongodb.operation.OperationHelper.releasingCallback;
+import static com.mongodb.operation.OperationHelper.validateReadConcernAndCollation;
 import static com.mongodb.operation.OperationHelper.withConnection;
 import static com.mongodb.operation.OperationReadConcernHelper.appendReadConcernToCommand;
 
@@ -254,7 +254,7 @@ public class DistinctOperation<T> implements AsyncReadOperation<AsyncBatchCursor
         BsonDocument commandDocument = new BsonDocument("distinct", new BsonString(namespace.getCollectionName()));
         appendReadConcernToCommand(sessionContext, commandDocument);
         commandDocument.put("key", new BsonString(fieldName));
-        putIfNotNull(commandDocument, "query", filter);
+        putIfNotNullOrEmpty(commandDocument, "query", filter);
         putIfNotZero(commandDocument, "maxTimeMS", maxTimeMS);
         if (collation != null) {
             commandDocument.put("collation", collation.asDocument());

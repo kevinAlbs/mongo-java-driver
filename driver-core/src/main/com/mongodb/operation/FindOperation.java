@@ -65,6 +65,7 @@ import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandli
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformer;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocol;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocolAsync;
+import static com.mongodb.operation.DocumentHelper.putIfNotNullOrEmpty;
 import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionAndSource;
 import static com.mongodb.operation.OperationHelper.LOGGER;
 import static com.mongodb.operation.OperationHelper.cursorDocumentToQueryResult;
@@ -1010,15 +1011,9 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
                 }
             }
         }
-        if (filter != null) {
-            commandDocument.put("filter", filter);
-        }
-        if (sort != null) {
-            commandDocument.put("sort", sort);
-        }
-        if (projection != null) {
-            commandDocument.put("projection", projection);
-        }
+        putIfNotNullOrEmpty(commandDocument, "filter", filter);
+        putIfNotNullOrEmpty(commandDocument, "sort", sort);
+        putIfNotNullOrEmpty(commandDocument, "projection", projection);
         if (skip > 0) {
             commandDocument.put("skip", new BsonInt32(skip));
         }

@@ -348,11 +348,11 @@ public class FindAndReplaceOperation<T> extends BaseFindAndModifyOperation<T> {
             public BsonDocument create(final ServerDescription serverDescription, final ConnectionDescription connectionDescription) {
                 validateCollation(connectionDescription, collation);
 
-                BsonDocument commandDocument = new BsonDocument("findandmodify", new BsonString(namespace.getCollectionName()));
+                BsonDocument commandDocument = new BsonDocument("findAndModify", new BsonString(namespace.getCollectionName()));
                 putIfNotNull(commandDocument, "query", getFilter());
                 putIfNotNull(commandDocument, "fields", getProjection());
                 putIfNotNull(commandDocument, "sort", getSort());
-                putIfTrue(commandDocument, "new", !isReturnOriginal());
+                commandDocument.put("new", new BsonBoolean(!isReturnOriginal()));
                 putIfTrue(commandDocument, "upsert", isUpsert());
                 putIfNotZero(commandDocument, "maxTimeMS", getMaxTime(MILLISECONDS));
                 commandDocument.put("update", getReplacement());
