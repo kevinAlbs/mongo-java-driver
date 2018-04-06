@@ -18,6 +18,7 @@ package com.mongodb.async.client;
 
 import com.mongodb.Block;
 import com.mongodb.ClientSessionOptions;
+import com.mongodb.MongoCommandException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
@@ -216,15 +217,25 @@ public class TransactionsTest {
                         assertEquals("Expected operation result differs from actual", expectedResult, actualResult);
                     }
                 } catch (RuntimeException e) {
-                    if (expectedResult == null
-                            || !expectedResult.isDocument()
-                            || !expectedResult.asDocument().containsKey("errorContains")) {
+                    if (expectedResult == null) {
                         throw e;
                     }
-                    String expectedError = expectedResult.asDocument().getString("errorContains").getValue();
-                    assertTrue(String.format("Expected '%s' but got '%s'", expectedError, e.getMessage()),
-                            e.getMessage().toLowerCase().contains(expectedError.toLowerCase()));
-                }
+                    if (!expectedResult.isDocument()) {
+                        throw e;
+                    }
+                    if (expectedResult.asDocument().containsKey("errorContains")) {
+                        String expectedError = expectedResult.asDocument().getString("errorContains").getValue();
+                        assertTrue(String.format("Expected '%s' but got '%s'", expectedError, e.getMessage()),
+                                e.getMessage().toLowerCase().contains(expectedError.toLowerCase()));
+                    } else if (expectedResult.asDocument().containsKey("errorCodeName") || !(e instanceof MongoCommandException)) {
+                        String expectedErrorCodeName = expectedResult.asDocument().getString("errorCodeName").getValue();
+                        MongoCommandException commandException = (MongoCommandException) e;
+                        assertEquals(commandException.getResponse().getString("codeName", new BsonString("")).getValue(),
+                                expectedErrorCodeName);
+                    }
+                    else {
+                        throw e;
+                    }                }
             }
         } finally {
             closeAllSessions();
