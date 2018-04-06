@@ -116,7 +116,7 @@ public final class CommandMonitoringTestHelper {
             CommandEvent expected = expectedEvents.get(i);
 
             assertEquals(expected.getClass(), actual.getClass());
-            assertEquals(expected.getCommandName(), actual.getCommandName());
+            assertEquals(expected.getCommandName().toLowerCase(), actual.getCommandName().toLowerCase());
 
             if (actual.getClass().equals(CommandStartedEvent.class)) {
                 CommandStartedEvent actualCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) actual);
@@ -218,6 +218,9 @@ public final class CommandMonitoringTestHelper {
         }
         if (command.containsKey("stmtId") && command.isNull("stmtId")) {
             command.remove("stmtId");
+        }
+        if (command.containsKey("startTransaction") && command.isNull("startTransaction")) {
+            command.remove("startTransaction");
         }
         if (command.containsKey("autocommit") && command.isNull("autocommit")) {
             command.remove("autocommit");

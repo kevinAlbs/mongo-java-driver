@@ -247,9 +247,10 @@ final class CommandMessage extends RequestMessage {
             int statementId = sessionContext.advanceStatementId(1);
             extraElements.add(new BsonElement("stmtId", new BsonInt32(statementId)));
             if (statementId == 0) {
-                extraElements.add(new BsonElement("autocommit", BsonBoolean.FALSE));
+                extraElements.add(new BsonElement("startTransaction", BsonBoolean.TRUE));
                 addReadConcernDocument(extraElements, sessionContext);
             }
+            extraElements.add(new BsonElement("autocommit", BsonBoolean.FALSE));
         }
         if (readPreference != null) {
             if (!readPreference.equals(primary())) {
