@@ -715,9 +715,9 @@ public class JsonPoweredCrudTestHelper {
     BsonDocument getFindResult(final BsonDocument arguments, @Nullable final ClientSession clientSession) {
         FindIterable<BsonDocument> iterable;
         if (clientSession == null) {
-            iterable = getCollection(arguments).find(arguments.getDocument("filter"));
+            iterable = getCollection(arguments).find(arguments.getDocument("filter", new BsonDocument()));
         } else {
-            iterable = getCollection(arguments).find(clientSession, arguments.getDocument("filter"));
+            iterable = getCollection(arguments).find(clientSession, arguments.getDocument("filter", new BsonDocument()));
         }
 
         if (arguments.containsKey("skip")) {
