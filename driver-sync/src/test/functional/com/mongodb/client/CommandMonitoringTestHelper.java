@@ -22,6 +22,7 @@ import com.mongodb.event.CommandEvent;
 import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandStartedEvent;
 import com.mongodb.event.CommandSucceededEvent;
+import com.mongodb.lang.Nullable;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
@@ -109,18 +110,32 @@ public final class CommandMonitoringTestHelper {
     }
 
     static void assertEventsEquality(final List<CommandEvent> expectedEvents, final List<CommandEvent> events) {
+        assertEventsEquality(expectedEvents, events, null);
+    }
+
+    static void assertEventsEquality(final List<CommandEvent> expectedEvents, final List<CommandEvent> events,
+                                     @Nullable final List<BsonDocument> expectedSessionIdentifiers) {
         assertEquals(expectedEvents.size(), events.size());
+        if (expectedSessionIdentifiers != null) {
+            assertEquals(events.size(), expectedSessionIdentifiers.size());
+        }
 
         for (int i = 0; i < events.size(); i++) {
             CommandEvent actual = events.get(i);
             CommandEvent expected = expectedEvents.get(i);
+            BsonDocument sessionIdentifier = null;
+            if (expectedSessionIdentifiers != null) {
+                sessionIdentifier = expectedSessionIdentifiers.get(i);
+            }
 
             assertEquals(expected.getClass(), actual.getClass());
             assertEquals(expected.getCommandName().toLowerCase(), actual.getCommandName().toLowerCase());
 
             if (actual.getClass().equals(CommandStartedEvent.class)) {
-                CommandStartedEvent actualCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) actual);
-                CommandStartedEvent expectedCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) expected);
+                CommandStartedEvent actualCommandStartedEvent = massageActualCommandStartedEvent((CommandStartedEvent) actual,
+                        sessionIdentifier);
+                CommandStartedEvent expectedCommandStartedEvent = massageExpectedCommandStartedEvent((CommandStartedEvent) expected,
+                        sessionIdentifier);
 
                 assertEquals(expectedCommandStartedEvent.getDatabaseName(), actualCommandStartedEvent.getDatabaseName());
                 assertEquals(expectedCommandStartedEvent.getCommand(), actualCommandStartedEvent.getCommand());
@@ -191,28 +206,35 @@ public final class CommandMonitoringTestHelper {
                 actual.getElapsedTime(TimeUnit.NANOSECONDS));
     }
 
-    private static CommandStartedEvent massageActualCommandStartedEvent(final CommandStartedEvent actual) {
-        BsonDocument command = getWritableCloneOfCommand(actual.getCommand());
+    private static CommandStartedEvent massageActualCommandStartedEvent(final CommandStartedEvent event,
+                                                                        @Nullable final BsonDocument sessionIdentifier) {
+        BsonDocument command = getWritableCloneOfCommand(event.getCommand());
 
-        if (actual.getCommandName().equals("update")) {
-            for (BsonValue bsonValue : command.getArray("updates")) {
-                BsonDocument curUpdate = bsonValue.asDocument();
-                if (!curUpdate.containsKey("multi")) {
-                    curUpdate.put("multi", BsonBoolean.FALSE);
-                }
-                if (!curUpdate.containsKey("upsert")) {
-                    curUpdate.put("upsert", BsonBoolean.FALSE);
-                }
-            }
-        } else if (actual.getCommandName().equals("getMore")) {
-            command.put("getMore", new BsonInt64(42));
-        } else if (actual.getCommandName().equals("killCursors")) {
-            command.getArray("cursors").set(0, new BsonInt64(42));
+        massageCommand(event, command);
+
+        if (sessionIdentifier == null) {
+            command.remove("lsid");
         }
-        command.remove("$clusterTime");
-        command.remove("lsid");
+        if (command.containsKey("readConcern") && (command.getDocument("readConcern").containsKey("afterClusterTime"))) {
+            command.getDocument("readConcern").put("afterClusterTime", new BsonInt32(42));
+        }
 
-        // TODO: Only do this for expected
+        return new CommandStartedEvent(event.getRequestId(), event.getConnectionDescription(), event.getDatabaseName(),
+                event.getCommandName(), command);
+    }
+
+    private static CommandStartedEvent massageExpectedCommandStartedEvent(final CommandStartedEvent event,
+                                                                          @Nullable final BsonDocument sessionIdentifier) {
+        BsonDocument command = getWritableCloneOfCommand(event.getCommand());
+
+        massageCommand(event, command);
+
+        if (sessionIdentifier == null) {
+            command.remove("lsid");
+        } else {
+            command.put("lsid", sessionIdentifier);
+        }
+
         if (command.containsKey("txnNumber") && command.isNull("txnNumber")) {
             command.remove("txnNumber");
         }
@@ -231,13 +253,30 @@ public final class CommandMonitoringTestHelper {
         if (command.containsKey("readConcern")) {
             if (command.isNull("readConcern")) {
                 command.remove("readConcern");
-            } else if (command.getDocument("readConcern").containsKey("afterClusterTime")) {
-                command.getDocument("readConcern").put("afterClusterTime", new BsonInt32(42));
             }
         }
 
-        return new CommandStartedEvent(actual.getRequestId(), actual.getConnectionDescription(), actual.getDatabaseName(),
-                actual.getCommandName(), command);
+        return new CommandStartedEvent(event.getRequestId(), event.getConnectionDescription(), event.getDatabaseName(),
+                event.getCommandName(), command);
+    }
+
+    private static void massageCommand(final CommandStartedEvent event, final BsonDocument command) {
+        if (event.getCommandName().equals("update")) {
+            for (BsonValue bsonValue : command.getArray("updates")) {
+                BsonDocument curUpdate = bsonValue.asDocument();
+                if (!curUpdate.containsKey("multi")) {
+                    curUpdate.put("multi", BsonBoolean.FALSE);
+                }
+                if (!curUpdate.containsKey("upsert")) {
+                    curUpdate.put("upsert", BsonBoolean.FALSE);
+                }
+            }
+        } else if (event.getCommandName().equals("getMore")) {
+            command.put("getMore", new BsonInt64(42));
+        } else if (event.getCommandName().equals("killCursors")) {
+            command.getArray("cursors").set(0, new BsonInt64(42));
+        }
+        command.remove("$clusterTime");
     }
 
     private static BsonDocument getWritableCloneOfCommand(final BsonDocument original) {
