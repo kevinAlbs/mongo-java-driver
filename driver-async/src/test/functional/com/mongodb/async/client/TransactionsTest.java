@@ -188,6 +188,8 @@ public class TransactionsTest {
                 BsonValue expectedResult = operation.get("result", null);
                 final ClientSession clientSession = operation.getDocument("arguments").containsKey("session")
                         ? sessionsMap.get(operation.getDocument("arguments").getString("session").getValue()) : null;
+                BsonDocument sessionIdentifier = (clientSession == null) ? null : clientSession.getServerSession().getIdentifier();
+                commandListener.addExpectedSessionNextStartedEvent(sessionIdentifier);
                 try {
                     if (operationName.equals("startTransaction")) {
                         TransactionOptions.Builder builder = TransactionOptions.builder();
@@ -247,7 +249,7 @@ public class TransactionsTest {
             List<CommandEvent> expectedEvents = getExpectedEvents(definition.getArray("expectations"), databaseName, null);
             List<CommandEvent> events = getCommandStartedEvents();
 
-            assertEventsEquality(expectedEvents, events);
+            assertEventsEquality(expectedEvents, events, commandListener.getSessions());
         }
 
         BsonDocument expectedOutcome = definition.getDocument("outcome", new BsonDocument());
