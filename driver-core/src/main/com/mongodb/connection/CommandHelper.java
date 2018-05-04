@@ -18,6 +18,7 @@ package com.mongodb.connection;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.MongoServerException;
+import com.mongodb.ReadPreference;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.internal.connection.NoOpSessionContext;
 import com.mongodb.internal.validator.NoOpFieldNameValidator;
@@ -31,18 +32,23 @@ import static com.mongodb.ReadPreference.primary;
 
 final class CommandHelper {
     static BsonDocument executeCommand(final String database, final BsonDocument command, final InternalConnection internalConnection) {
-        return sendAndReceive(database, command, null, internalConnection);
+        return sendAndReceive(database, command, primary(), null, internalConnection);
     }
 
     static BsonDocument executeCommand(final String database, final BsonDocument command, final ClusterClock clusterClock,
                                        final InternalConnection internalConnection) {
-        return sendAndReceive(database, command, clusterClock, internalConnection);
+        return sendAndReceive(database, command, primary(), clusterClock, internalConnection);
+    }
+
+    static BsonDocument executeCommand(final String database, final BsonDocument command, final ReadPreference readPreference,
+                                       final ClusterClock clusterClock, final InternalConnection internalConnection) {
+        return sendAndReceive(database, command, readPreference, clusterClock, internalConnection);
     }
 
     static BsonDocument executeCommandWithoutCheckingForFailure(final String database, final BsonDocument command,
                                                                 final InternalConnection internalConnection) {
         try {
-            return sendAndReceive(database, command, null, internalConnection);
+            return sendAndReceive(database, command, primary(), null, internalConnection);
         } catch (MongoServerException e) {
             return new BsonDocument();
         }
@@ -50,7 +56,7 @@ final class CommandHelper {
 
     static void executeCommandAsync(final String database, final BsonDocument command, final InternalConnection internalConnection,
                                     final SingleResultCallback<BsonDocument> callback) {
-        internalConnection.sendAndReceiveAsync(getCommandMessage(database, command, internalConnection), new BsonDocumentCodec(),
+        internalConnection.sendAndReceiveAsync(getCommandMessage(database, command, primary(), internalConnection), new BsonDocumentCodec(),
                 NoOpSessionContext.INSTANCE, new SingleResultCallback<BsonDocument>() {
                     @Override
                     public void onResult(final BsonDocument result, final Throwable t) {
@@ -60,7 +66,7 @@ final class CommandHelper {
                             callback.onResult(result, null);
                         }
                     }
-        });
+                });
     }
 
     static boolean isCommandOk(final BsonDocument response) {
@@ -78,22 +84,23 @@ final class CommandHelper {
     }
 
     private static BsonDocument sendAndReceive(final String database, final BsonDocument command,
-                                               final ClusterClock clusterClock, final InternalConnection internalConnection) {
+                                               final ReadPreference readPreference, final ClusterClock clusterClock,
+                                               final InternalConnection internalConnection) {
         SessionContext sessionContext = clusterClock == null ? NoOpSessionContext.INSTANCE
                 : new ClusterClockAdvancingSessionContext(NoOpSessionContext.INSTANCE, clusterClock);
-        return internalConnection.sendAndReceive(getCommandMessage(database, command, internalConnection), new BsonDocumentCodec(),
-                sessionContext);
+        return internalConnection.sendAndReceive(getCommandMessage(database, command, readPreference, internalConnection),
+                new BsonDocumentCodec(), sessionContext);
     }
 
     private static CommandMessage getCommandMessage(final String database, final BsonDocument command,
-                                                    final InternalConnection internalConnection) {
-        return new CommandMessage(new MongoNamespace(database, COMMAND_COLLECTION_NAME), command, new NoOpFieldNameValidator(), primary(),
-                MessageSettings
-                        .builder()
-                         // Note: server version will be 0.0 at this point when called from InternalConnectionInitializer,
-                         // which means OP_MSG will not be used
-                        .serverVersion(internalConnection.getDescription().getServerVersion())
-                        .build()
+                                                    final ReadPreference readPreference, final InternalConnection internalConnection) {
+        return new CommandMessage(new MongoNamespace(database, COMMAND_COLLECTION_NAME), command, new NoOpFieldNameValidator(),
+                readPreference, MessageSettings
+                .builder()
+                // Note: server version will be 0.0 at this point when called from InternalConnectionInitializer,
+                // which means OP_MSG will not be used
+                .serverVersion(internalConnection.getDescription().getServerVersion())
+                .build()
         );
     }
 

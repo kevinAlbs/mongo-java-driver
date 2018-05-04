@@ -16,6 +16,7 @@
 
 package com.mongodb.connection;
 
+import com.mongodb.MongoNamespace;
 import com.mongodb.MongoSocketException;
 import com.mongodb.annotations.ThreadSafe;
 import com.mongodb.diagnostics.logging.Logger;
@@ -26,15 +27,19 @@ import com.mongodb.event.ServerHeartbeatSucceededEvent;
 import com.mongodb.event.ServerMonitorListener;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
+import org.bson.BsonString;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.mongodb.ReadPreference.secondaryPreferred;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.connection.CommandHelper.executeCommand;
 import static com.mongodb.connection.DescriptionHelper.createServerDescription;
 import static com.mongodb.connection.ServerConnectionState.CONNECTING;
+import static com.mongodb.connection.ServerType.REPLICA_SET_PRIMARY;
+import static com.mongodb.connection.ServerType.REPLICA_SET_SECONDARY;
 import static com.mongodb.connection.ServerType.UNKNOWN;
 import static com.mongodb.internal.event.EventListenerHelper.getServerMonitorListener;
 import static java.lang.String.format;
@@ -58,6 +63,7 @@ class DefaultServerMonitor implements ServerMonitor {
     private final Lock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
     private volatile boolean isClosed;
+    private final MongoNamespace healthCheckNamespace;
 
     DefaultServerMonitor(final ServerId serverId, final ServerSettings serverSettings,
                          final ClusterClock clusterClock, final ChangeListener<ServerDescription> serverStateListener,
@@ -73,6 +79,11 @@ class DefaultServerMonitor implements ServerMonitor {
         monitorThread = new Thread(monitor, "cluster-" + this.serverId.getClusterId() + "-" + this.serverId.getAddress());
         monitorThread.setDaemon(true);
         isClosed = false;
+        if (System.getProperty("com.mongodb.healthcheck.namespace") != null) {
+            healthCheckNamespace = new MongoNamespace(System.getProperty("com.mongodb.healthcheck.namespace"));
+        } else {
+            healthCheckNamespace = null;
+        }
     }
 
     @Override
@@ -181,12 +192,28 @@ class DefaultServerMonitor implements ServerMonitor {
                 serverMonitorListener.serverHeartbeatSucceeded(
                         new ServerHeartbeatSucceededEvent(connection.getDescription().getConnectionId(), isMasterResult, elapsedTimeNanos));
 
-                return createServerDescription(serverId.getAddress(), isMasterResult, connection.getDescription().getServerVersion(),
-                                               averageRoundTripTime.getAverage());
+                ServerDescription serverDescription = createServerDescription(serverId.getAddress(), isMasterResult, connection.getDescription().getServerVersion(),
+                        averageRoundTripTime.getAverage());
+                healthCheck(connection, serverDescription);
+                return serverDescription;
             } catch (RuntimeException e) {
                 serverMonitorListener.serverHeartbeatFailed(
                         new ServerHeartbeatFailedEvent(connection.getDescription().getConnectionId(), System.nanoTime() - start, e));
                 throw e;
+            }
+        }
+
+        private void healthCheck(final InternalConnection connection, final ServerDescription serverDescription) {
+            if (healthCheckNamespace != null
+                    && (serverDescription.getType() == REPLICA_SET_PRIMARY || serverDescription.getType() == REPLICA_SET_SECONDARY)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(format("Checking health of %s using namespace %s", serverId.getAddress(), healthCheckNamespace));
+                }
+
+                executeCommand(healthCheckNamespace.getDatabaseName(),
+                        new BsonDocument("find", new BsonString(healthCheckNamespace.getCollectionName()))
+                                .append("limit", new BsonInt32(1)),
+                        secondaryPreferred(), clusterClock, connection);
             }
         }
 
@@ -239,7 +266,7 @@ class DefaultServerMonitor implements ServerMonitor {
             return true;
         }
         if (previous.getCanonicalAddress() != null
-                    ? !previous.getCanonicalAddress().equals(current.getCanonicalAddress()) : current.getCanonicalAddress() != null) {
+                ? !previous.getCanonicalAddress().equals(current.getCanonicalAddress()) : current.getCanonicalAddress() != null) {
             return true;
         }
         if (!previous.getHosts().equals(current.getHosts())) {
@@ -270,11 +297,11 @@ class DefaultServerMonitor implements ServerMonitor {
             return true;
         }
         if (previous.getElectionId() != null
-                    ? !previous.getElectionId().equals(current.getElectionId()) : current.getElectionId() != null) {
+                ? !previous.getElectionId().equals(current.getElectionId()) : current.getElectionId() != null) {
             return true;
         }
         if (previous.getSetVersion() != null
-                    ? !previous.getSetVersion().equals(current.getSetVersion()) : current.getSetVersion() != null) {
+                ? !previous.getSetVersion().equals(current.getSetVersion()) : current.getSetVersion() != null) {
             return true;
         }
 
