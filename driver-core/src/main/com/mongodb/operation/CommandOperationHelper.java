@@ -685,13 +685,16 @@ final class CommandOperationHelper {
 
     private static boolean shouldNotAttemptToRetry(@Nullable final BsonDocument command, final Throwable exception,
                                                    final SessionContext sessionContext) {
-        return shouldNotAttemptToRetry(command != null && command.containsKey("txnNumber"), exception, sessionContext);
+        return shouldNotAttemptToRetry(command != null
+                        && (command.containsKey("txnNumber")
+                        || command.getFirstKey().equals("commitTransaction") || command.getFirstKey().equals("abortTransaction")),
+                exception, sessionContext);
     }
 
 
     static boolean shouldNotAttemptToRetry(final boolean retryWritesEnabled, final Throwable exception,
                                            final SessionContext sessionContext) {
-        return !retryWritesEnabled || !isRetryableException(exception) || sessionContext.hasActiveTransaction();
+        return !retryWritesEnabled || !isRetryableException(exception);
     }
 
     private CommandOperationHelper() {
