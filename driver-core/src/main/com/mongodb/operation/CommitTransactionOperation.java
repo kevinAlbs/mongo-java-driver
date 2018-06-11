@@ -67,9 +67,6 @@ public class CommitTransactionOperation extends TransactionOperation {
 
     private void addErrorLabels(final MongoException e) {
         if (isRetryableException(e)) {
-            if (e.hasErrorLabel(TRANSIENT_TRANSACTION_ERROR_LABEL)) {
-                e.removeLabel(TRANSIENT_TRANSACTION_ERROR_LABEL);
-            }
             e.addLabel(UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL);
         }
     }
