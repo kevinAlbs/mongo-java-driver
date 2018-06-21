@@ -410,8 +410,8 @@ deployment (e.g. standalone, replica set, or a sharded cluster) and use it acros
 </code></pre>
 
 <ul>
-<li>You can call <a href="/mongo-java-driver/3.8/javadoc?com/mongodb/async/client/MongoClients.html#create-com.mongodb.async.client.MongoClientSettings-
-"><code>MongoClients.create()</code></a> with a <a href="/mongo-java-driver/3.8/javadoc?com/mongodb/async/client/MongoClientSettings.html
+<li>You can call <a href="/mongo-java-driver/3.8/javadoc?com/mongodb/async/client/MongoClients.html#create-com.mongodb.MongoClientSettings-
+"><code>MongoClients.create()</code></a> with a <a href="/mongo-java-driver/3.8/javadoc?com/mongodb/MongoClientSettings.html
 "><code>MongoClientSettings</code></a> object:</li>
 </ul>
 
@@ -556,7 +556,7 @@ for (int i = 0; i &lt; 100; i++) {
 "><code>count()</code></a>
 method.  The following code should print <code>101</code> (the 100 inserted via <code>insertMany</code> plus the 1 inserted via the <code>insertOne</code>).</p>
 
-<pre><code class="language-java">collection.count(
+<pre><code class="language-java">collection.countDocuments(
   new SingleResultCallback&lt;Long&gt;() {
       @Override
       public void onResult(final Long count, final Throwable t) {

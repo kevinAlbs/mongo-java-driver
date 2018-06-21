@@ -257,10 +257,14 @@
 
 <h2 id="upgrading-from-3-7-x">Upgrading from 3.7.x</h2>
 
-<p>It introduces a small but significant breaking change to the existing API for any applications that already depend on session support
-(introduced in the 3.6 release to support causal consistency): the type of ClientSession changes from <code>com.mongodb.session.ClientSession</code> to
-<code>com.mongodb.client.ClientSession</code>.  This is both source and binary incompatible with the 3.7 release.  This change was required in order
-to introduce support in the driver for transactions that works in both the synchronous and the asynchronous drivers.</p>
+<p>The 3.8 driver introduces a small but significant breaking change to the existing API for any application that already depends on session
+support (introduced in the 3.6 release to support causal consistency): the type of ClientSession changes from
+<code>com.mongodb.session.ClientSession</code> to <code>com.mongodb.client.ClientSession</code>.  This is both source and binary incompatible with the 3.7
+release.  This change was required in order to introduce support in the driver for transactions that works in both the synchronous and the
+asynchronous drivers.</p>
+
+<p>In addition, the default <code>authSource</code> value for connection strings with an <code>authMechanism</code> of PLAIN has changed from <code>admin</code> to <code>$external</code>.
+Users wishing to continue to use PLAIN authentication with the <code>admin</code> database should declare <code>authSource=admin</code> on the connection string.</p>
 
 <p>Otherwise, the 3.8 release is binary and source compatible with the 3.7 release, except for methods that have been added to interfaces that
 have been marked as unstable, and changes to classes or interfaces that have been marked as internal or annotated as Beta.</p>
