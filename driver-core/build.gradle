@@ -44,7 +44,7 @@ buildConfig {
     version = getGitVersion()
 
     clsName = 'MongoDriverVersion'
-    packageName = 'com.mongodb.internal.connection'
+    packageName = 'com.mongodb.internal.build'
 }
 
 jar {
