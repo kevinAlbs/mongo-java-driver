@@ -20,17 +20,27 @@ import org.bson.json.JsonMode;
 import org.bson.json.JsonWriter;
 import org.bson.json.JsonWriterSettings;
 
-import java.io.StringWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 
 public class EvergreenBenchmarkResultWriter implements BenchmarkResultWriter {
 
-    private final StringWriter stringWriter = new StringWriter();
-    private final JsonWriter jsonWriter = new JsonWriter(stringWriter,
-            JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).indent(true).build());
+    private static final String OUTPUT_FILE_SYSTEM_PROPERTY = "org.mongodb.benchmarks.output";
 
-    public EvergreenBenchmarkResultWriter() {
-        jsonWriter.writeStartDocument();
-        jsonWriter.writeStartArray("results");
+    private final Writer writer;
+    private final JsonWriter jsonWriter;
+
+    public EvergreenBenchmarkResultWriter()  {
+        try {
+            writer = new FileWriter(System.getProperty(OUTPUT_FILE_SYSTEM_PROPERTY));
+            jsonWriter = new JsonWriter(writer,
+                    JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).indent(true).build());;
+            jsonWriter.writeStartDocument();
+            jsonWriter.writeStartArray("results");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -50,13 +60,15 @@ public class EvergreenBenchmarkResultWriter implements BenchmarkResultWriter {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         jsonWriter.writeEndArray();
         jsonWriter.writeEndDocument();
         jsonWriter.close();
+        writer.close();
+        System.out.println("DONE");
     }
 
     public String getResults() {
-        return stringWriter.toString();
+        return writer.toString();
     }
 }

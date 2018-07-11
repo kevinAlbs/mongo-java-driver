@@ -54,23 +54,27 @@ public class BenchmarkSuite {
         }
 
         runBenchmarks(clazz, getDefaultCodecRegistry().get(clazz), createIdRemover(clazz));
+
+        for (BenchmarkResultWriter writer : WRITERS) {
+            writer.close();
+        }
     }
 
     private static <T extends Bson> void runBenchmarks(final Class<T> clazz, final Codec<T> codec, final IdRemover<T> idRemover)
             throws Exception {
 
-//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
-//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
-//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
-//
-//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
-//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
-//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
-//
-//        runBenchmark(new RunCommandBenchmark<T>(codec));
-//        runBenchmark(new FindOneBenchmark<T>("single_and_multi_document/tweet.json", clazz));
+        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
+        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
+        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
 
-        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 1));
+        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
+        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
+        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
+
+        runBenchmark(new RunCommandBenchmark<T>(codec));
+        runBenchmark(new FindOneBenchmark<T>("single_and_multi_document/tweet.json", clazz));
+
+//        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 1));
 //        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 10));
 //        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 100));
 //
