@@ -22,8 +22,8 @@ import com.mongodb.benchmark.framework.Benchmark;
 import com.mongodb.benchmark.framework.BenchmarkResult;
 import com.mongodb.benchmark.framework.BenchmarkResultWriter;
 import com.mongodb.benchmark.framework.BenchmarkRunner;
+import com.mongodb.benchmark.framework.EvergreenBenchmarkResultWriter;
 import com.mongodb.benchmark.framework.MinimalTextBasedBenchmarkResultWriter;
-import com.mongodb.benchmark.framework.TextBasedBenchmarkResultWriter;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.codecs.Codec;
@@ -40,8 +40,8 @@ public class BenchmarkSuite {
     public static final int NUM_WARMUP_ITERATIONS = 0;
     public static final int NUM_ITERATIONS = 100;
 
-    private static final List<BenchmarkResultWriter> WRITERS = Arrays.asList(
-            new TextBasedBenchmarkResultWriter(System.out, Arrays.asList(50), false, false),
+    private static final List<BenchmarkResultWriter> WRITERS = Arrays.<BenchmarkResultWriter>asList(
+            new EvergreenBenchmarkResultWriter(),
             new MinimalTextBasedBenchmarkResultWriter(System.out)
     );
 
@@ -59,36 +59,35 @@ public class BenchmarkSuite {
     private static <T extends Bson> void runBenchmarks(final Class<T> clazz, final Codec<T> codec, final IdRemover<T> idRemover)
             throws Exception {
 
-        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
-        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
-        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
-
-        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
-        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
-        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
-
-        runBenchmark(new RunCommandBenchmark<T>(codec));
-        runBenchmark(new FindOneBenchmark<T>("single_and_multi_document/tweet.json", clazz));
+//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
+//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
+//        runBenchmark(new BsonEncodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
+//
+//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Flat", "extended_bson/flat_bson.json", codec));
+//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Deep", "extended_bson/deep_bson.json", codec));
+//        runBenchmark(new BsonDecodeDocumentBenchmark<T>("Full", "extended_bson/full_bson.json", codec));
+//
+//        runBenchmark(new RunCommandBenchmark<T>(codec));
+//        runBenchmark(new FindOneBenchmark<T>("single_and_multi_document/tweet.json", clazz));
 
         runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 1));
-        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 1));
-        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 10));
-        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 100));
+//        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 10));
+//        runBenchmark(new FindNBenchmark<T>("single_and_multi_document/tweet.json", clazz, 100));
+//
+//        runBenchmark(new InsertOneBenchmark<T>("Small", "./single_and_multi_document/small_doc.json", 10000, clazz, idRemover));
+//        runBenchmark(new InsertOneBenchmark<T>("Large", "./single_and_multi_document/large_doc.json", 10, clazz, idRemover));
 
-        runBenchmark(new InsertOneBenchmark<T>("Small", "./single_and_multi_document/small_doc.json", 10000, clazz, idRemover));
-        runBenchmark(new InsertOneBenchmark<T>("Large", "./single_and_multi_document/large_doc.json", 10, clazz, idRemover));
-
-        runBenchmark(new FindManyBenchmark<T>("single_and_multi_document/tweet.json", clazz));
-        runBenchmark(new InsertManyBenchmark<T>("Small", "./single_and_multi_document/small_doc.json", 10000, clazz));
-        runBenchmark(new InsertManyBenchmark<T>("Large", "./single_and_multi_document/large_doc.json", 10, clazz));
-
-        runBenchmark(new GridFSUploadBenchmark("single_and_multi_document/gridfs_large.bin"));
-        runBenchmark(new GridFSDownloadBenchmark("single_and_multi_document/gridfs_large.bin"));
-
-        runBenchmark(new ImportBenchmark());
-        runBenchmark(new ExportBenchmark());
-        runBenchmark(new GridFSImportBenchmark());
-        runBenchmark(new GridFSExportBenchmark());
+//        runBenchmark(new FindManyBenchmark<T>("single_and_multi_document/tweet.json", clazz));
+//        runBenchmark(new InsertManyBenchmark<T>("Small", "./single_and_multi_document/small_doc.json", 10000, clazz));
+//        runBenchmark(new InsertManyBenchmark<T>("Large", "./single_and_multi_document/large_doc.json", 10, clazz));
+//
+//        runBenchmark(new GridFSUploadBenchmark("single_and_multi_document/gridfs_large.bin"));
+//        runBenchmark(new GridFSDownloadBenchmark("single_and_multi_document/gridfs_large.bin"));
+//
+//        runBenchmark(new ImportBenchmark());
+//        runBenchmark(new ExportBenchmark());
+//        runBenchmark(new GridFSImportBenchmark());
+//        runBenchmark(new GridFSExportBenchmark());
     }
 
     private static void runBenchmark(final Benchmark benchmark) throws Exception {

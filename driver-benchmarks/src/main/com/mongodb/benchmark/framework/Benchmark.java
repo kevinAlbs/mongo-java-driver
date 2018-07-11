@@ -29,6 +29,8 @@ import java.nio.file.Paths;
 
 public abstract class Benchmark {
 
+    static final String TEST_DATA_SYSTEM_PROPERTY_NAME = "org.mongodb.benchmarks.data";
+
     public void setUp() throws Exception {
     }
 
@@ -48,15 +50,19 @@ public abstract class Benchmark {
     public abstract int getBytesPerRun();
 
     protected byte[] readAllBytesFromRelativePath(final String relativePath) throws IOException {
-        return Files.readAllBytes(Paths.get("/Users/jeff/driver-performance-test-data/" + relativePath));
+        return Files.readAllBytes(Paths.get(getResourceRoot() + relativePath));
     }
 
     protected Reader readFromRelativePath(final String relativePath) throws IOException {
-        return new FileReader("/Users/jeff/driver-performance-test-data/" + relativePath);
+        return new FileReader(getResourceRoot() + relativePath);
     }
 
     protected InputStream streamFromRelativePath(final String relativePath) throws IOException {
-        return new FileInputStream("/Users/jeff/driver-performance-test-data/" + relativePath);
+        return new FileInputStream(getResourceRoot() + relativePath);
     }
 
+    private String getResourceRoot() {
+        // TODO: remove default
+        return System.getProperty(TEST_DATA_SYSTEM_PROPERTY_NAME);
+    }
 }
