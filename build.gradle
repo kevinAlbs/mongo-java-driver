@@ -54,8 +54,8 @@ configure(subprojects.findAll { it.name != 'util' }) {
 
     group = 'org.mongodb'
     version = '3.9.0-SNAPSHOT'
-    sourceCompatibility = JavaVersion.VERSION_1_6
-    targetCompatibility = JavaVersion.VERSION_1_6
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 
     repositories {
         mavenCentral()
