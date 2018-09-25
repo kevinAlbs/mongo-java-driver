@@ -37,7 +37,6 @@ import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
-import com.mongodb.operation.OperationHelper.CallableWithConnectionAndSource;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
@@ -52,7 +51,6 @@ import org.bson.codecs.DecoderContext;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -61,6 +59,7 @@ import static com.mongodb.assertions.Assertions.isTrueArgument;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.connection.ServerType.SHARD_ROUTER;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
+import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionThreeDotTwo;
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformer;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocol;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocolAsync;
@@ -69,7 +68,6 @@ import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionA
 import static com.mongodb.operation.OperationHelper.LOGGER;
 import static com.mongodb.operation.OperationHelper.cursorDocumentToQueryResult;
 import static com.mongodb.operation.OperationHelper.releasingCallback;
-import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionThreeDotTwo;
 import static com.mongodb.operation.OperationHelper.validateReadConcernAndCollation;
 import static com.mongodb.operation.OperationHelper.withConnection;
 import static com.mongodb.operation.OperationReadConcernHelper.appendReadConcernToCommand;
@@ -692,119 +690,99 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
 
     @Override
     public BatchCursor<T> execute(final ReadBinding binding) {
-        return withConnection(binding, new CallableWithConnectionAndSource<BatchCursor<T>>() {
-            @Override
-            public BatchCursor<T> call(final ConnectionSource source, final Connection connection) {
-                if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
-                    try {
-                        validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
-                        return executeWrappedCommandProtocol(binding, namespace.getDatabaseName(),
-                                                             wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
-                                                             CommandResultDocumentCodec.create(decoder, FIRST_BATCH),
-                                                             connection, transformer(source, connection));
-                    } catch (MongoCommandException e) {
-                        throw new MongoQueryException(e);
-                    }
-                } else {
+        return withConnection(binding, (source, connection) -> {
+            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+                try {
                     validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
-                    QueryResult<T> queryResult = connection.query(namespace,
-                                                                  asDocument(connection.getDescription(), binding.getReadPreference()),
-                                                                  projection,
-                                                                  skip,
-                                                                  limit,
-                                                                  batchSize,
-                                                                  isSlaveOk() || binding.getReadPreference().isSlaveOk(),
-                                                                  isTailableCursor(),
-                                                                  isAwaitData(),
-                                                                  isNoCursorTimeout(),
-                                                                  isPartial(),
-                                                                  isOplogReplay(),
-                                                                  decoder);
-                    return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+                    return executeWrappedCommandProtocol(binding, namespace.getDatabaseName(),
+                                                         wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
+                                                         CommandResultDocumentCodec.create(decoder, FIRST_BATCH),
+                                                         connection, transformer(source, connection));
+                } catch (MongoCommandException e) {
+                    throw new MongoQueryException(e);
                 }
+            } else {
+                validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
+                QueryResult<T> queryResult = connection.query(namespace,
+                                                              asDocument(connection.getDescription(), binding.getReadPreference()),
+                                                              projection,
+                                                              skip,
+                                                              limit,
+                                                              batchSize,
+                                                              isSlaveOk() || binding.getReadPreference().isSlaveOk(),
+                                                              isTailableCursor(),
+                                                              isAwaitData(),
+                                                              isNoCursorTimeout(),
+                                                              isPartial(),
+                                                              isOplogReplay(),
+                                                              decoder);
+                return new QueryBatchCursor<>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
             }
         });
     }
 
     @Override
     public void executeAsync(final AsyncReadBinding binding, final SingleResultCallback<AsyncBatchCursor<T>> callback) {
-        withConnection(binding, new AsyncCallableWithConnectionAndSource() {
-            @Override
-            public void call(final AsyncConnectionSource source, final AsyncConnection connection, final Throwable t) {
-                SingleResultCallback<AsyncBatchCursor<T>> errHandlingCallback = errorHandlingCallback(callback, LOGGER);
-                if (t != null) {
-                    errHandlingCallback.onResult(null, t);
+        withConnection(binding, (source, connection, t) -> {
+            SingleResultCallback<AsyncBatchCursor<T>> errHandlingCallback = errorHandlingCallback(callback, LOGGER);
+            if (t != null) {
+                errHandlingCallback.onResult(null, t);
+            } else {
+                if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+                    final SingleResultCallback<AsyncBatchCursor<T>> wrappedCallback =
+                            releasingCallback(exceptionTransformingCallback(errHandlingCallback), source, connection);
+                    validateReadConcernAndCollation(source, connection, binding.getSessionContext().getReadConcern(), collation,
+                            (source1, connection1, t12) -> {
+                                if (t12 != null) {
+                                    wrappedCallback.onResult(null, t12);
+                                } else {
+                                    executeWrappedCommandProtocolAsync(binding, namespace.getDatabaseName(),
+                                            wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
+                                            CommandResultDocumentCodec.create(decoder, FIRST_BATCH), connection1,
+                                            asyncTransformer(source1, connection1), wrappedCallback);
+                                }
+                            });
                 } else {
-                    if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
-                        final SingleResultCallback<AsyncBatchCursor<T>> wrappedCallback =
-                                releasingCallback(exceptionTransformingCallback(errHandlingCallback), source, connection);
-                        validateReadConcernAndCollation(source, connection, binding.getSessionContext().getReadConcern(), collation,
-                                new AsyncCallableWithConnectionAndSource() {
-                                    @Override
-                                    public void call(final AsyncConnectionSource source, final AsyncConnection connection,
-                                                     final Throwable t) {
-                                        if (t != null) {
-                                            wrappedCallback.onResult(null, t);
-                                        } else {
-                                            executeWrappedCommandProtocolAsync(binding, namespace.getDatabaseName(),
-                                                    wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
-                                                    CommandResultDocumentCodec.create(decoder, FIRST_BATCH), connection,
-                                                    asyncTransformer(source, connection), wrappedCallback);
-                                        }
-                                    }
-                                });
-                    } else {
-                        final SingleResultCallback<AsyncBatchCursor<T>> wrappedCallback =
-                                releasingCallback(errHandlingCallback, source, connection);
-                        validateReadConcernAndCollation(source, connection, binding.getSessionContext().getReadConcern(), collation,
-                                new AsyncCallableWithConnectionAndSource() {
-                                    @Override
-                                    public void call(final AsyncConnectionSource source, final AsyncConnection connection, final
-                                    Throwable t) {
-                                        if (t != null) {
-                                            wrappedCallback.onResult(null, t);
-                                        } else {
-                                            connection.queryAsync(namespace, asDocument(connection.getDescription(),
-                                                    binding.getReadPreference()), projection, skip, limit, batchSize,
-                                                    isSlaveOk() || binding.getReadPreference().isSlaveOk(),
-                                                    isTailableCursor(), isAwaitData(), isNoCursorTimeout(), isPartial(), isOplogReplay(),
-                                                    decoder, new SingleResultCallback<QueryResult<T>>() {
-                                                        @Override
-                                                        public void onResult(final QueryResult<T> result, final Throwable t) {
-                                                            if (t != null) {
-                                                                wrappedCallback.onResult(null, t);
-                                                            } else {
-                                                                wrappedCallback.onResult(new AsyncQueryBatchCursor<T>(result, limit,
-                                                                        batchSize, getMaxTimeForCursor(), decoder, source, connection),
-                                                                        null);
-                                                            }
-                                                        }
-                                                    });
-                                        }
-                                    }
-                        });
-                    }
+                    final SingleResultCallback<AsyncBatchCursor<T>> wrappedCallback =
+                            releasingCallback(errHandlingCallback, source, connection);
+                    validateReadConcernAndCollation(source, connection, binding.getSessionContext().getReadConcern(), collation,
+                            (source12, connection12, t13) -> {
+                                if (t13 != null) {
+                                    wrappedCallback.onResult(null, t13);
+                                } else {
+                                    connection12.queryAsync(namespace, asDocument(connection12.getDescription(),
+                                            binding.getReadPreference()), projection, skip, limit, batchSize,
+                                            isSlaveOk() || binding.getReadPreference().isSlaveOk(),
+                                            isTailableCursor(), isAwaitData(), isNoCursorTimeout(), isPartial(), isOplogReplay(),
+                                            decoder, (result, t1) -> {
+                                                if (t1 != null) {
+                                                    wrappedCallback.onResult(null, t1);
+                                                } else {
+                                                    wrappedCallback.onResult(new AsyncQueryBatchCursor<>(result, limit,
+                                                                    batchSize, getMaxTimeForCursor(), decoder, source12, connection12),
+                                                            null);
+                                                }
+                                            });
+                                }
+                            });
                 }
             }
         });
     }
 
     private static <T> SingleResultCallback<T> exceptionTransformingCallback(final SingleResultCallback<T> callback) {
-        return new SingleResultCallback<T>() {
-            @Override
-            public void onResult(final T result, final Throwable t) {
-                if (t != null) {
-                    if (t instanceof MongoCommandException) {
-                        MongoCommandException commandException = (MongoCommandException) t;
-                        callback.onResult(result, new MongoQueryException(commandException.getServerAddress(),
-                                                                          commandException.getErrorCode(),
-                                commandException.getErrorMessage()));
-                    } else {
-                        callback.onResult(result, t);
-                    }
+        return (result, t) -> {
+            if (t != null) {
+                if (t instanceof MongoCommandException) {
+                    MongoCommandException commandException = (MongoCommandException) t;
+                    callback.onResult(result, new MongoQueryException(commandException.getServerAddress(),
+                                                                      commandException.getErrorCode(),
+                            commandException.getErrorMessage()));
                 } else {
-                    callback.onResult(result, null);
+                    callback.onResult(result, t);
                 }
+            } else {
+                callback.onResult(result, null);
             }
         };
     }
@@ -818,40 +796,29 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
      */
     public ReadOperation<BsonDocument> asExplainableOperation(final ExplainVerbosity explainVerbosity) {
         notNull("explainVerbosity", explainVerbosity);
-        return new ReadOperation<BsonDocument>() {
-            @Override
-            public BsonDocument execute(final ReadBinding binding) {
-                return withConnection(binding, new CallableWithConnectionAndSource<BsonDocument>() {
-                    @Override
-                    public BsonDocument call(final ConnectionSource connectionSource, final Connection connection) {
-                        ReadBinding singleConnectionBinding = new SingleConnectionReadBinding(binding.getReadPreference(),
-                                                                                              connectionSource.getServerDescription(),
-                                                                                              connection);
-                        try {
-                            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
-                                try {
-                                    return new CommandReadOperation<BsonDocument>(getNamespace().getDatabaseName(),
-                                                                                  new BsonDocument("explain",
-                                                                                                   getCommand(binding.getSessionContext())),
-                                                                                  new BsonDocumentCodec()).execute(singleConnectionBinding);
-                                } catch (MongoCommandException e) {
-                                    throw new MongoQueryException(e);
-                                }
-                            } else {
-                                BatchCursor<BsonDocument> cursor = createExplainableQueryOperation().execute(singleConnectionBinding);
-                                try {
-                                    return cursor.next().iterator().next();
-                                } finally {
-                                    cursor.close();
-                                }
-                            }
-                        } finally {
-                            singleConnectionBinding.release();
-                        }
+        return binding -> withConnection(binding, (connectionSource, connection) -> {
+            ReadBinding singleConnectionBinding = new SingleConnectionReadBinding(binding.getReadPreference(),
+                                                                                  connectionSource.getServerDescription(),
+                                                                                  connection);
+            try {
+                if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+                    try {
+                        return new CommandReadOperation<>(getNamespace().getDatabaseName(),
+                                new BsonDocument("explain",
+                                        getCommand(binding.getSessionContext())),
+                                new BsonDocumentCodec()).execute(singleConnectionBinding);
+                    } catch (MongoCommandException e) {
+                        throw new MongoQueryException(e);
                     }
-                });
+                } else {
+                    try (BatchCursor<BsonDocument> cursor = createExplainableQueryOperation().execute(singleConnectionBinding)) {
+                        return cursor.next().iterator().next();
+                    }
+                }
+            } finally {
+                singleConnectionBinding.release();
             }
-        };
+        });
     }
 
     /**
@@ -862,42 +829,35 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
      */
     public AsyncReadOperation<BsonDocument> asExplainableOperationAsync(final ExplainVerbosity explainVerbosity) {
         notNull("explainVerbosity", explainVerbosity);
-        return new AsyncReadOperation<BsonDocument>() {
-            @Override
-            public void executeAsync(final AsyncReadBinding binding, final SingleResultCallback<BsonDocument> callback) {
-                withConnection(binding, new AsyncCallableWithConnectionAndSource() {
-                    @Override
-                    public void call(final AsyncConnectionSource connectionSource, final AsyncConnection connection, final Throwable t) {
-                        SingleResultCallback<BsonDocument> errHandlingCallback = errorHandlingCallback(callback, LOGGER);
-                        if (t != null) {
-                            errHandlingCallback.onResult(null, t);
-                        } else {
-                            AsyncReadBinding singleConnectionReadBinding =
-                            new AsyncSingleConnectionReadBinding(binding.getReadPreference(), connectionSource.getServerDescription(),
-                                                                 connection);
+        return (binding, callback) -> withConnection(binding, (AsyncCallableWithConnectionAndSource) (connectionSource, connection, t) -> {
+            SingleResultCallback<BsonDocument> errHandlingCallback = errorHandlingCallback(callback, LOGGER);
+            if (t != null) {
+                errHandlingCallback.onResult(null, t);
+            } else {
+                AsyncReadBinding singleConnectionReadBinding =
+                new AsyncSingleConnectionReadBinding(binding.getReadPreference(), connectionSource.getServerDescription(),
+                                                     connection);
 
-                            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
-                                new CommandReadOperation<BsonDocument>(namespace.getDatabaseName(),
-                                                                       new BsonDocument("explain", getCommand(binding.getSessionContext())),
-                                                                       new BsonDocumentCodec())
-                                .executeAsync(singleConnectionReadBinding,
-                                              releasingCallback(exceptionTransformingCallback(errHandlingCallback),
-                                                                singleConnectionReadBinding, connectionSource, connection));
-                            } else {
-                                createExplainableQueryOperation()
-                                .executeAsync(singleConnectionReadBinding,
-                                              releasingCallback(new ExplainResultCallback(errHandlingCallback),
-                                                      singleConnectionReadBinding, connectionSource, connection));
-                            }
-                        }
-                    }
-                });
+                if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+                    new CommandReadOperation<>(namespace.getDatabaseName(),
+                            new BsonDocument("explain", getCommand(binding.getSessionContext())),
+                            new BsonDocumentCodec())
+                    .executeAsync(singleConnectionReadBinding,
+                                  releasingCallback(exceptionTransformingCallback(errHandlingCallback),
+                                                    singleConnectionReadBinding, connectionSource, connection));
+                } else {
+                    createExplainableQueryOperation()
+                    .executeAsync(singleConnectionReadBinding,
+                                  releasingCallback(new ExplainResultCallback(errHandlingCallback),
+                                          singleConnectionReadBinding, connectionSource, connection));
+                }
             }
-        };
+        });
     }
 
+    @SuppressWarnings("deprecation")
     private FindOperation<BsonDocument> createExplainableQueryOperation() {
-        FindOperation<BsonDocument> explainFindOperation = new FindOperation<BsonDocument>(namespace, new BsonDocumentCodec());
+        FindOperation<BsonDocument> explainFindOperation = new FindOperation<>(namespace, new BsonDocumentCodec());
 
         BsonDocument explainModifiers = new BsonDocument();
         if (modifiers != null) {
@@ -965,7 +925,7 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         return document;
     }
 
-    private static final Map<String, String> META_OPERATOR_TO_COMMAND_FIELD_MAP = new HashMap<String, String>();
+    private static final Map<String, String> META_OPERATOR_TO_COMMAND_FIELD_MAP = new HashMap<>();
 
     static {
         META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$query", "filter");
@@ -1083,12 +1043,9 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
 
     private CommandTransformer<BsonDocument, BatchCursor<T>> transformer(final ConnectionSource source,
                                                                          final Connection connection) {
-        return new CommandTransformer<BsonDocument, BatchCursor<T>>() {
-            @Override
-            public BatchCursor<T> apply(final BsonDocument result, final ServerAddress serverAddress) {
-                QueryResult<T> queryResult = documentToQueryResult(result, serverAddress);
-                return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
-            }
+        return (result, serverAddress) -> {
+            QueryResult<T> queryResult = documentToQueryResult(result, serverAddress);
+            return new QueryBatchCursor<>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
         };
     }
 
@@ -1098,12 +1055,9 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
 
     private CommandTransformer<BsonDocument, AsyncBatchCursor<T>> asyncTransformer(final AsyncConnectionSource source,
                                                                                    final AsyncConnection connection) {
-        return new CommandTransformer<BsonDocument, AsyncBatchCursor<T>>() {
-            @Override
-            public AsyncBatchCursor<T> apply(final BsonDocument result, final ServerAddress serverAddress) {
-                QueryResult<T> queryResult = documentToQueryResult(result, serverAddress);
-                return new AsyncQueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
-            }
+        return (result, serverAddress) -> {
+            QueryResult<T> queryResult = documentToQueryResult(result, serverAddress);
+            return new AsyncQueryBatchCursor<>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
         };
     }
 
@@ -1111,7 +1065,7 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         QueryResult<T> queryResult;
         if (isExplain()) {
             T decodedDocument = decoder.decode(new BsonDocumentReader(result), DecoderContext.builder().build());
-            queryResult = new QueryResult<T>(getNamespace(), Collections.singletonList(decodedDocument), 0, serverAddress);
+            queryResult = new QueryResult<>(getNamespace(), Collections.singletonList(decodedDocument), 0, serverAddress);
         } else {
             queryResult = cursorDocumentToQueryResult(result.getDocument("cursor"), serverAddress);
         }
@@ -1130,17 +1084,14 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
             if (t != null) {
                 callback.onResult(null, t);
             } else {
-                cursor.next(new SingleResultCallback<List<BsonDocument>>() {
-                    @Override
-                    public void onResult(final List<BsonDocument> result, final Throwable t) {
-                        cursor.close();
-                        if (t != null) {
-                            callback.onResult(null, t);
-                        } else if (result == null || result.size() == 0) {
-                            callback.onResult(null, new MongoInternalException("Expected explain result"));
-                        } else {
-                            callback.onResult(result.get(0), null);
-                        }
+                cursor.next((result, t1) -> {
+                    cursor.close();
+                    if (t1 != null) {
+                        callback.onResult(null, t1);
+                    } else if (result == null || result.size() == 0) {
+                        callback.onResult(null, new MongoInternalException("Expected explain result"));
+                    } else {
+                        callback.onResult(result.get(0), null);
                     }
                 });
             }
