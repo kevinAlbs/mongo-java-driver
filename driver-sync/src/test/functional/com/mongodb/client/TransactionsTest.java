@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.ClusterFixture.isDiscoverableReplicaSet;
+import static com.mongodb.ClusterFixture.isSharded;
 import static com.mongodb.ClusterFixture.serverVersionAtLeast;
 import static com.mongodb.client.CommandMonitoringTestHelper.assertEventsEquality;
 import static com.mongodb.client.CommandMonitoringTestHelper.getExpectedEvents;
@@ -418,6 +419,6 @@ public class TransactionsTest {
     }
 
     private boolean canRunTests() {
-        return serverVersionAtLeast(4, 0) && isDiscoverableReplicaSet();
+        return serverVersionAtLeast(4, 0) && (isDiscoverableReplicaSet() || isSharded());
     }
 }
