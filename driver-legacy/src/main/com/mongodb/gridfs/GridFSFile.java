@@ -276,7 +276,7 @@ public abstract class GridFSFile implements DBObject {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public String toString() {
         return com.mongodb.util.JSON.serialize(this);
     }
