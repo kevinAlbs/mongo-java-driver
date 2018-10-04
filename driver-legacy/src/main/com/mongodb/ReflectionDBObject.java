@@ -212,7 +212,7 @@ public abstract class ReflectionDBObject implements DBObject {
          * @return true if the key exists
          * @deprecated
          */
-        @Deprecated
+        @Deprecated(since = "3.0", forRemoval = true)
         public boolean containsKey(final String key) {
             return keys.contains(key);
         }
