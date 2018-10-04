@@ -246,8 +246,8 @@ public abstract class GridFSFile implements DBObject {
         return extra.get(key);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    @Deprecated
     public boolean containsKey(final String key) {
         return containsField(key);
     }
