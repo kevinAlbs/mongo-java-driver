@@ -546,7 +546,7 @@ class DefaultServerSpecification extends Specification {
         }
     }
 
-    class TestCommandProtocol implements CommandProtocol<BsonDocument> {
+    class TestCommandProtocol implements CommandProtocol<BsonDocument, Object> {
         private final BsonDocument commandResult
         private final BsonDocument responseDocument
         private BsonDocument contextClusterTime
@@ -559,6 +559,11 @@ class DefaultServerSpecification extends Specification {
         @Override
         BsonDocument execute(final InternalConnection connection) {
             commandResult
+        }
+
+        @Override
+        CommandResultWithSequence<BsonDocument, Object> executeWithSequence(final InternalConnection connection) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -30,6 +30,7 @@ import com.mongodb.embedded.capi.MongoEmbeddedInstance;
 import com.mongodb.event.CommandListener;
 import com.mongodb.internal.connection.Authenticator;
 import com.mongodb.internal.connection.CommandMessage;
+import com.mongodb.internal.connection.CommandResultWithSequence;
 import com.mongodb.internal.connection.InternalConnection;
 import com.mongodb.internal.connection.InternalStreamConnection;
 import com.mongodb.internal.connection.InternalStreamConnectionInitializer;
@@ -100,6 +101,14 @@ class EmbeddedInternalConnection implements InternalConnection {
     @Override
     public <T> T sendAndReceive(final CommandMessage message, final Decoder<T> decoder, final SessionContext sessionContext) {
         return wrapped.sendAndReceive(message, decoder, sessionContext);
+    }
+
+    @Override
+    public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                             final Decoder<T> decoder,
+                                                                             final Decoder<D> documentSequenceDecoder,
+                                                                             final SessionContext sessionContext) {
+        return wrapped.sendAndReceiveWithSequence(message, decoder, documentSequenceDecoder, sessionContext);
     }
 
     @Override

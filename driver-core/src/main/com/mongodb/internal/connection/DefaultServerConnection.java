@@ -124,12 +124,22 @@ public class DefaultServerConnection extends AbstractReferenceCounted implements
     }
 
     @Override
+    public <T, D> CommandResultWithSequence<T, D> command(final String database, final BsonDocument command,
+                                                          final FieldNameValidator fieldNameValidator, final ReadPreference readPreference,
+                                                          final Decoder<T> commandResultDecoder, final Decoder<D> documentSequenceDecoder,
+                                                          final SessionContext sessionContext) {
+        return executeProtocolWithSequence(new CommandProtocolImpl<T, D>(database, command, fieldNameValidator, readPreference,
+                commandResultDecoder, documentSequenceDecoder, clusterConnectionMode), sessionContext);
+    }
+
+    @Override
     public <T> T command(final String database, final BsonDocument command, final FieldNameValidator commandFieldNameValidator,
                          final ReadPreference readPreference, final Decoder<T> commandResultDecoder, final SessionContext sessionContext,
                          final boolean responseExpected, final SplittablePayload payload,
                          final FieldNameValidator payloadFieldNameValidator) {
-        return executeProtocol(new CommandProtocolImpl<T>(database, command, commandFieldNameValidator, readPreference,
-                commandResultDecoder, responseExpected, payload, payloadFieldNameValidator, clusterConnectionMode), sessionContext);
+        final CommandProtocolImpl<T, Object> protocol = new CommandProtocolImpl<T, Object>(database, command, commandFieldNameValidator,
+                readPreference, commandResultDecoder, responseExpected, payload, payloadFieldNameValidator, clusterConnectionMode);
+        return executeProtocol(protocol, sessionContext);
     }
 
     @Override
@@ -153,7 +163,7 @@ public class DefaultServerConnection extends AbstractReferenceCounted implements
                                  final ReadPreference readPreference, final Decoder<T> commandResultDecoder,
                                  final SessionContext sessionContext, final boolean responseExpected, final SplittablePayload payload,
                                  final FieldNameValidator payloadFieldNameValidator, final SingleResultCallback<T> callback) {
-        executeProtocolAsync(new CommandProtocolImpl<T>(database, command, commandFieldNameValidator, readPreference,
+        executeProtocolAsync(new CommandProtocolImpl<T, Object>(database, command, commandFieldNameValidator, readPreference,
                 commandResultDecoder, responseExpected, payload,  payloadFieldNameValidator, clusterConnectionMode),
                 sessionContext, callback);
     }
@@ -265,8 +275,13 @@ public class DefaultServerConnection extends AbstractReferenceCounted implements
         return protocolExecutor.execute(protocol, this.wrapped);
     }
 
-    private <T> T executeProtocol(final CommandProtocol<T> protocol, final SessionContext sessionContext) {
+    private <T, D> T executeProtocol(final CommandProtocol<T, D> protocol, final SessionContext sessionContext) {
         return protocolExecutor.execute(protocol, this.wrapped, sessionContext);
+    }
+
+    private <T, D> CommandResultWithSequence<T, D> executeProtocolWithSequence(final CommandProtocol<T, D> protocol,
+                                                                               final SessionContext sessionContext) {
+        return protocolExecutor.executeWithSequence(protocol, this.wrapped, sessionContext);
     }
 
     private <T> void executeProtocolAsync(final LegacyProtocol<T> protocol, final SingleResultCallback<T> callback) {
@@ -278,7 +293,7 @@ public class DefaultServerConnection extends AbstractReferenceCounted implements
         }
     }
 
-    private <T> void executeProtocolAsync(final CommandProtocol<T> protocol, final SessionContext sessionContext,
+    private <T, D> void executeProtocolAsync(final CommandProtocol<T, D> protocol, final SessionContext sessionContext,
                                           final SingleResultCallback<T> callback) {
         SingleResultCallback<T> errHandlingCallback = errorHandlingCallback(callback, LOGGER);
         try {

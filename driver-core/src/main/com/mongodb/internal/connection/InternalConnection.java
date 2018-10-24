@@ -73,6 +73,9 @@ public interface InternalConnection extends BufferProvider {
      */
     <T> T sendAndReceive(CommandMessage message, Decoder<T> decoder, SessionContext sessionContext);
 
+    <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(CommandMessage message, Decoder<T> decoder,
+                                                                      Decoder<D> documentSequenceDecoder, SessionContext sessionContext);
+
     /**
      * Send a command message to the server.
      *
@@ -115,5 +118,4 @@ public interface InternalConnection extends BufferProvider {
      * @param callback the callback to invoke on completion
      */
     void receiveMessageAsync(int responseTo, SingleResultCallback<ResponseBuffers> callback);
-
 }

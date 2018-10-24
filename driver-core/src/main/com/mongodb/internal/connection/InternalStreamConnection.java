@@ -262,6 +262,37 @@ public class InternalStreamConnection implements InternalConnection {
             throw e;
         }
     }
+
+    @Override
+    public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message, final Decoder<T> decoder,
+                                                                             final Decoder<D> documentSequenceDecoder,
+                                                                             final SessionContext sessionContext) {
+        ByteBufferBsonOutput bsonOutput = new ByteBufferBsonOutput(this);
+        CommandEventSender commandEventSender;
+
+        try {
+            message.encode(bsonOutput, sessionContext);
+            commandEventSender = createCommandEventSender(message, bsonOutput);
+            commandEventSender.sendStartedEvent();
+        } catch (RuntimeException e) {
+            bsonOutput.close();
+            throw e;
+        }
+
+        try {
+            sendCommandMessage(message, bsonOutput, sessionContext);
+            if (message.isResponseExpected()) {
+                return receiveCommandMessageResponseWithSequence(message, decoder, commandEventSender, sessionContext);
+            } else {
+                commandEventSender.sendSucceededEventForOneWayCommand();
+                return null;
+            }
+        } catch (RuntimeException e) {
+            commandEventSender.sendFailedEvent(e);
+            throw e;
+        }
+    }
+
     private void sendCommandMessage(final CommandMessage message,
                                     final ByteBufferBsonOutput bsonOutput, final SessionContext sessionContext) {
         try {
@@ -297,6 +328,27 @@ public class InternalStreamConnection implements InternalConnection {
             commandEventSender.sendSucceededEvent(responseBuffers);
 
             return getCommandResult(decoder, responseBuffers, message.getId());
+        } finally {
+            responseBuffers.close();
+        }
+    }
+
+    // TODO: Rubber, meet road
+    private <D, T> CommandResultWithSequence<T, D> receiveCommandMessageResponseWithSequence(final CommandMessage message,
+                                                                                             final Decoder<T> decoder,
+                                                                                             final CommandEventSender commandEventSender,
+                                                                                             final SessionContext sessionContext) {
+        ResponseBuffers responseBuffers = receiveMessage(message.getId());
+        try {
+            updateSessionContext(sessionContext, responseBuffers);
+            if (!isCommandOk(responseBuffers)) {
+                throw getCommandFailureException(responseBuffers.getResponseDocument(message.getId(), new BsonDocumentCodec()),
+                        description.getServerAddress());
+            }
+
+            commandEventSender.sendSucceededEvent(responseBuffers);
+
+            return new CommandResultWithSequence<T, D>(getCommandResult(decoder, responseBuffers, message.getId()));
         } finally {
             responseBuffers.close();
         }

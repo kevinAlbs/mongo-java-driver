@@ -449,6 +449,20 @@ class DefaultConnectionPool implements ConnectionPool {
         }
 
         @Override
+        public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                                 final Decoder<T> decoder,
+                                                                                 final Decoder<D> documentSequenceDecoder,
+                                                                                 final SessionContext sessionContext) {
+            isTrue("open", !isClosed.get());
+            try {
+                return wrapped.sendAndReceiveWithSequence(message, decoder, documentSequenceDecoder, sessionContext);
+            } catch (MongoException e) {
+                incrementGenerationOnSocketException(this, e);
+                throw e;
+            }
+        }
+
+        @Override
         public <T> void sendAndReceiveAsync(final CommandMessage message, final Decoder<T> decoder,
                                             final SessionContext sessionContext, final SingleResultCallback<T> callback) {
             isTrue("open", !isClosed.get());

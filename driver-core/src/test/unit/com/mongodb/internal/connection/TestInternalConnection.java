@@ -167,6 +167,14 @@ class TestInternalConnection implements InternalConnection {
         }
     }
 
+    @Override
+    public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                             final Decoder<T> decoder,
+                                                                             final Decoder<D> documentSequenceDecoder,
+                                                                             final SessionContext sessionContext) {
+        return new CommandResultWithSequence<T, D>(sendAndReceive(message, decoder, sessionContext));
+    }
+
     private <T extends BsonDocument> T getResponseDocument(final ResponseBuffers responseBuffers,
                                                            final CommandMessage commandMessage, final Decoder<T> decoder) {
         ReplyMessage<T> replyMessage = new ReplyMessage<T>(responseBuffers, decoder, commandMessage.getId());

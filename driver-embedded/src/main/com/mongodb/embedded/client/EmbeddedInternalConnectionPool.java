@@ -19,6 +19,7 @@ package com.mongodb.embedded.client;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.internal.connection.CommandMessage;
+import com.mongodb.internal.connection.CommandResultWithSequence;
 import com.mongodb.internal.connection.ConcurrentPool;
 import com.mongodb.internal.connection.InternalConnection;
 import com.mongodb.internal.connection.ResponseBuffers;
@@ -127,6 +128,14 @@ class EmbeddedInternalConnectionPool {
         @Override
         public <T> T sendAndReceive(final CommandMessage message, final Decoder<T> decoder, final SessionContext sessionContext) {
             return wrapped.sendAndReceive(message, decoder, sessionContext);
+        }
+
+        @Override
+        public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                                 final Decoder<T> decoder,
+                                                                                 final Decoder<D> documentSequenceDecoder,
+                                                                                 final SessionContext sessionContext) {
+            return wrapped.sendAndReceiveWithSequence(message, decoder, documentSequenceDecoder, sessionContext);
         }
 
         @Override

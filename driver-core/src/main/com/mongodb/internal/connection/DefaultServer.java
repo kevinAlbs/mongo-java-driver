@@ -193,7 +193,7 @@ class DefaultServer implements ClusterableServer {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T execute(final CommandProtocol<T> protocol, final InternalConnection connection,
+        public <T, D> T execute(final CommandProtocol<T, D> protocol, final InternalConnection connection,
                              final SessionContext sessionContext) {
             try {
                 protocol.sessionContext(new ClusterClockAdvancingSessionContext(sessionContext, clusterClock));
@@ -209,7 +209,24 @@ class DefaultServer implements ClusterableServer {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> void executeAsync(final CommandProtocol<T> protocol, final InternalConnection connection,
+        public <T, D> CommandResultWithSequence<T, D> executeWithSequence(final CommandProtocol<T, D> protocol,
+                                                                          final InternalConnection connection,
+                                                                          final SessionContext sessionContext) {
+            try {
+                protocol.sessionContext(new ClusterClockAdvancingSessionContext(sessionContext, clusterClock));
+                return protocol.executeWithSequence(connection);
+            } catch (MongoWriteConcernWithResponseException e) {
+                invalidate();
+                return new CommandResultWithSequence<T, D>((T) e.getResponse());
+            } catch (MongoException e) {
+                handleThrowable(e);
+                throw e;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T, D> void executeAsync(final CommandProtocol<T, D> protocol, final InternalConnection connection,
                                      final SessionContext sessionContext, final SingleResultCallback<T> callback) {
             protocol.sessionContext(new ClusterClockAdvancingSessionContext(sessionContext, clusterClock));
             protocol.executeAsync(connection, errorHandlingCallback(new SingleResultCallback<T>() {

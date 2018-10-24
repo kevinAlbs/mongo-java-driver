@@ -19,11 +19,13 @@ package com.mongodb.internal.connection;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.session.SessionContext;
 
-public interface CommandProtocol<T> {
+public interface CommandProtocol<T, D> {
 
     T execute(InternalConnection connection);
 
+    CommandResultWithSequence<T, D> executeWithSequence(InternalConnection connection);
+
     void executeAsync(InternalConnection connection, SingleResultCallback<T> callback);
 
-    CommandProtocol<T> sessionContext(SessionContext sessionContext);
+    CommandProtocol<T, D> sessionContext(SessionContext sessionContext);
 }

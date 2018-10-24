@@ -30,7 +30,7 @@ import static com.mongodb.assertions.Assertions.isTrueArgument;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.connection.ProtocolHelper.getMessageSettings;
 
-class CommandProtocolImpl<T> implements CommandProtocol<T> {
+class CommandProtocolImpl<T, D> implements CommandProtocol<T, D> {
     private final MongoNamespace namespace;
     private final BsonDocument command;
     private final SplittablePayload payload;
@@ -38,6 +38,7 @@ class CommandProtocolImpl<T> implements CommandProtocol<T> {
     private final FieldNameValidator commandFieldNameValidator;
     private final FieldNameValidator payloadFieldNameValidator;
     private final Decoder<T> commandResultDecoder;
+    private final Decoder<D> documentSequenceDecoder;
     private final boolean responseExpected;
     private final ClusterConnectionMode clusterConnectionMode;
     private SessionContext sessionContext;
@@ -58,6 +59,7 @@ class CommandProtocolImpl<T> implements CommandProtocol<T> {
         this.commandFieldNameValidator = notNull("commandFieldNameValidator", commandFieldNameValidator);
         this.readPreference = readPreference;
         this.commandResultDecoder = notNull("commandResultDecoder", commandResultDecoder);
+        this.documentSequenceDecoder = null;
         this.responseExpected = responseExpected;
         this.payload = payload;
         this.payloadFieldNameValidator = payloadFieldNameValidator;
@@ -67,9 +69,31 @@ class CommandProtocolImpl<T> implements CommandProtocol<T> {
                 payload == null || payloadFieldNameValidator != null);
     }
 
+    CommandProtocolImpl(final String database, final BsonDocument command, final FieldNameValidator commandFieldNameValidator,
+                        final ReadPreference readPreference, final Decoder<T> commandResultDecoder,
+                        final Decoder<D> documentSequenceDecoder, final ClusterConnectionMode clusterConnectionMode) {
+        notNull("database", database);
+        this.namespace = new MongoNamespace(notNull("database", database), MongoNamespace.COMMAND_COLLECTION_NAME);
+        this.command = notNull("command", command);
+        this.commandFieldNameValidator = notNull("commandFieldNameValidator", commandFieldNameValidator);
+        this.readPreference = readPreference;
+        this.commandResultDecoder = notNull("commandResultDecoder", commandResultDecoder);
+        this.documentSequenceDecoder = documentSequenceDecoder;
+        this.responseExpected = true;
+        this.payload = null;
+        this.payloadFieldNameValidator = null;
+        this.clusterConnectionMode = notNull("clusterConnectionMode", clusterConnectionMode);
+    }
+
     @Override
     public T execute(final InternalConnection connection) {
         return connection.sendAndReceive(getCommandMessage(connection), commandResultDecoder, sessionContext);
+    }
+
+    @Override
+    public CommandResultWithSequence<T, D> executeWithSequence(final InternalConnection connection) {
+        return connection.sendAndReceiveWithSequence(getCommandMessage(connection), commandResultDecoder, documentSequenceDecoder,
+                sessionContext);
     }
 
     @Override
@@ -92,7 +116,7 @@ class CommandProtocolImpl<T> implements CommandProtocol<T> {
     }
 
     @Override
-    public CommandProtocolImpl<T> sessionContext(final SessionContext sessionContext) {
+    public CommandProtocolImpl<T, D> sessionContext(final SessionContext sessionContext) {
         this.sessionContext = sessionContext;
         return this;
     }

@@ -34,6 +34,7 @@ import com.mongodb.internal.connection.ClusterClock;
 import com.mongodb.internal.connection.ClusterClockAdvancingSessionContext;
 import com.mongodb.internal.connection.CommandHelper;
 import com.mongodb.internal.connection.CommandProtocol;
+import com.mongodb.internal.connection.CommandResultWithSequence;
 import com.mongodb.internal.connection.DefaultServerConnection;
 import com.mongodb.internal.connection.DescriptionHelper;
 import com.mongodb.internal.connection.InternalConnection;
@@ -142,14 +143,21 @@ class EmbeddedServer implements Server, Closeable {
         }
 
         @Override
-        public <T> T execute(final CommandProtocol<T> protocol, final InternalConnection connection,
+        public <T, D> T execute(final CommandProtocol<T, D> protocol, final InternalConnection connection,
                              final SessionContext sessionContext) {
             protocol.sessionContext(new ClusterClockAdvancingSessionContext(sessionContext, clusterClock));
             return protocol.execute(connection);
         }
 
         @Override
-        public <T> void executeAsync(final CommandProtocol<T> protocol, final InternalConnection connection,
+        public <T, D> CommandResultWithSequence<T, D> executeWithSequence(final CommandProtocol<T, D> protocol,
+                                                                          final InternalConnection connection,
+                                                                          final SessionContext sessionContext) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T, D> void executeAsync(final CommandProtocol<T, D> protocol, final InternalConnection connection,
                                      final SessionContext sessionContext, final SingleResultCallback<T> callback) {
             protocol.sessionContext(new ClusterClockAdvancingSessionContext(sessionContext, clusterClock));
             protocol.executeAsync(connection, errorHandlingCallback(callback, LOGGER));

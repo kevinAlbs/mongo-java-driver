@@ -24,9 +24,12 @@ import com.mongodb.ServerAddress;
 import com.mongodb.ServerCursor;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.connection.Connection;
+import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
+import com.mongodb.internal.connection.CommandResultWithSequence;
 import com.mongodb.internal.validator.NoOpFieldNameValidator;
 import org.bson.BsonArray;
+import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
@@ -40,6 +43,7 @@ import java.util.NoSuchElementException;
 
 import static com.mongodb.assertions.Assertions.isTrueArgument;
 import static com.mongodb.assertions.Assertions.notNull;
+import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionFourDotTwo;
 import static com.mongodb.operation.CursorHelper.getNumberToReturn;
 import static com.mongodb.operation.OperationHelper.getMoreCursorDocumentToQueryResult;
 import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionThreeDotTwo;
@@ -220,10 +224,11 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
             if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
                 try {
                     initFromCommandResult(connection.command(namespace.getDatabaseName(),
-                                                             asGetMoreCommandDocument(),
+                                                             asGetMoreCommandDocument(connection.getDescription()),
                                                              NO_OP_FIELD_NAME_VALIDATOR,
                                                              ReadPreference.primary(),
                                                              CommandResultDocumentCodec.create(decoder, "nextBatch"),
+                                                             decoder,
                                                              connectionSource.getSessionContext()));
                 } catch (MongoCommandException e) {
                     throw translateCommandException(e, serverCursor);
@@ -245,7 +250,7 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
         }
     }
 
-    private BsonDocument asGetMoreCommandDocument() {
+    private BsonDocument asGetMoreCommandDocument(final ConnectionDescription description) {
         BsonDocument document = new BsonDocument("getMore", new BsonInt64(serverCursor.getId()))
                                 .append("collection", new BsonString(namespace.getCollectionName()));
 
@@ -257,6 +262,10 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
             document.append("maxTimeMS", new BsonInt64(maxTimeMS));
         }
 
+        if (serverIsAtLeastVersionFourDotTwo(description)) {
+            document.put("tempOptInToDocumentSequences", BsonBoolean.TRUE);
+        }
+
         return document;
     }
 
@@ -264,6 +273,20 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
         serverCursor = queryResult.getCursor();
         nextBatch = queryResult.getResults().isEmpty() ? null : queryResult.getResults();
         count += queryResult.getResults().size();
+    }
+
+    private void initFromCommandResult(final CommandResultWithSequence<BsonDocument, T> getMoreCommandResultWithSequence) {
+        if (getMoreCommandResultWithSequence.getDocumentSequence() == null) {
+            initFromCommandResult(getMoreCommandResultWithSequence.getCommandResult());
+        } else {
+            // TODO: refactor this so it can be shared
+            BsonDocument cursorDocument = getMoreCommandResultWithSequence.getCommandResult().getDocument("cursor");
+            long cursorId = ((BsonInt64) cursorDocument.get("id")).getValue();
+            MongoNamespace queryResultNamespace = new MongoNamespace(cursorDocument.getString("ns").getValue());
+            QueryResult<T> queryResult = new QueryResult<T>(queryResultNamespace, getMoreCommandResultWithSequence.getDocumentSequence(),
+                    cursorId, serverAddress);
+            initFromQueryResult(queryResult);
+        }
     }
 
     private void initFromCommandResult(final BsonDocument getMoreCommandResultDocument) {

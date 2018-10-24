@@ -37,6 +37,8 @@ import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
+import com.mongodb.internal.connection.CommandResultWithSequence;
+import com.mongodb.internal.validator.NoOpFieldNameValidator;
 import com.mongodb.operation.OperationHelper.CallableWithConnectionAndSource;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonBoolean;
@@ -61,9 +63,9 @@ import static com.mongodb.assertions.Assertions.isTrueArgument;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.connection.ServerType.SHARD_ROUTER;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
+import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionFourDotTwo;
 import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionThreeDotTwo;
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformer;
-import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocol;
 import static com.mongodb.operation.CommandOperationHelper.executeWrappedCommandProtocolAsync;
 import static com.mongodb.operation.DocumentHelper.putIfNotNullOrEmpty;
 import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionAndSource;
@@ -699,10 +701,13 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
                 if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
                     try {
                         validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
-                        return executeWrappedCommandProtocol(binding, namespace.getDatabaseName(),
-                                                             wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
-                                                             CommandResultDocumentCodec.create(decoder, FIRST_BATCH),
-                                                             connection, transformer(source, connection));
+                        return resultWithDocumentSequenceTransformer(source, connection).apply(
+                                connection.command(namespace.getDatabaseName(),
+                                        wrapInExplainIfNecessary(getCommand(binding.getSessionContext(), connection.getDescription(),
+                                                true)),
+                                        new NoOpFieldNameValidator(), binding.getReadPreference(),
+                                        CommandResultDocumentCodec.create(decoder, FIRST_BATCH), decoder, binding.getSessionContext()),
+                                connection.getDescription().getServerAddress());
                     } catch (MongoCommandException e) {
                         throw new MongoQueryException(e);
                     }
@@ -748,7 +753,8 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
                                             wrappedCallback.onResult(null, t);
                                         } else {
                                             executeWrappedCommandProtocolAsync(binding, namespace.getDatabaseName(),
-                                                    wrapInExplainIfNecessary(getCommand(binding.getSessionContext())),
+                                                    wrapInExplainIfNecessary(
+                                                            getCommand(binding.getSessionContext(), connection.getDescription(), false)),
                                                     CommandResultDocumentCodec.create(decoder, FIRST_BATCH), connection,
                                                     asyncTransformer(source, connection), wrappedCallback);
                                         }
@@ -833,7 +839,9 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
                                 try {
                                     return new CommandReadOperation<BsonDocument>(getNamespace().getDatabaseName(),
                                                                                   new BsonDocument("explain",
-                                                                                                   getCommand(binding.getSessionContext())),
+                                                                                                   getCommand(binding.getSessionContext(),
+                                                                                                           connection.getDescription(),
+                                                                                                           false)),
                                                                                   new BsonDocumentCodec()).execute(singleConnectionBinding);
                                 } catch (MongoCommandException e) {
                                     throw new MongoQueryException(e);
@@ -879,7 +887,9 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
 
                             if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
                                 new CommandReadOperation<BsonDocument>(namespace.getDatabaseName(),
-                                                                       new BsonDocument("explain", getCommand(binding.getSessionContext())),
+                                                                       new BsonDocument("explain",
+                                                                               getCommand(binding.getSessionContext(),
+                                                                                       connection.getDescription(), false)),
                                                                        new BsonDocumentCodec())
                                 .executeAsync(singleConnectionReadBinding,
                                               releasingCallback(exceptionTransformingCallback(errHandlingCallback),
@@ -985,7 +995,8 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         META_OPERATOR_TO_COMMAND_FIELD_MAP.put("$snapshot", "snapshot");
     }
 
-    private BsonDocument getCommand(final SessionContext sessionContext) {
+    private BsonDocument getCommand(final SessionContext sessionContext, final ConnectionDescription connectionDescription,
+                                    final boolean documentSequenceOptIn) {
         BsonDocument commandDocument = new BsonDocument("find", new BsonString(namespace.getCollectionName()));
 
         appendReadConcernToCommand(sessionContext, commandDocument);
@@ -1062,6 +1073,10 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         if (snapshot) {
             commandDocument.put("snapshot", BsonBoolean.TRUE);
         }
+
+        if (serverIsAtLeastVersionFourDotTwo(connectionDescription)) {
+            commandDocument.put("tempOptInToDocumentSequences", new BsonBoolean(documentSequenceOptIn));
+        }
         return commandDocument;
     }
 
@@ -1085,13 +1100,23 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         return cursorType == CursorType.TailableAwait;
     }
 
-    private CommandTransformer<BsonDocument, BatchCursor<T>> transformer(final ConnectionSource source,
-                                                                         final Connection connection) {
-        return new CommandTransformer<BsonDocument, BatchCursor<T>>() {
+    private CommandTransformer<CommandResultWithSequence<BsonDocument, T>, BatchCursor<T>> resultWithDocumentSequenceTransformer(
+            final ConnectionSource source, final Connection connection) {
+        return new CommandTransformer<CommandResultWithSequence<BsonDocument, T>, BatchCursor<T>>() {
             @Override
-            public BatchCursor<T> apply(final BsonDocument result, final ServerAddress serverAddress) {
-                QueryResult<T> queryResult = documentToQueryResult(result, serverAddress);
-                return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+            public BatchCursor<T> apply(final CommandResultWithSequence<BsonDocument, T> result, final ServerAddress serverAddress) {
+                if (result.getDocumentSequence() == null) {
+                    QueryResult<T> queryResult = documentToQueryResult(result.getCommandResult(), serverAddress);
+                    return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+                } else {
+                    // TODO: refactor this so it can be shared
+                    BsonDocument cursorDocument = result.getCommandResult().getDocument("cursor");
+                    long cursorId = ((BsonInt64) cursorDocument.get("id")).getValue();
+                    MongoNamespace queryResultNamespace = new MongoNamespace(cursorDocument.getString("ns").getValue());
+                    QueryResult<T> queryResult = new QueryResult<T>(queryResultNamespace, result.getDocumentSequence(), cursorId,
+                            serverAddress);
+                    return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+                }
             }
         };
     }

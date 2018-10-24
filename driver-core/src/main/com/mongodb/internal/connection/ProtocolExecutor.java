@@ -24,8 +24,11 @@ public interface ProtocolExecutor {
 
     <T> void executeAsync(LegacyProtocol<T> protocol, InternalConnection connection, SingleResultCallback<T> callback);
 
-    <T> T execute(CommandProtocol<T> protocol, InternalConnection connection, SessionContext sessionContext);
+    <T, D> T execute(CommandProtocol<T, D> protocol, InternalConnection connection, SessionContext sessionContext);
 
-    <T> void executeAsync(CommandProtocol<T> protocol, InternalConnection connection, SessionContext sessionContext,
+    <T, D> CommandResultWithSequence<T, D> executeWithSequence(CommandProtocol<T, D> protocol, InternalConnection connection,
+                                                               SessionContext sessionContext);
+
+    <T, D> void executeAsync(CommandProtocol<T, D> protocol, InternalConnection connection, SessionContext sessionContext,
                           SingleResultCallback<T> callback);
 }

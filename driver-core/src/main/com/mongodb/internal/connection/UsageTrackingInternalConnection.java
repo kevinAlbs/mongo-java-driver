@@ -102,6 +102,17 @@ class UsageTrackingInternalConnection implements InternalConnection {
     }
 
     @Override
+    public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                             final Decoder<T> decoder,
+                                                                             final Decoder<D> documentSequenceDecoder,
+                                                                             final SessionContext sessionContext) {
+        CommandResultWithSequence<T, D> result = wrapped.sendAndReceiveWithSequence(message, decoder, documentSequenceDecoder,
+                sessionContext);
+        lastUsedAt = System.currentTimeMillis();
+        return result;
+    }
+
+    @Override
     public <T> void sendAndReceiveAsync(final CommandMessage message, final Decoder<T> decoder,
                                         final SessionContext sessionContext, final SingleResultCallback<T> callback) {
         SingleResultCallback<T> errHandlingCallback = errorHandlingCallback(new SingleResultCallback<T>() {

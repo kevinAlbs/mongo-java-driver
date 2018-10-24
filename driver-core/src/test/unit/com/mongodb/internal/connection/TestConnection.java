@@ -118,6 +118,14 @@ class TestConnection implements Connection, AsyncConnection {
     }
 
     @Override
+    public <T, D> CommandResultWithSequence<T, D> command(final String database, final BsonDocument command,
+                                                          final FieldNameValidator fieldNameValidator, final ReadPreference readPreference,
+                                                          final Decoder<T> commandResultDecoder, final Decoder<D> documentSequenceDecoder,
+                                                          final SessionContext sessionContext) {
+        return new CommandResultWithSequence<T, D>(this.<T>executeEnqueuedCommandBasedProtocol(sessionContext));
+    }
+
+    @Override
     public <T> T command(final String database, final BsonDocument command, final FieldNameValidator commandFieldNameValidator,
                          final ReadPreference readPreference, final Decoder<T> commandResultDecoder, final SessionContext sessionContext,
                          final boolean responseExpected, final SplittablePayload payload,

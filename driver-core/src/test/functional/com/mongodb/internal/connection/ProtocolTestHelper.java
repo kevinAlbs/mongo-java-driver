@@ -33,7 +33,7 @@ final class ProtocolTestHelper {
         }
     }
 
-    public static <T> T execute(final CommandProtocol<T> protocol, final InternalConnection connection, final boolean async)
+    public static <T, D> T execute(final CommandProtocol<T, D> protocol, final InternalConnection connection, final boolean async)
             throws Throwable{
         if (async) {
             final FutureResultCallback<T> futureResultCallback = new FutureResultCallback<T>();

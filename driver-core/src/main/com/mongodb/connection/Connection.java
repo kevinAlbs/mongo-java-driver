@@ -24,6 +24,7 @@ import com.mongodb.binding.ReferenceCounted;
 import com.mongodb.bulk.DeleteRequest;
 import com.mongodb.bulk.InsertRequest;
 import com.mongodb.bulk.UpdateRequest;
+import com.mongodb.internal.connection.CommandResultWithSequence;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonDocument;
 import org.bson.FieldNameValidator;
@@ -116,6 +117,25 @@ public interface Connection extends ReferenceCounted {
      */
     <T> T command(String database, BsonDocument command, FieldNameValidator fieldNameValidator, ReadPreference readPreference,
                   Decoder<T> commandResultDecoder, SessionContext sessionContext);
+
+    /**
+     * Execute the command.
+     *
+     * @param <T>                  the type of the result
+     * @param <D>                  the type of the document sequence result
+     * @param database             the database to execute the command in
+     * @param command              the command document
+     * @param fieldNameValidator   the field name validator for the command document
+     * @param readPreference       the read preference that was applied to get this connection, or null if this is a write operation
+     * @param commandResultDecoder the decoder for the result
+     * @param documentSequenceDecoder the document sequence decoder
+     * @param sessionContext       the session context
+     * @return the command result
+     * @since 3.6
+     */
+    <T, D> CommandResultWithSequence<T, D> command(String database, BsonDocument command, FieldNameValidator fieldNameValidator,
+                                                   ReadPreference readPreference, Decoder<T> commandResultDecoder,
+                                                   Decoder<D> documentSequenceDecoder, SessionContext sessionContext);
 
     /**
      * Executes the command, consuming as much of the {@code SplittablePayload} as possible.

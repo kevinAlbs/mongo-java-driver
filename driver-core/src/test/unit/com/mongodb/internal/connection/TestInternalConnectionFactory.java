@@ -93,6 +93,14 @@ class TestInternalConnectionFactory implements InternalConnectionFactory {
         }
 
         @Override
+        public <D, T> CommandResultWithSequence<T, D> sendAndReceiveWithSequence(final CommandMessage message,
+                                                                                 final Decoder<T> decoder,
+                                                                                 final Decoder<D> documentSequenceDecoder,
+                                                                                 final SessionContext sessionContext) {
+            return null;
+        }
+
+        @Override
         public <T> void sendAndReceiveAsync(final CommandMessage message, final Decoder<T> decoder,
                                             final SessionContext sessionContext, final SingleResultCallback<T> callback) {
             callback.onResult(null, null);
