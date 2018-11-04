@@ -21,9 +21,12 @@ import com.mongodb.connection.ByteBufferBsonOutput;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.event.CommandListener;
+import org.bson.BsonBinaryReader;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonReader;
+import org.bson.ByteBuf;
+import org.bson.codecs.DecoderContext;
 import org.bson.codecs.RawBsonDocumentCodec;
 import org.bson.json.JsonMode;
 import org.bson.json.JsonWriter;
@@ -126,7 +129,7 @@ class LoggingCommandEventSender implements CommandEventSender {
     }
 
     @Override
-    public void sendSucceededEvent(final ResponseBuffers responseBuffers) {
+    public void sendSucceededEvent(final ByteBuf documentByteBuf) {
         long elapsedTimeNanos = System.nanoTime() - startTimeNanos;
 
         if (loggingRequired()) {
@@ -139,7 +142,7 @@ class LoggingCommandEventSender implements CommandEventSender {
         if (eventRequired()) {
             BsonDocument responseDocumentForEvent = (securitySensitiveCommands.contains(commandName))
                     ? new BsonDocument()
-                    : responseBuffers.getResponseDocument(message.getId(), new RawBsonDocumentCodec());
+                    : new RawBsonDocumentCodec().decode(new BsonBinaryReader(documentByteBuf.asNIO()), DecoderContext.builder().build());
             sendCommandSucceededEvent(message, commandName, responseDocumentForEvent, description,
                     elapsedTimeNanos, commandListener);
         }

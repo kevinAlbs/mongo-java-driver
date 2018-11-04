@@ -43,6 +43,7 @@ import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.BsonType;
 import org.bson.BsonValue;
+import org.bson.ByteBuf;
 import org.bson.codecs.BsonValueCodecProvider;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -79,7 +80,7 @@ public final class ProtocolHelper {
         BsonBoolean updatedExisting = result.getBoolean("updatedExisting", BsonBoolean.FALSE);
 
         return WriteConcernResult.acknowledged(result.getNumber("n", new BsonInt32(0)).intValue(),
-                                               updatedExisting.getValue(), result.get("upserted"));
+                updatedExisting.getValue(), result.get("upserted"));
     }
 
 
@@ -92,16 +93,12 @@ public final class ProtocolHelper {
         return isCommandOk(getField(bsonReader, "ok"));
     }
 
-    static boolean isCommandOk(final ResponseBuffers responseBuffers) {
-        try {
-            return isCommandOk(createBsonReader(responseBuffers));
-        } finally {
-            responseBuffers.reset();
-        }
+    static boolean isCommandOk(final ByteBuf documentByteBuf) {
+        return isCommandOk(createBsonReader(documentByteBuf));
     }
 
-    static MongoException createSpecialWriteConcernException(final ResponseBuffers responseBuffers, final ServerAddress serverAddress) {
-        BsonValue writeConcernError = getField(createBsonReader(responseBuffers), "writeConcernError");
+    static MongoException createSpecialWriteConcernException(final ByteBuf documentByteBuf, final ServerAddress serverAddress) {
+        BsonValue writeConcernError = getField(createBsonReader(documentByteBuf), "writeConcernError");
         if (writeConcernError == null) {
             return null;
         } else {
@@ -109,28 +106,20 @@ public final class ProtocolHelper {
         }
     }
 
-    static BsonTimestamp getOperationTime(final ResponseBuffers responseBuffers) {
-        try {
-            BsonValue operationTime = getField(createBsonReader(responseBuffers), "operationTime");
-            if (operationTime == null) {
-                return null;
-            }
-            return operationTime.asTimestamp();
-        } finally {
-            responseBuffers.reset();
+    static BsonTimestamp getOperationTime(final ByteBuf documentByteBuf) {
+        BsonValue operationTime = getField(createBsonReader(documentByteBuf), "operationTime");
+        if (operationTime == null) {
+            return null;
         }
+        return operationTime.asTimestamp();
     }
 
-    static BsonDocument getClusterTime(final ResponseBuffers responseBuffers) {
-        try {
-            BsonValue clusterTime = getField(createBsonReader(responseBuffers), "$clusterTime");
-            if (clusterTime == null) {
-                return null;
-            }
-            return clusterTime.asDocument();
-        } finally {
-            responseBuffers.reset();
+    static BsonDocument getClusterTime(final ByteBuf documentByteBuf) {
+        BsonValue clusterTime = getField(createBsonReader(documentByteBuf), "$clusterTime");
+        if (clusterTime == null) {
+            return null;
         }
+        return clusterTime.asDocument();
     }
 
     static BsonDocument getClusterTime(final BsonDocument response) {
@@ -141,8 +130,8 @@ public final class ProtocolHelper {
         return clusterTime.asDocument();
     }
 
-    private static BsonBinaryReader createBsonReader(final ResponseBuffers responseBuffers) {
-        return new BsonBinaryReader(new ByteBufferBsonInput(responseBuffers.getBodyByteBuffer()));
+    private static BsonBinaryReader createBsonReader(final ByteBuf documentByteBuf) {
+        return new BsonBinaryReader(new ByteBufferBsonInput(documentByteBuf));
     }
 
 
@@ -232,6 +221,7 @@ public final class ProtocolHelper {
 
     private static final List<Integer> NOT_MASTER_CODES = asList(10107, 13435);
     private static final List<Integer> RECOVERING_CODES = asList(11600, 11602, 13436, 189, 91);
+
     public static MongoException createSpecialException(final BsonDocument response, final ServerAddress serverAddress,
                                                         final String errorMessageFieldName) {
         if (response == null) {
@@ -252,7 +242,6 @@ public final class ProtocolHelper {
             return null;
         }
     }
-
 
 
     private static boolean hasWriteError(final BsonDocument response) {
@@ -279,7 +268,7 @@ public final class ProtocolHelper {
                                         final CommandListener commandListener) {
         try {
             commandListener.commandStarted(new CommandStartedEvent(message.getId(), connectionDescription,
-                                                                   databaseName, commandName, command));
+                    databaseName, commandName, command));
         } catch (Exception e) {
             if (PROTOCOL_EVENT_LOGGER.isWarnEnabled()) {
                 PROTOCOL_EVENT_LOGGER.warn(format("Exception thrown raising command started event to listener %s", commandListener), e);

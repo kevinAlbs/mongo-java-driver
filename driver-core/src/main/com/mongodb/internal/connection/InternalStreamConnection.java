@@ -43,7 +43,7 @@ import org.bson.BsonBinaryReader;
 import org.bson.ByteBuf;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.Decoder;
-import org.bson.io.ByteBufferBsonInput;
+import org.bson.codecs.DecoderContext;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -61,6 +61,7 @@ import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 import static com.mongodb.internal.connection.MessageHeader.MESSAGE_HEADER_LENGTH;
 import static com.mongodb.internal.connection.OpCode.OP_COMPRESSED;
+import static com.mongodb.internal.connection.OpCode.OP_REPLY;
 import static com.mongodb.internal.connection.ProtocolHelper.createSpecialWriteConcernException;
 import static com.mongodb.internal.connection.ProtocolHelper.getClusterTime;
 import static com.mongodb.internal.connection.ProtocolHelper.getCommandFailureException;
@@ -282,7 +283,8 @@ public class InternalStreamConnection implements InternalConnection {
         try {
             sendCommandMessage(message, bsonOutput, sessionContext);
             if (message.isResponseExpected()) {
-                return receiveCommandMessageResponseWithSequence(message, decoder, commandEventSender, sessionContext);
+                return receiveCommandMessageResponseWithSequence(message, decoder, documentSequenceDecoder, commandEventSender,
+                        sessionContext);
             } else {
                 commandEventSender.sendSucceededEventForOneWayCommand();
                 return null;
@@ -319,36 +321,20 @@ public class InternalStreamConnection implements InternalConnection {
                                                 final CommandEventSender commandEventSender, final SessionContext sessionContext) {
         ResponseBuffers responseBuffers = receiveMessage(message.getId());
         try {
-            updateSessionContext(sessionContext, responseBuffers);
-            if (!isCommandOk(responseBuffers)) {
-                throw getCommandFailureException(responseBuffers.getResponseDocument(message.getId(), new BsonDocumentCodec()),
-                        description.getServerAddress());
-            }
-
-            commandEventSender.sendSucceededEvent(responseBuffers);
-
-            return getCommandResult(decoder, responseBuffers, message.getId());
+            return getCommandResult(decoder, responseBuffers, message.getId(), sessionContext, commandEventSender);
         } finally {
             responseBuffers.close();
         }
     }
 
-    // TODO: Rubber, meet road
     private <D, T> CommandResultWithSequence<T, D> receiveCommandMessageResponseWithSequence(final CommandMessage message,
                                                                                              final Decoder<T> decoder,
+                                                                                             final Decoder<D> documentSequenceDecoder,
                                                                                              final CommandEventSender commandEventSender,
                                                                                              final SessionContext sessionContext) {
         ResponseBuffers responseBuffers = receiveMessage(message.getId());
         try {
-            updateSessionContext(sessionContext, responseBuffers);
-            if (!isCommandOk(responseBuffers)) {
-                throw getCommandFailureException(responseBuffers.getResponseDocument(message.getId(), new BsonDocumentCodec()),
-                        description.getServerAddress());
-            }
-
-            commandEventSender.sendSucceededEvent(responseBuffers);
-
-            return new CommandResultWithSequence<T, D>(getCommandResult(decoder, responseBuffers, message.getId()));
+            return getCommandResult(decoder, documentSequenceDecoder, responseBuffers, message.getId(), sessionContext, commandEventSender);
         } finally {
             responseBuffers.close();
         }
@@ -414,22 +400,10 @@ public class InternalStreamConnection implements InternalConnection {
                                 return;
                             }
                             try {
-                                updateSessionContext(sessionContext, responseBuffers);
-                                boolean commandOk =
-                                        isCommandOk(new BsonBinaryReader(new ByteBufferBsonInput(responseBuffers.getBodyByteBuffer())));
-                                responseBuffers.reset();
-                                if (!commandOk) {
-                                    MongoException commandFailureException = getCommandFailureException(
-                                            responseBuffers.getResponseDocument(messageId, new BsonDocumentCodec()),
-                                            description.getServerAddress());
-                                    commandEventSender.sendFailedEvent(commandFailureException);
-                                    throw commandFailureException;
-                                }
-                                commandEventSender.sendSucceededEvent(responseBuffers);
-
-                                T result = getCommandResult(decoder, responseBuffers, messageId);
+                                T result = getCommandResult(decoder, responseBuffers, messageId, sessionContext, commandEventSender);
                                 callback.onResult(result, null);
                             } catch (Throwable localThrowable) {
+                                commandEventSender.sendFailedEvent(localThrowable);
                                 callback.onResult(null, localThrowable);
                             } finally {
                                 responseBuffers.close();
@@ -441,12 +415,44 @@ public class InternalStreamConnection implements InternalConnection {
         });
     }
 
-    private <T> T getCommandResult(final Decoder<T> decoder, final ResponseBuffers responseBuffers, final int messageId) {
-        T result = new ReplyMessage<T>(responseBuffers, decoder, messageId).getDocuments().get(0);
-        MongoException writeConcernBasedError = createSpecialWriteConcernException(responseBuffers, description.getServerAddress());
+    private <T> T getCommandResult(final Decoder<T> decoder, final ResponseBuffers responseBuffers, final int messageId,
+                                   final SessionContext sessionContext, final CommandEventSender commandEventSender) {
+        return getCommandResult(decoder, null, responseBuffers, messageId, sessionContext, commandEventSender)
+                .getCommandResult();
+    }
+
+    private <T, D> CommandResultWithSequence<T, D> getCommandResult(final Decoder<T> decoder,
+                                                                    final Decoder<D> documentSequenceDecoder,
+                                                                    final ResponseBuffers responseBuffers,
+                                                                    final int messageId, final SessionContext sessionContext,
+                                                                    final CommandEventSender commandEventSender) {
+        CommandResultWithSequence<T, D> result;
+        ByteBuf resultDocumentByteBuf;
+        if (responseBuffers.getReplyHeader().getOpCode() == OP_REPLY.getValue()) {
+            result = new CommandResultWithSequence<T, D>(new ReplyMessage<T>(responseBuffers, decoder, messageId).getDocuments().get(0));
+            resultDocumentByteBuf = responseBuffers.getBodyByteBuffer();
+
+        } else {
+            Message<T, D> message = new Message<T, D>(responseBuffers, decoder, documentSequenceDecoder);
+            result = new CommandResultWithSequence<T, D>(message.getDocument(), message.getSequenceName(), message.getDocumentSequence());
+            resultDocumentByteBuf = message.getDocumentByteBuf();
+        }
+        updateSessionContext(sessionContext, resultDocumentByteBuf.duplicate());
+
+        if (!isCommandOk(resultDocumentByteBuf.duplicate())) {
+            throw getCommandFailureException(new BsonDocumentCodec().decode(new BsonBinaryReader(resultDocumentByteBuf.duplicate().asNIO()),
+                    DecoderContext.builder().build()),
+                    description.getServerAddress());
+        }
+
+        commandEventSender.sendSucceededEvent(resultDocumentByteBuf.duplicate());
+
+        MongoException writeConcernBasedError = createSpecialWriteConcernException(resultDocumentByteBuf.duplicate(),
+                description.getServerAddress());
         if (writeConcernBasedError != null) {
             throw new MongoWriteConcernWithResponseException(writeConcernBasedError, result);
         }
+
         return result;
     }
 
@@ -565,9 +571,9 @@ public class InternalStreamConnection implements InternalConnection {
         return description.getServerAddress();
     }
 
-    private void updateSessionContext(final SessionContext sessionContext, final ResponseBuffers responseBuffers) {
-        sessionContext.advanceOperationTime(getOperationTime(responseBuffers));
-        sessionContext.advanceClusterTime(getClusterTime(responseBuffers));
+    private void updateSessionContext(final SessionContext sessionContext, final ByteBuf documentByteBuf) {
+        sessionContext.advanceOperationTime(getOperationTime(documentByteBuf.duplicate()));
+        sessionContext.advanceClusterTime(getClusterTime(documentByteBuf.duplicate()));
     }
 
     private MongoException translateWriteException(final Throwable e) {

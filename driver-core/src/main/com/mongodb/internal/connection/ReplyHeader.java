@@ -44,6 +44,7 @@ public final class ReplyHeader {
     private static final int QUERY_FAILURE_RESPONSE_FLAG = 2;
 
     private final int messageLength;
+    private final int opCode;
     private final int requestId;
     private final int responseTo;
     private final int responseFlags;
@@ -65,6 +66,7 @@ public final class ReplyHeader {
         this.messageLength = messageLength;
         this.requestId = messageHeader.getRequestId();
         this.responseTo = messageHeader.getResponseTo();
+        this.opCode = opCode;
         if (opCode == OP_MSG.getValue()) {
             responseFlags = 0;
             cursorId = 0;
@@ -72,7 +74,6 @@ public final class ReplyHeader {
             numberReturned = 1;
 
             opMsgFlagBits = header.getInt();
-            header.get();  // ignore payload type
         } else if (opCode == OP_REPLY.getValue()) {
             if (messageLength < TOTAL_REPLY_HEADER_LENGTH) {
                 throw new MongoInternalException(format("The reply message length %d is less than the mimimum message length %d",
@@ -102,6 +103,10 @@ public final class ReplyHeader {
      */
     public int getMessageLength() {
         return messageLength;
+    }
+
+    public int getOpCode() {
+        return opCode;
     }
 
     /**

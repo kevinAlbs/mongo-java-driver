@@ -16,6 +16,8 @@
 
 package com.mongodb.internal.connection;
 
+import org.bson.ByteBuf;
+
 class NoOpCommandEventSender implements CommandEventSender {
     @Override
     public void sendStartedEvent() {
@@ -26,7 +28,7 @@ class NoOpCommandEventSender implements CommandEventSender {
     }
 
     @Override
-    public void sendSucceededEvent(final ResponseBuffers responseBuffers) {
+    public void sendSucceededEvent(final ByteBuf documentByteBuf) {
     }
 
     @Override

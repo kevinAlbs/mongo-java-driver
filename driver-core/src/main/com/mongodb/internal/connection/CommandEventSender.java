@@ -16,12 +16,14 @@
 
 package com.mongodb.internal.connection;
 
+import org.bson.ByteBuf;
+
 interface CommandEventSender {
     void sendStartedEvent();
 
     void sendFailedEvent(Throwable t);
 
-    void sendSucceededEvent(ResponseBuffers responseBuffers);
+    void sendSucceededEvent(ByteBuf documentByteBuf);
 
     void sendSucceededEventForOneWayCommand();
 }
