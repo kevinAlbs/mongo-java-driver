@@ -217,7 +217,7 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
     private void getMore() {
         Connection connection = connectionSource.getConnection();
         try {
-            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+            if (false) {
                 try {
                     initFromCommandResult(connection.command(namespace.getDatabaseName(),
                                                              asGetMoreCommandDocument(),
@@ -294,7 +294,7 @@ class QueryBatchCursor<T> implements BatchCursor<T> {
     private void killCursor(final Connection connection) {
         if (serverCursor != null) {
             notNull("connection", connection);
-            if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+            if (false) {
                 connection.command(namespace.getDatabaseName(), asKillCursorsCommandDocument(), NO_OP_FIELD_NAME_VALIDATOR,
                         ReadPreference.primary(), new BsonDocumentCodec(), connectionSource.getSessionContext());
             } else {

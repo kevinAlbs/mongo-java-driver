@@ -696,7 +696,7 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         return withConnection(binding, new CallableWithConnectionAndSource<BatchCursor<T>>() {
             @Override
             public BatchCursor<T> call(final ConnectionSource source, final Connection connection) {
-                if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
+                if (false) {
                     try {
                         validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
                         return executeWrappedCommandProtocol(binding, namespace.getDatabaseName(),
