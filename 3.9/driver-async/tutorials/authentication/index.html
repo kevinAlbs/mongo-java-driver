@@ -450,8 +450,7 @@ MongoClient mongoClient = MongoClients.create(
                         builder.hosts(Arrays.asList(new ServerAddress(&quot;host1&quot;, 27017))))
                 .credential(credential)
                 .streamFactoryFactory(NettyStreamFactoryFactory.builder().eventLoopGroup(eventLoopGroup).build())
-                .applyToSslSettings(builder -&gt;
-                        builder.enabled(true))
+                .applyToSslSettings(builder -&gt; builder.enabled(true))
                 .build());
 </code></pre>
 
@@ -459,6 +458,13 @@ MongoClient mongoClient = MongoClients.create(
 
 <pre><code class="language-java">MongoClient mongoClient = MongoClients.create(&quot;mongodb://subjectName@host1/?authMechanism=MONGODB-X509&amp;streamType=netty&amp;ssl=true&quot;);
 </code></pre>
+
+<div class="admonition note">
+<h5 class="admonition-title">Note</h5>
+<p>The streamType connection string query parameter is deprecated as of the 3.10 release and will be removed in the next major release.</p>
+
+</div>
+
 
 <p>See the MongoDB server
 <a href="http://docs.mongodb.org/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user">x.509 tutorial</a> for

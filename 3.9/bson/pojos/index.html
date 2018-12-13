@@ -352,10 +352,11 @@ new registry that will also support the registered POJOs. The following example 
 import org.bson.codecs.configuration.CodecRegistry;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 
 // Create a CodecRegistry containing the PojoCodecProvider instance.
 CodecProvider pojoCodecProvider = PojoCodecProvider.builder().register(&quot;org.example.pojos&quot;).build();
-CodecRegistry pojoCodecRegistry = fromRegistries(defaultCodecRegistry, fromProviders(pojoCodecProvider));
+CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
 </code></pre>
 
 <div class="admonition tip">
@@ -703,7 +704,7 @@ ClassModel&lt;SubscriberUser&gt; subscriberUserModel = ClassModel.builder(Subscr
 
 PojoCodecProvider pojoCodecProvider = PojoCodecProvider.builder().register(userModel, freeUserModel, subscriberUserModel).build();
 
-CodecRegistry pojoCodecRegistry = fromRegistries(defaultCodecRegistry, fromProviders(pojoCodecProvider));
+CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
 </code></pre>
 
 <h3 id="supporting-pojos-without-no-args-constructors">Supporting POJOs without no args constructors</h3>

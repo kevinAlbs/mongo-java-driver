@@ -263,12 +263,8 @@ that can be found with the async driver source on github.</p>
 
 <div class="admonition note">
 <h5 class="admonition-title">Note</h5>
-<p>There are two higher level MongoDB Asynchronous Java Drivers available, that users may find easier to work with due to their friendlier APIs:</p>
-
-<ul>
-<li><a href="http://mongodb.github.io/mongo-java-driver-rx/">MongoDB RxJava Driver</a> An RxJava implementation of the MongoDB Driver.</li>
-<li><a href="http://mongodb.github.io/mongo-java-driver-reactivestreams/">MongoDB Reactive Streams Java Driver</a> A Reactive Streams implementation for the JVM.</li>
-</ul>
+<p>The callback-based Async Java Driver has been deprecated in favor of the
+<a href="http://mongodb.github.io/mongo-java-driver-reactivestreams/">MongoDB Reactive Streams Java Driver</a>.</p>
 
 </div>
 
@@ -343,7 +339,7 @@ SingleResultCallback&lt;Void&gt; callbackWhenFinished = new SingleResultCallback
 </code></pre>
 
 <ul>
-<li>The following <code>Block</code> code which the exexamples will use used to print the results of the find operations:</li>
+<li>The following <code>Block</code> code which the examples will use to print the results of the find operations:</li>
 </ul>
 
 <pre><code class="language-java">Block&lt;Document&gt; printDocumentBlock = new Block&lt;Document&gt;() {
