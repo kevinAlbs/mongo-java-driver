@@ -39,7 +39,7 @@ buildscript {
 ext {
     configDir = new File(rootDir, 'config')
     jnrUnixsocketVersion = '0.18'
-    nettyVersion = '4.1.17.Final'
+    nettyVersion = '[4.1, 4.2)'
     snappyVersion = '1.1.4'
     gitVersion = getGitVersion()
 }
@@ -59,7 +59,6 @@ configure(coreProjects) {
         google()
         mavenCentral()
         jcenter()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         mavenLocal()
     }
 }
