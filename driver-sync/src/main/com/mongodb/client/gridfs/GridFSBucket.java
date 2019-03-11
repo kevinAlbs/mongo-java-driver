@@ -20,9 +20,9 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.annotations.ThreadSafe;
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.gridfs.model.GridFSDownloadOptions;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
-import com.mongodb.client.ClientSession;
 import org.bson.BsonValue;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -712,56 +712,4 @@ public interface GridFSBucket {
      * @mongodb.server.release 3.6
      */
     void drop(ClientSession clientSession);
-
-    // Deprecated APIs
-
-    /**
-     * Opens a Stream from which the application can read the contents of the latest version of the stored file specified by the
-     * {@code filename}.
-     *
-     * @param filename the name of the file to be downloaded
-     * @deprecated use {@link #openDownloadStream(String)} instead.
-     * @return the stream
-     */
-    @Deprecated
-    GridFSDownloadStream openDownloadStreamByName(String filename);
-
-    /**
-     * Opens a Stream from which the application can read the contents of the stored file specified by {@code filename} and the revision
-     * in {@code options}.
-     *
-     * @param filename the name of the file to be downloaded
-     * @param options the download options
-     * @deprecated use {@link #openDownloadStream(String, GridFSDownloadOptions)} instead.
-     * @return the stream
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    GridFSDownloadStream openDownloadStreamByName(String filename, com.mongodb.client.gridfs.model.GridFSDownloadByNameOptions options);
-
-    /**
-     * Downloads the contents of the latest version of the stored file specified by {@code filename} and writes the contents to
-     * the {@code destination} Stream.
-     *
-     * @param filename the name of the file to be downloaded
-     * @param destination the destination stream
-     * @deprecated use {@link #downloadToStream(String, OutputStream)} instead.
-     */
-    @Deprecated
-    void downloadToStreamByName(String filename, OutputStream destination);
-
-    /**
-     * Downloads the contents of the stored file specified by {@code filename} and by the revision in {@code options} and writes the
-     * contents to the {@code destination} Stream.
-     *
-     * @param filename the name of the file to be downloaded
-     * @param destination the destination stream
-     * @param options the download options
-     * @deprecated use {@link #downloadToStream(String, OutputStream, GridFSDownloadOptions)} instead.
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    void downloadToStreamByName(String filename, OutputStream destination,
-                                com.mongodb.client.gridfs.model.GridFSDownloadByNameOptions options);
-
 }
