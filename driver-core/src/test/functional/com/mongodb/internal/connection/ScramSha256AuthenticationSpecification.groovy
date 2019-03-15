@@ -33,9 +33,9 @@ import org.bson.codecs.DocumentCodec
 import spock.lang.IgnoreIf
 import spock.lang.Specification
 
-import static com.mongodb.ClusterFixture.getBinding
 import static com.mongodb.ClusterFixture.createAsyncCluster
 import static com.mongodb.ClusterFixture.createCluster
+import static com.mongodb.ClusterFixture.getBinding
 import static com.mongodb.ClusterFixture.isAuthenticated
 import static com.mongodb.MongoCredential.createCredential
 import static com.mongodb.MongoCredential.createScramSha1Credential
@@ -95,7 +95,7 @@ class ScramSha256AuthenticationSpecification extends Specification {
 
     def 'test authentication and authorization'() {
         given:
-        def cluster = createCluster(credentials)
+        def cluster = createCluster(credential)
 
         when:
         new CommandReadOperation<Document>('admin',
@@ -109,20 +109,18 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[sha1Implicit],
-                        [sha1Explicit],
-                        [sha256Implicit],
-                        [sha256Explicit],
-                        [bothImplicit],
-                        [bothExplicitSha1],
-                        [bothExplicitSha256],
-                        [sha1Implicit, sha1Explicit, sha256Implicit, sha256Explicit, bothImplicit, bothExplicitSha1, bothExplicitSha256]
-        ]
+        credential << [sha1Implicit,
+                        sha1Explicit,
+                        sha256Implicit,
+                        sha256Explicit,
+                        bothImplicit,
+                        bothExplicitSha1,
+                        bothExplicitSha256]
     }
 
     def 'test authentication and authorization async'() {
         given:
-        def cluster = createAsyncCluster(credentials)
+        def cluster = createAsyncCluster(credential)
         def callback = new FutureResultCallback()
 
         when:
@@ -139,20 +137,18 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[sha1Implicit],
-                        [sha1Explicit],
-                        [sha256Implicit],
-                        [sha256Explicit],
-                        [bothImplicit],
-                        [bothExplicitSha1],
-                        [bothExplicitSha256],
-                        [sha1Implicit, sha1Explicit, sha256Implicit, sha256Explicit, bothImplicit, bothExplicitSha1, bothExplicitSha256]
-        ]
+        credential << [sha1Implicit,
+                        sha1Explicit,
+                        sha256Implicit,
+                        sha256Explicit,
+                        bothImplicit,
+                        bothExplicitSha1,
+                        bothExplicitSha256]
     }
 
     def 'test authentication and authorization failure with wrong mechanism'() {
         given:
-        def cluster = createCluster(credentials)
+        def cluster = createCluster(credential)
 
         when:
         new CommandReadOperation<Document>('admin',
@@ -166,7 +162,7 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[sha1AsSha256], [sha256AsSha1], [nonExistentUserImplicit]]
+        credential << [sha1AsSha256, sha256AsSha1, nonExistentUserImplicit]
     }
 
     def 'test authentication and authorization failure with wrong mechanism async'() {
@@ -187,7 +183,7 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[sha1AsSha256], [sha256AsSha1], [nonExistentUserImplicit]]
+        credentials << [sha1AsSha256, sha256AsSha1, nonExistentUserImplicit]
     }
 
     def 'test SASL Prep'() {
@@ -206,7 +202,7 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[userNinePrepped], [userNineUnprepped], [userFourPrepped], [userFourUnprepped]]
+        credentials << [userNinePrepped, userNineUnprepped, userFourPrepped, userFourUnprepped]
     }
 
     def 'test SASL Prep async'() {
@@ -227,6 +223,6 @@ class ScramSha256AuthenticationSpecification extends Specification {
         cluster.close()
 
         where:
-        credentials << [[userNinePrepped], [userNineUnprepped], [userFourPrepped], [userFourUnprepped]]
+        credentials << [userNinePrepped, userNineUnprepped, userFourPrepped, userFourUnprepped]
     }
 }
