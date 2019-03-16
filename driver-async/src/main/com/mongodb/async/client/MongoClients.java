@@ -17,6 +17,7 @@
 package com.mongodb.async.client;
 
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoDriverInformation;
 import com.mongodb.MongoInternalException;
 import com.mongodb.connection.AsynchronousSocketChannelStreamFactoryFactory;
@@ -29,6 +30,7 @@ import com.mongodb.lang.Nullable;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import java.io.Closeable;
+import java.util.Collections;
 
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.event.EventListenerHelper.getCommandListener;
@@ -52,18 +54,6 @@ public final class MongoClients {
     }
 
     /**
-     * Create a new client with the given client settings.
-     *
-     * @param settings the settings
-     * @return the client
-     * @deprecated use {@link #create(com.mongodb.MongoClientSettings)} instead
-     */
-    @Deprecated
-    public static MongoClient create(final MongoClientSettings settings) {
-        return create(settings, null);
-    }
-
-    /**
      * Create a new client with the given connection string as if by a call to {@link #create(ConnectionString)}.
      *
      * @param connectionString the connection
@@ -77,9 +67,9 @@ public final class MongoClients {
     /**
      * Create a new client with the given connection string.
      * <p>
-     * For each of the settings classed configurable via {@link com.mongodb.MongoClientSettings}, the connection string is applied by
+     * For each of the settings classed configurable via {@link MongoClientSettings}, the connection string is applied by
      * calling the {@code applyConnectionString} method on an instance of setting's builder class, building the setting, and adding it to
-     * an instance of {@link com.mongodb.MongoClientSettings.Builder}.
+     * an instance of {@link MongoClientSettings.Builder}.
      * </p>
      * <p>
      * The connection string's stream type is then applied by setting the
@@ -89,7 +79,7 @@ public final class MongoClients {
      * @param connectionString the settings
      * @return the client
      *
-     * @see com.mongodb.MongoClientSettings.Builder
+     * @see MongoClientSettings.Builder
      * @see com.mongodb.connection.ClusterSettings.Builder#applyConnectionString(ConnectionString)
      * @see com.mongodb.connection.ConnectionPoolSettings.Builder#applyConnectionString(ConnectionString)
      * @see com.mongodb.connection.ServerSettings.Builder#applyConnectionString(ConnectionString)
@@ -124,7 +114,7 @@ public final class MongoClients {
      * @return the client
      * @since 3.7
      */
-    public static MongoClient create(final com.mongodb.MongoClientSettings settings) {
+    public static MongoClient create(final MongoClientSettings settings) {
         return create(settings, null);
     }
 
@@ -138,25 +128,8 @@ public final class MongoClients {
      * @return the client
      * @since 3.7
      */
-    public static MongoClient create(final com.mongodb.MongoClientSettings settings,
+    public static MongoClient create(final MongoClientSettings settings,
                                      @Nullable final MongoDriverInformation mongoDriverInformation) {
-        return create(MongoClientSettings.createFromClientSettings(settings), mongoDriverInformation);
-    }
-
-    /**
-     * Creates a new client with the given client settings.
-     *
-     * <p>Note: Intended for driver and library authors to associate extra driver metadata with the connections.</p>
-     *
-     * @param settings               the settings
-     * @param mongoDriverInformation any driver information to associate with the MongoClient
-     * @return the client
-     * @since 3.4
-     * @deprecated use {@link #create(com.mongodb.MongoClientSettings, MongoDriverInformation)} instead
-     */
-    @Deprecated
-    public  static MongoClient create(final MongoClientSettings settings,
-                                      @Nullable final MongoDriverInformation mongoDriverInformation) {
         if (settings.getStreamFactoryFactory() == null) {
             if (settings.getSslSettings().isEnabled()) {
                 return createWithTlsChannel(settings, mongoDriverInformation);
@@ -169,20 +142,23 @@ public final class MongoClients {
         }
     }
 
-    static MongoClient createMongoClient(final MongoClientSettings settings, @Nullable final MongoDriverInformation mongoDriverInformation,
+    private static MongoClient createMongoClient(final MongoClientSettings settings,
+                                         @Nullable final MongoDriverInformation mongoDriverInformation,
                                          final StreamFactory streamFactory, final StreamFactory heartbeatStreamFactory,
                                          @Nullable final Closeable externalResourceCloser) {
         return new MongoClientImpl(settings, createCluster(settings, mongoDriverInformation, streamFactory, heartbeatStreamFactory),
                 externalResourceCloser);
     }
 
-    private static Cluster createCluster(final MongoClientSettings settings, @Nullable final MongoDriverInformation mongoDriverInformation,
+    private static Cluster createCluster(final MongoClientSettings settings,
+                                         @Nullable final MongoDriverInformation mongoDriverInformation,
                                          final StreamFactory streamFactory, final StreamFactory heartbeatStreamFactory) {
         notNull("settings", settings);
         MongoDriverInformation.Builder builder = mongoDriverInformation == null ? MongoDriverInformation.builder()
                 : MongoDriverInformation.builder(mongoDriverInformation);
         return new DefaultClusterFactory().createCluster(settings.getClusterSettings(), settings.getServerSettings(),
-                settings.getConnectionPoolSettings(), streamFactory, heartbeatStreamFactory, settings.getCredentialList(),
+                settings.getConnectionPoolSettings(), streamFactory, heartbeatStreamFactory,
+                settings.getCredential() == null ? Collections.emptyList() : Collections.singletonList(settings.getCredential()),
                 getCommandListener(settings.getCommandListeners()), settings.getApplicationName(), builder.driverName("async").build(),
                 settings.getCompressorList());
     }
@@ -205,11 +181,11 @@ public final class MongoClients {
      * </ul>
      *
      * @return the default codec registry
-     * @see com.mongodb.MongoClientSettings#getCodecRegistry()
+     * @see MongoClientSettings#getCodecRegistry()
      * @since 3.1
      */
     public static CodecRegistry getDefaultCodecRegistry() {
-        return com.mongodb.MongoClientSettings.getDefaultCodecRegistry();
+        return MongoClientSettings.getDefaultCodecRegistry();
     }
 
 

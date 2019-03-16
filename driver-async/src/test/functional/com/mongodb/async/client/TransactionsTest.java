@@ -19,6 +19,7 @@ package com.mongodb.async.client;
 import com.mongodb.Block;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings.Builder;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
@@ -139,7 +140,7 @@ public class TransactionsTest {
         if (this.filename.equals("pin-mongos.json")) {
             connectionString = getMultiMongosConnectionString();
         }
-        MongoClientSettings.Builder builder = MongoClientSettings.builder()
+        Builder builder = com.mongodb.MongoClientSettings.builder()
                 .applyConnectionString(connectionString);
         if (System.getProperty("java.version").startsWith("1.6.")) {
             builder.applyToSslSettings(new Block<SslSettings.Builder>() {
