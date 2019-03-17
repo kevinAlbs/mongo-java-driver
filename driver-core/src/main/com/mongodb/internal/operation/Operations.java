@@ -28,7 +28,6 @@ import com.mongodb.client.model.AggregationLevel;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Collation;
 import com.mongodb.client.model.CountOptions;
-import com.mongodb.internal.client.model.CountStrategy;
 import com.mongodb.client.model.CreateIndexOptions;
 import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.DeleteOneModel;
@@ -51,6 +50,7 @@ import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
+import com.mongodb.internal.client.model.CountStrategy;
 import com.mongodb.operation.AggregateOperation;
 import com.mongodb.operation.AggregateToCollectionOperation;
 import com.mongodb.operation.CountOperation;
@@ -145,7 +145,6 @@ final class Operations<TDocument> {
                 .limit(options.getLimit())
                 .maxTime(options.getMaxTime(MILLISECONDS), MILLISECONDS)
                 .maxAwaitTime(options.getMaxAwaitTime(MILLISECONDS), MILLISECONDS)
-                .modifiers(toBsonDocumentOrNull(options.getModifiers()))
                 .projection(toBsonDocumentOrNull(options.getProjection()))
                 .sort(toBsonDocumentOrNull(options.getSort()))
                 .cursorType(options.getCursorType())
@@ -158,10 +157,8 @@ final class Operations<TDocument> {
                 .hint(toBsonDocumentOrNull(options.getHint()))
                 .min(toBsonDocumentOrNull(options.getMin()))
                 .max(toBsonDocumentOrNull(options.getMax()))
-                .maxScan(options.getMaxScan())
                 .returnKey(options.isReturnKey())
-                .showRecordId(options.isShowRecordId())
-                .snapshot(options.isSnapshot());
+                .showRecordId(options.isShowRecordId());
     }
 
     <TResult> DistinctOperation<TResult> distinct(final String fieldName, final Bson filter,
@@ -178,14 +175,12 @@ final class Operations<TDocument> {
     <TResult> AggregateOperation<TResult> aggregate(final List<? extends Bson> pipeline, final Class<TResult> resultClass,
                                                     final long maxTimeMS, final long maxAwaitTimeMS, final Integer batchSize,
                                                     final Collation collation, final Bson hint, final String comment,
-                                                    final Boolean allowDiskUse, final Boolean useCursor,
-                                                    final AggregationLevel aggregationLevel) {
+                                                    final Boolean allowDiskUse, final AggregationLevel aggregationLevel) {
         return new AggregateOperation<TResult>(namespace, toBsonDocumentList(pipeline), codecRegistry.get(resultClass), aggregationLevel)
                 .maxTime(maxTimeMS, MILLISECONDS)
                 .maxAwaitTime(maxAwaitTimeMS, MILLISECONDS)
                 .allowDiskUse(allowDiskUse)
                 .batchSize(batchSize)
-                .useCursor(useCursor)
                 .collation(collation)
                 .hint(hint == null ? null : hint.toBsonDocument(documentClass, codecRegistry))
                 .comment(comment);

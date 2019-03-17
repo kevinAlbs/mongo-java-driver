@@ -284,7 +284,6 @@ class MongoDatabaseSpecification extends Specification {
                 .collation(collation)
                 .autoIndex(false)
                 .capped(true)
-                .usePowerOf2Sizes(true)
                 .maxDocuments(100)
                 .sizeInBytes(1000)
                 .storageEngineOptions(BsonDocument.parse('{ wiredTiger : {}}'))
