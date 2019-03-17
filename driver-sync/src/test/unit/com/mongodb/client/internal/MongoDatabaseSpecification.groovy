@@ -20,6 +20,7 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.MongoNamespace
 import com.mongodb.ReadConcern
 import com.mongodb.WriteConcern
+import com.mongodb.client.ClientSession
 import com.mongodb.client.model.AggregationLevel
 import com.mongodb.client.model.Collation
 import com.mongodb.client.model.CreateCollectionOptions
@@ -33,7 +34,6 @@ import com.mongodb.operation.CommandReadOperation
 import com.mongodb.operation.CreateCollectionOperation
 import com.mongodb.operation.CreateViewOperation
 import com.mongodb.operation.DropDatabaseOperation
-import com.mongodb.client.ClientSession
 import org.bson.BsonBoolean
 import org.bson.BsonDocument
 import org.bson.BsonInt32
@@ -48,9 +48,9 @@ import static com.mongodb.CustomMatchers.isTheSameAs
 import static com.mongodb.ReadPreference.primary
 import static com.mongodb.ReadPreference.primaryPreferred
 import static com.mongodb.ReadPreference.secondary
+import static com.mongodb.client.internal.TestHelper.execute
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders
 import static spock.util.matcher.HamcrestSupport.expect
-import static com.mongodb.client.internal.TestHelper.execute
 
 class MongoDatabaseSpecification extends Specification {
 
@@ -265,9 +265,7 @@ class MongoDatabaseSpecification extends Specification {
 
         when:
         def createCollectionOptions = new CreateCollectionOptions()
-                .autoIndex(false)
                 .capped(true)
-                .usePowerOf2Sizes(true)
                 .maxDocuments(100)
                 .sizeInBytes(1000)
                 .storageEngineOptions(BsonDocument.parse('{ wiredTiger : {}}'))
@@ -283,9 +281,7 @@ class MongoDatabaseSpecification extends Specification {
         then:
         expect operation, isTheSameAs(new CreateCollectionOperation(name, collectionName, writeConcern)
                 .collation(collation)
-                .autoIndex(false)
                 .capped(true)
-                .usePowerOf2Sizes(true)
                 .maxDocuments(100)
                 .sizeInBytes(1000)
                 .storageEngineOptions(BsonDocument.parse('{ wiredTiger : {}}'))

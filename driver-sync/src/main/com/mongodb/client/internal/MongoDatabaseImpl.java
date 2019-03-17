@@ -29,12 +29,12 @@ import com.mongodb.client.ListCollectionsIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.client.model.AggregationLevel;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.CreateViewOptions;
 import com.mongodb.client.model.IndexOptionDefaults;
 import com.mongodb.client.model.ValidationOptions;
 import com.mongodb.client.model.changestream.ChangeStreamLevel;
-import com.mongodb.client.model.AggregationLevel;
 import com.mongodb.lang.Nullable;
 import com.mongodb.operation.CommandReadOperation;
 import com.mongodb.operation.CreateCollectionOperation;
@@ -278,9 +278,7 @@ public class MongoDatabaseImpl implements MongoDatabase {
                 .collation(createCollectionOptions.getCollation())
                 .capped(createCollectionOptions.isCapped())
                 .sizeInBytes(createCollectionOptions.getSizeInBytes())
-                .autoIndex(createCollectionOptions.isAutoIndex())
                 .maxDocuments(createCollectionOptions.getMaxDocuments())
-                .usePowerOf2Sizes(createCollectionOptions.isUsePowerOf2Sizes())
                 .storageEngineOptions(toBsonDocument(createCollectionOptions.getStorageEngineOptions()));
 
         IndexOptionDefaults indexOptionDefaults = createCollectionOptions.getIndexOptionDefaults();
