@@ -21,6 +21,7 @@ import com.mongodb.MongoGridFSException
 import com.mongodb.MongoNamespace
 import com.mongodb.ReadConcern
 import com.mongodb.WriteConcern
+import com.mongodb.client.ClientSession
 import com.mongodb.client.FindIterable
 import com.mongodb.client.ListIndexesIterable
 import com.mongodb.client.MongoCollection
@@ -32,9 +33,8 @@ import com.mongodb.client.internal.OperationExecutor
 import com.mongodb.client.internal.TestOperationExecutor
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
-import com.mongodb.operation.BatchCursor
-import com.mongodb.operation.FindOperation
-import com.mongodb.client.ClientSession
+import com.mongodb.internal.operation.BatchCursor
+import com.mongodb.internal.operation.FindOperation
 import org.bson.BsonDocument
 import org.bson.BsonObjectId
 import org.bson.BsonString

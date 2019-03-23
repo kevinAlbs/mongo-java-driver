@@ -29,7 +29,7 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument
 import com.mongodb.client.model.changestream.ChangeStreamDocumentCodec
 import com.mongodb.client.model.changestream.ChangeStreamLevel
 import com.mongodb.client.model.changestream.FullDocument
-import com.mongodb.operation.ChangeStreamOperation
+import com.mongodb.internal.operation.ChangeStreamOperation
 import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.BsonTimestamp

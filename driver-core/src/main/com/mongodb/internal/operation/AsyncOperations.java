@@ -41,10 +41,6 @@ import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.internal.client.model.CountStrategy;
-import com.mongodb.operation.AsyncReadOperation;
-import com.mongodb.operation.AsyncWriteOperation;
-import com.mongodb.operation.MapReduceAsyncBatchCursor;
-import com.mongodb.operation.MapReduceStatistics;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 

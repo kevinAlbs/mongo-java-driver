@@ -29,7 +29,7 @@ import com.mongodb.connection.ServerType
 import com.mongodb.connection.ServerVersion
 import com.mongodb.connection.SocketSettings
 import com.mongodb.connection.SocketStreamFactory
-import com.mongodb.operation.CommandReadOperation
+import com.mongodb.internal.operation.CommandReadOperation
 import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.codecs.BsonDocumentCodec
