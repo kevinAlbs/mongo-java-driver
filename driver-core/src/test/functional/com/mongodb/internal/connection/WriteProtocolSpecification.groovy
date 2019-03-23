@@ -18,11 +18,11 @@ package com.mongodb.internal.connection
 
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.ReadPreference
-import com.mongodb.bulk.InsertRequest
 import com.mongodb.connection.ClusterId
 import com.mongodb.connection.ServerId
 import com.mongodb.connection.SocketSettings
 import com.mongodb.connection.netty.NettyStreamFactory
+import com.mongodb.internal.bulk.InsertRequest
 import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.BsonString
@@ -33,7 +33,6 @@ import static com.mongodb.ClusterFixture.getPrimary
 import static com.mongodb.ClusterFixture.getSslSettings
 import static com.mongodb.connection.ConnectionFixture.getCredentialListWithCache
 import static com.mongodb.internal.connection.ProtocolTestHelper.execute
-
 
 class WriteProtocolSpecification extends OperationFunctionalSpecification {
     @Shared
