@@ -16,17 +16,12 @@
 
 package com.mongodb.internal.operation
 
-
 import com.mongodb.MongoException
 import com.mongodb.MongoNamespace
 import com.mongodb.OperationFunctionalSpecification
 import com.mongodb.ReadConcern
 import com.mongodb.WriteConcern
 import com.mongodb.async.SingleResultCallback
-import com.mongodb.binding.AsyncConnectionSource
-import com.mongodb.binding.AsyncReadBinding
-import com.mongodb.binding.ConnectionSource
-import com.mongodb.binding.ReadBinding
 import com.mongodb.client.model.CreateCollectionOptions
 import com.mongodb.client.model.changestream.ChangeStreamDocument
 import com.mongodb.client.model.changestream.ChangeStreamLevel
@@ -37,6 +32,10 @@ import com.mongodb.client.test.CollectionHelper
 import com.mongodb.connection.AsyncConnection
 import com.mongodb.connection.Connection
 import com.mongodb.connection.ConnectionDescription
+import com.mongodb.internal.binding.AsyncConnectionSource
+import com.mongodb.internal.binding.AsyncReadBinding
+import com.mongodb.internal.binding.ConnectionSource
+import com.mongodb.internal.binding.ReadBinding
 import com.mongodb.session.SessionContext
 import org.bson.BsonArray
 import org.bson.BsonBoolean
