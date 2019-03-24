@@ -25,7 +25,6 @@ import com.mongodb.connection.ClusterConnectionMode
 import com.mongodb.connection.ClusterId
 import com.mongodb.connection.ConnectionDescription
 import com.mongodb.connection.ConnectionId
-import com.mongodb.connection.QueryResult
 import com.mongodb.connection.ServerId
 import com.mongodb.connection.ServerVersion
 import com.mongodb.diagnostics.logging.Logger

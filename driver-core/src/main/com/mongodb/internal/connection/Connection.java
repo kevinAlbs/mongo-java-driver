@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.mongodb.connection;
+package com.mongodb.internal.connection;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcernResult;
 import com.mongodb.annotations.ThreadSafe;
+import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.internal.binding.ReferenceCounted;
 import com.mongodb.internal.bulk.DeleteRequest;
 import com.mongodb.internal.bulk.InsertRequest;
@@ -42,7 +43,6 @@ import java.util.List;
  * @since 3.0
  */
 @ThreadSafe
-@Deprecated
 public interface Connection extends ReferenceCounted {
 
     @Override
