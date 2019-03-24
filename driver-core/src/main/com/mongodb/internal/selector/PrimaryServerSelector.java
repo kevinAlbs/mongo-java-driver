@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.mongodb.selector;
+package com.mongodb.internal.selector;
 
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.selector.ServerSelector;
 
 import java.util.List;
 
@@ -25,9 +26,7 @@ import java.util.List;
  * A server selector that chooses servers that are primaries.
  *
  * @since 3.0
- * @deprecated Use either {@link ReadPreferenceServerSelector} or {@link WritableServerSelector}, depending on your requirements
  */
-@Deprecated
 public final class PrimaryServerSelector implements ServerSelector {
 
     @Override

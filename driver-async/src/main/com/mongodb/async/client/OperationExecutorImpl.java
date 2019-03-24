@@ -37,8 +37,8 @@ import com.mongodb.internal.binding.AsyncReadWriteBinding;
 import com.mongodb.internal.binding.AsyncSingleServerBinding;
 import com.mongodb.internal.operation.AsyncReadOperation;
 import com.mongodb.internal.operation.AsyncWriteOperation;
+import com.mongodb.internal.selector.ReadPreferenceServerSelector;
 import com.mongodb.lang.Nullable;
-import com.mongodb.selector.ReadPreferenceServerSelector;
 import com.mongodb.selector.ServerSelector;
 
 import java.util.List;

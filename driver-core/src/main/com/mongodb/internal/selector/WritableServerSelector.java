@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.mongodb.selector;
+package com.mongodb.internal.selector;
 
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.selector.ServerSelector;
 
 import java.util.List;
 
@@ -26,11 +27,9 @@ import java.util.List;
  *
  * @since 3.1
  */
-@Deprecated
 public final class WritableServerSelector implements ServerSelector {
 
     @Override
-    @SuppressWarnings("deprecation")
     public List<ServerDescription> select(final ClusterDescription clusterDescription) {
         return clusterDescription.getPrimaries();
     }

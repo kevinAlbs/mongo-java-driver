@@ -14,58 +14,57 @@
  * limitations under the License.
  */
 
-package com.mongodb.selector;
+package com.mongodb.internal.selector;
 
-import com.mongodb.ServerAddress;
+import com.mongodb.ReadPreference;
+import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.selector.ServerSelector;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.mongodb.assertions.Assertions.notNull;
 
 /**
- * A server selector that chooses a server that matches the server address.
+ * A server selector that chooses based on a read preference.
  *
  * @since 3.0
  */
-@Deprecated
-public class ServerAddressSelector implements ServerSelector {
-    private final ServerAddress serverAddress;
+public class ReadPreferenceServerSelector implements ServerSelector {
+    private final ReadPreference readPreference;
 
     /**
-     * Constructs a new instance.
+     * Gets the read preference.
      *
-     * @param serverAddress the server address
+     * @param readPreference the read preference
      */
-    public ServerAddressSelector(final ServerAddress serverAddress) {
-        this.serverAddress = notNull("serverAddress", serverAddress);
+    public ReadPreferenceServerSelector(final ReadPreference readPreference) {
+        this.readPreference = notNull("readPreference", readPreference);
     }
 
     /**
-     * Gets the server address.
+     * Gets the read preference.
      *
-     * @return the server address
+     * @return the read preference
      */
-    public ServerAddress getServerAddress() {
-        return serverAddress;
+    public ReadPreference getReadPreference() {
+        return readPreference;
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public List<ServerDescription> select(final ClusterDescription clusterDescription) {
-        if (clusterDescription.getByServerAddress(serverAddress) != null) {
-            return Arrays.asList(clusterDescription.getByServerAddress(serverAddress));
+        if (clusterDescription.getConnectionMode() == ClusterConnectionMode.SINGLE) {
+            return clusterDescription.getAny();
         }
-        return Collections.emptyList();
+        return readPreference.choose(clusterDescription);
     }
 
     @Override
     public String toString() {
-        return "ServerAddressSelector{"
-               + "serverAddress=" + serverAddress
+        return "ReadPreferenceServerSelector{"
+               + "readPreference=" + readPreference
                + '}';
     }
 }
