@@ -18,7 +18,7 @@ package org.bson.json;
 
 import org.bson.BsonRegularExpression;
 
-import java.io.InputStream;
+import java.io.Reader;
 
 /**
  * Parses the string representation of a JSON object into a set of {@link JsonToken}-derived objects.
@@ -34,11 +34,11 @@ class JsonScanner {
     }
 
     JsonScanner(final String json) {
-        this(JsonBufferFactory.createBuffer(json));
+        this(new JsonStringBuffer(json));
     }
 
-    JsonScanner(final InputStream jsonStream) {
-        this(JsonBufferFactory.createBuffer(jsonStream));
+    JsonScanner(final Reader reader) {
+        this(new JsonStreamBuffer(reader));
     }
 
     public void reset(final int markPos) {
@@ -529,10 +529,6 @@ class JsonScanner {
                 throw new JsonParseException("End of file in JSON string.");
             }
         }
-    }
-
-    public void close() {
-        buffer.close();
     }
 
     public void discard(final int markPos) {
