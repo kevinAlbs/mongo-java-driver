@@ -64,7 +64,6 @@ import static com.mongodb.connection.ServerType.SHARD_ROUTER;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 import static com.mongodb.internal.operation.ServerVersionHelper.serverIsAtLeastVersionThreeDotTwo;
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformer;
-import static com.mongodb.operation.CommandOperationHelper.executeCommand;
 import static com.mongodb.operation.CommandOperationHelper.executeCommandAsync;
 import static com.mongodb.operation.DocumentHelper.putIfNotNullOrEmpty;
 import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionAndSource;
@@ -717,33 +716,39 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
 
     @Override
     public BatchCursor<T> execute(final ReadBinding binding) {
-        return withConnection(binding, new CallableWithConnectionAndSource<BatchCursor<T>>() {
+        return withConnectionSource(binding, new CallableWithConnectionSource<BatchCursor<T>>() {
             @Override
-            public BatchCursor<T> call(final ConnectionSource source, final Connection connection) {
+            public BatchCursor<T> call(final ConnectionSource source) {
+                Connection connection = source.getConnection();
                 if (serverIsAtLeastVersionThreeDotTwo(connection.getDescription())) {
                     try {
                         validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
-                        return executeCommand(binding, namespace.getDatabaseName(), getCommandCreator(binding.getSessionContext()),
+                        return executeRetryableCommand(binding, connection, namespace.getDatabaseName(),
+                                getCommandCreator(binding.getSessionContext()),
                                 CommandResultDocumentCodec.create(decoder, FIRST_BATCH), transformer(source, connection), getRetryReads());
                     } catch (MongoCommandException e) {
                         throw new MongoQueryException(e);
                     }
                 } else {
-                    validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
-                    QueryResult<T> queryResult = connection.query(namespace,
-                                                                  asDocument(connection.getDescription(), binding.getReadPreference()),
-                                                                  projection,
-                                                                  skip,
-                                                                  limit,
-                                                                  batchSize,
-                                                                  isSlaveOk() || binding.getReadPreference().isSlaveOk(),
-                                                                  isTailableCursor(),
-                                                                  isAwaitData(),
-                                                                  isNoCursorTimeout(),
-                                                                  isPartial(),
-                                                                  isOplogReplay(),
-                                                                  decoder);
-                    return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+                    try {
+                        validateReadConcernAndCollation(connection, binding.getSessionContext().getReadConcern(), collation);
+                        QueryResult<T> queryResult = connection.query(namespace,
+                                asDocument(connection.getDescription(), binding.getReadPreference()),
+                                projection,
+                                skip,
+                                limit,
+                                batchSize,
+                                isSlaveOk() || binding.getReadPreference().isSlaveOk(),
+                                isTailableCursor(),
+                                isAwaitData(),
+                                isNoCursorTimeout(),
+                                isPartial(),
+                                isOplogReplay(),
+                                decoder);
+                        return new QueryBatchCursor<T>(queryResult, limit, batchSize, getMaxTimeForCursor(), decoder, source, connection);
+                    } finally {
+                        connection.release();
+                    }
                 }
             }
         });
