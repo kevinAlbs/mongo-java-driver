@@ -74,6 +74,30 @@ final class CommandOperationHelper {
         R apply(T t, ServerAddress serverAddress);
     }
 
+    interface NewCommandTransformer<T, R> {
+
+        /**
+         * Yield an appropriate result object for the input object.
+         *
+         * @param t the input object
+         * @return the function result
+         */
+        R apply(T t, ConnectionSource source, Connection connection);
+    }
+
+    class Adapter<T, R> implements NewCommandTransformer<T, R> {
+        private final CommandTransformer<T, R> wrapped;
+
+        Adapter(final CommandTransformer<T, R> wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public R apply(final T t, final ConnectionSource source, final Connection connection) {
+            return wrapped.apply(t, source.getServerDescription().getAddress());
+        }
+    }
+
     static class IdentityTransformer<T> implements CommandTransformer<T, T> {
         @Override
         public T apply(final T t, final ServerAddress serverAddress) {
@@ -247,7 +271,7 @@ final class CommandOperationHelper {
                 readPreference, new IdentityTransformer<T>(), sessionContext);
     }
 
-    private static <D, T> T executeCommand(final String database, final BsonDocument command,
+    static <D, T> T executeCommand(final String database, final BsonDocument command,
                                            final Decoder<D> decoder, final Connection connection,
                                            final ReadPreference readPreference,
                                            final CommandTransformer<D, T> transformer, final SessionContext sessionContext) {
