@@ -195,7 +195,7 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
         exception.getMessage().startsWith('Collation not supported by server version:')
 
         where:
-        async << [false, false]
+        async << [true, false]
     }
 
     @IgnoreIf({ !serverVersionAtLeast(3, 4) })
@@ -494,7 +494,7 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                 new BsonDocument('cursor', new BsonDocument('id', new BsonInt64(1))
                         .append('ns', new BsonString(getNamespace().getFullName()))
                         .append('firstBatch', new BsonArrayWrapper([])))
-        2 * connection.release()
+        1 * connection.release()
 
         where:
         sessionContext << [
@@ -535,7 +535,7 @@ class AggregateOperationSpecification extends OperationFunctionalSpecification {
                     .append('ns', new BsonString(getNamespace().getFullName()))
                     .append('firstBatch', new BsonArrayWrapper([]))), null)
         }
-        2 * connection.release()
+        1 * connection.release()
 
         where:
         sessionContext << [

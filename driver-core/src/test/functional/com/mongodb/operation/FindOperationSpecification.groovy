@@ -298,6 +298,7 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
         given:
         def operation = new FindOperation<Document>(getNamespace(), new DocumentCodec())
                 .filter(new BsonDocument('x', new BsonDocument('$thisIsNotAnOperator', BsonBoolean.TRUE)))
+                .retryReads(false)
 
         when:
         execute(operation, async)
@@ -546,7 +547,7 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
                 new BsonDocument('cursor', new BsonDocument('id', new BsonInt64(1))
                         .append('ns', new BsonString(getNamespace().getFullName()))
                         .append('firstBatch', new BsonArrayWrapper([])))
-        2 * connection.release()
+        1 * connection.release()
 
         where:
         sessionContext << [
@@ -585,7 +586,7 @@ class FindOperationSpecification extends OperationFunctionalSpecification {
                     .append('ns', new BsonString(getNamespace().getFullName()))
                     .append('firstBatch', new BsonArrayWrapper([]))), null)
         }
-        2 * connection.release()
+        1 * connection.release()
 
         where:
         sessionContext << [
