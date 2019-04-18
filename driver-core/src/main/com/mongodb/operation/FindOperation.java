@@ -68,8 +68,8 @@ import static com.mongodb.operation.CommandOperationHelper.CommandCreator;
 import static com.mongodb.operation.CommandOperationHelper.CommandCreatorAsync;
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformer;
 import static com.mongodb.operation.CommandOperationHelper.CommandTransformerAsync;
-import static com.mongodb.operation.CommandOperationHelper.executeCommandWithConnection;
 import static com.mongodb.operation.CommandOperationHelper.executeCommandAsyncWithConnection;
+import static com.mongodb.operation.CommandOperationHelper.executeCommandWithConnection;
 import static com.mongodb.operation.DocumentHelper.putIfNotNullOrEmpty;
 import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionAndSource;
 import static com.mongodb.operation.OperationHelper.AsyncCallableWithConnectionDescription;
@@ -1100,6 +1100,7 @@ public class FindOperation<T> implements AsyncReadOperation<AsyncBatchCursor<T>>
         return new CommandOperationHelper.CommandCreator() {
             @Override
             public BsonDocument create(final ServerDescription serverDescription, final ConnectionDescription connectionDescription) {
+                validateReadConcernAndCollation(connectionDescription, sessionContext.getReadConcern(), collation);
                 return wrapInExplainIfNecessary(getCommand(sessionContext));
             }
         };
