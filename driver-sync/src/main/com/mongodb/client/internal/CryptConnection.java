@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.mongodb.internal.operation.ServerVersionHelper.serverIsLessThanVersionFourDotTwo;
 import static java.util.Arrays.asList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 
@@ -106,6 +107,10 @@ class CryptConnection implements Connection {
                          final ReadPreference readPreference, final Decoder<T> commandResultDecoder, final SessionContext sessionContext,
                          final boolean responseExpected, final SplittablePayload payload,
                          final FieldNameValidator payloadFieldNameValidator) {
+
+        if (serverIsLessThanVersionFourDotTwo(wrapped.getDescription())) {
+            throw new MongoClientException("Auto-encryption requires a minimum MongoDB version of 4.2");
+        }
 
         BasicOutputBuffer bsonOutput = new BasicOutputBuffer();
         BsonBinaryWriter bsonBinaryWriter = new BsonBinaryWriter(createBsonWriterSettings(), createBsonBinaryWriterSettings(),
