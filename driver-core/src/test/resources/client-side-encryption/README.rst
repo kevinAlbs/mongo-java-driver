@@ -214,7 +214,6 @@ as follows.
    - Use `KeyVault.encrypt` to encrypt the value "hello" with the following:
 
      - the algorithm "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-     - a fixed 16 byte initialization vector
      - the "local" KMS provider
 
    - Expect the value is equal to a known BSON binary of subtype 6
@@ -228,7 +227,6 @@ as follows.
    - Use `KeyVault.encrypt` to encrypt the value "hello" with the following:
 
      - the algorithm "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-     - a fixed 16 byte initialization vector
      - the "aws" KMS provider
 
    - Expect the value is equal to a known BSON binary of subtype 6
@@ -242,12 +240,12 @@ as follows.
 
      - Expect `document` and `array` to fail. An exception MUST be thrown.
      - Expect a BSON binary subtype 6 to fail. An exception MUST be thrown.
-     - Expect all other values to succeed.
+     - Expect all other values to succeed.  [JY: should we really test every other BSON type?
 
    - Use `KeyVault.encrypt` to attempt to encrypt a document using randomized encryption.
 
      - Expect a BSON binary subtype 6 to fail. An exception MUST be thrown.
-     - Expect all other values to succeed.
+     - Expect all other values to succeed. [JY: should we really test every other BSON type?]
 
 #. Test explicit encryption with auto decryption.
 
@@ -265,6 +263,7 @@ as follows.
    - Create a document, setting the auto-encrypted field to the value.
    - Insert the document. Verify an exception is thrown.
 
+[JY: this is a duplicate of the test above]
 #. Test explicit encrypting an auto encrypted field.
 
    - Create a `KeyVault` with either a "local" or "aws" KMS provider
@@ -292,5 +291,6 @@ as follows.
        db.adminCommand({configureFailPoint: "hangBeforeListCollections", mode: "off" })
 
    - Verify both insert operations succeed. Verify that exactly one listCollections command is run on the collection, and that exactly one find is run on the datakeys collection.
- 
+
+[JY] Client creation should not fail.  The first operation should.  Let's automate this test with runOn.
 #. Test that creating an encrypted client fails if the maxWireVersion < 8.
