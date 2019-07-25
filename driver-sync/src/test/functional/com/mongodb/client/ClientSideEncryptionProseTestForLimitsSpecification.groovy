@@ -18,9 +18,18 @@ package com.mongodb.client
 
 import com.mongodb.AutoEncryptionSettings
 import com.mongodb.MongoNamespace
+import com.mongodb.event.CommandFailedEvent
+import com.mongodb.event.CommandListener
+import com.mongodb.event.CommandStartedEvent
+import com.mongodb.event.CommandSucceededEvent
 import org.bson.BsonDocument
 import org.bson.BsonMaximumSizeExceededException
 import org.bson.BsonString
+import org.bson.codecs.BsonDocumentCodec
+import org.bson.codecs.DecoderContext
+import org.bson.json.JsonReader
+
+import java.nio.charset.Charset
 
 import static com.mongodb.ClusterFixture.isNotAtLeastJava8
 import static com.mongodb.ClusterFixture.serverVersionAtLeast
@@ -31,7 +40,49 @@ import static java.util.Collections.singletonMap
 import static org.junit.Assume.assumeFalse
 import static org.junit.Assume.assumeTrue
 
+public class TestCommandListener implements CommandListener {
+    public int numInserts = 0;
+
+    @Override
+    public void commandStarted(final CommandStartedEvent event) {
+        if (event.commandName.equals("insert")) {
+            numInserts++;
+        }
+    }
+
+    @Override
+    public void commandSucceeded(final CommandSucceededEvent event) {
+
+    }
+
+    @Override
+    public void commandFailed(final CommandFailedEvent event) {
+
+    }
+}
+
 class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpecification {
+    /* Copied from JSON powered test runner code. TODO: clean up, update paths */
+    def getFileAsString(final File file) throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        String ls = System.getProperty("line.separator");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")));
+        try {
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append(ls);
+            }
+        } finally {
+            reader.close();
+        }
+        return stringBuilder.toString();
+    }
+
+    def bsonDocumentFromPath(final String path) throws IOException, URISyntaxException {
+        File file = new File("/Users/kevinalbertson/code/specifications/source/client-side-encryption/limits/" + path)
+        return new BsonDocumentCodec().decode(new JsonReader(getFileAsString(file)), DecoderContext.builder().build())
+    }
 
     private final MongoNamespace keyVaultNamespace = new MongoNamespace('test.datakeys')
     private final MongoNamespace autoEncryptingCollectionNamespace = new MongoNamespace(getDefaultDatabaseName(),
@@ -41,6 +92,7 @@ class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpec
     private final MongoCollection<BsonDocument> dataCollection = getMongoClient()
             .getDatabase(autoEncryptingCollectionNamespace.databaseName).getCollection(autoEncryptingCollectionNamespace.collectionName,
             BsonDocument)
+    private TestCommandListener commandListener = new TestCommandListener()
 
     private MongoClient autoEncryptingClient
     private MongoCollection<BsonDocument> autoEncryptingDataCollection
@@ -51,39 +103,7 @@ class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpec
         dataKeyCollection.drop()
         dataCollection.drop()
 
-        dataKeyCollection.insertOne(
-                BsonDocument.parse('''
-{
-    "status": {
-        "$numberInt": "1"
-    }, 
-    "_id": {
-        "$binary": {
-            "base64": "LOCALAAAAAAAAAAAAAAAAA==", 
-            "subType": "04"
-        }
-    }, 
-    "masterKey": {
-        "provider": "local"
-    }, 
-    "updateDate": {
-        "$date": {
-            "$numberLong": "1557827033449"
-        }
-    }, 
-    "keyMaterial": {
-        "$binary": {
-            "base64": "Ce9HSz/HKKGkIt4uyy+jDuKGA+rLC2cycykMo6vc8jXxqa1UVDYHWq1r+vZKbnnSRBfB981akzRKZCFpC05CTyFqDhXv6OnMjpG97OZEREGIsHEYiJkBW0jJJvfLLgeLsEpBzsro9FztGGXASxyxFRZFhXvHxyiLOKrdWfs7X1O/iK3pEoHMx6uSNSfUOgbebLfIqW7TO++iQS5g1xovXA==", 
-            "subType": "00"
-        }
-    }, 
-    "creationDate": {
-        "$date": {
-            "$numberLong": "1557827033449"
-        }
-    },
-    "keyAltNames": [ "local" ]
-}'''))
+        dataKeyCollection.insertOne(bsonDocumentFromPath ("limits-key.json"))
 
         def providerProperties =
                 ['local': ['key': Base64.getDecoder().decode('Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN'
@@ -91,31 +111,11 @@ class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpec
                 ]
 
         autoEncryptingClient = MongoClients.create(getMongoClientSettingsBuilder()
+                .addCommandListener(commandListener)
                 .autoEncryptionSettings(AutoEncryptionSettings.builder()
                         .keyVaultNamespace(keyVaultNamespace.fullName)
                         .kmsProviders(providerProperties)
-                        .schemaMap(singletonMap(autoEncryptingCollectionNamespace.fullName,
-                                BsonDocument.parse(
-                                        '''
-   {
-     "bsonType": "object",
-     "properties": {
-       "encrypted": {
-         "encrypt": {
-           "keyId": [
-             {
-               "$binary": {
-                 "base64": "LOCALAAAAAAAAAAAAAAAAA==",
-                 "subType": "04"
-               }
-             }
-           ],
-           "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic",
-           "bsonType": "string"
-         }
-       }
-     }
-   }''')))
+                        .schemaMap(singletonMap(autoEncryptingCollectionNamespace.fullName, bsonDocumentFromPath("limits-schema.json")))
                         .build())
                 .build())
 
@@ -126,8 +126,8 @@ class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpec
     def 'client encryption limits prose test'() {
         when:
         autoEncryptingDataCollection.insertOne(
-                new BsonDocument('_id', new BsonString('no_encryption_equal_2mib'))
-                .append('unencrypted', new BsonString('a'.multiply(2097006)))
+                new BsonDocument('_id', new BsonString('no_encryption_under_2mib'))
+                .append('unencrypted', new BsonString('a'.multiply(2097152 - 1000)))
         )
 
         then:
@@ -136,10 +136,40 @@ class ClientSideEncryptionProseTestForLimitsSpecification extends FunctionalSpec
         when:
         autoEncryptingDataCollection.insertOne(
                 new BsonDocument('_id', new BsonString('no_encryption_over_2mib'))
-                        .append('unencrypted', new BsonString('a'.multiply(2097097)))
+                        .append('unencrypted', new BsonString('a'.multiply(2097152)))
         )
 
         then:
         thrown(BsonMaximumSizeExceededException)
+
+        when:
+        autoEncryptingDataCollection.insertOne(
+                bsonDocumentFromPath("limits-doc.json").append('_id', new BsonString('encryption_exceeds_2mib')).append('unencrypted', new BsonString('a'.multiply(2097152 - 2000)))
+        )
+
+        then:
+        noExceptionThrown()
+
+        when:
+        LinkedList<BsonDocument> list = new LinkedList<BsonDocument>()
+        list.add (new BsonDocument().append("_id", new BsonString("no_encryption_under_2mib_1")).append("unencrypted", new BsonString('a'.multiply(2097152 - 1000))));
+        list.add (new BsonDocument().append("_id", new BsonString("no_encryption_under_2mib_2")).append("unencrypted", new BsonString('a'.multiply(2097152 - 1000))));
+        commandListener.numInserts = 0; /* reset */
+        autoEncryptingDataCollection.insertMany(list)
+
+        then:
+        assert (commandListener.numInserts == 2)
+
+
+        when:
+        list = new LinkedList<BsonDocument>()
+        list.add (bsonDocumentFromPath("limits-doc.json").append('_id', new BsonString('encryption_exceeds_2mib_1')).append('unencrypted', new BsonString('a'.multiply(2097152 - 2000))))
+        list.add (bsonDocumentFromPath("limits-doc.json").append('_id', new BsonString('encryption_exceeds_2mib_2')).append('unencrypted', new BsonString('a'.multiply(2097152 - 2000))))
+        commandListener.numInserts = 0; /* reset */
+        autoEncryptingDataCollection.insertMany(list)
+
+        then:
+        assert (commandListener.numInserts == 2)
+
     }
 }
